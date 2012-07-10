@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.8-1"
+.IDENT		"V1.13"
 !++
 !
 ! DESCRIPTION:
@@ -27,6 +27,11 @@
 !   22-JUN-1995	V1.7-1	Madison	    Add ACTNODEPRULE.
 !   06-JUN-1998	V1.8	Madison	    Add SETDEF, SETDEFERR.
 !   07-SEP-1998	V1.8-1	Maidson	    Add CMDLENERR.
+!   24-OCT-2008 V1.9	Sneddon	    Add ELSIFNOIF.
+!   03-FEB-2011 V1.10	Sneddon	    Add INSFARGS, TOOMANYARGS.
+!   09-FEB-2011 V1.11	Sneddon	    Add NYI, BADPARAM.
+!   10-FEB-2011 V1.12	Sneddon	    Add INFO, WARN, ERROR
+!   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
 !--
 
 .SEVERITY   	FATAL
@@ -45,10 +50,15 @@ SDCMIX	    	<single/double-colon dependency mix found for target !AZ>/FAO=1
 MULACTION   	<multiple dependencies with action lists found for target !AD>/FAO=2
 MACFILSYNTAX	<syntax error at line !UL in macro definition file !AZ>/FAO=2
 ACTNODEPRULE 	<action line found with no dependency or rule preceding it>
+NYI		<built-in function '!AZ' not yet implemented>
+BADPARAM	<bad parameter value passed to '!AZ'>/FAO=1
+ERROR		<!AZ>/FAO=1
 
 .SEVERITY   	ERROR
-ELSENOIF    	<.ELSE directive encountered without corresponding .IFDEF>
-ENDIFNOIF   	<.ENDIF directive encountered without corresponding .IFDEF>
+ELSENOIF    	<.ELSE directive encountered without corresponding .IF or .IFDEF>
+ENDIFNOIF   	<.ENDIF directive encountered without corresponding .IF or .IFDEF>
+ELSIFNOIF	<.ELSIF directive encountered without corresponding .IF>
+ELSIFAFTELSE	<.ELSIF directive encountered following .ELSE>
 
 .SEVERITY   	WARNING
 NOOPNRUL    	<could not open rules file !AZ>/FAO=1
@@ -57,6 +67,9 @@ AMBDEPEND   	<ambiguous multiple dependencies for target !AZ>/FAO=1
 CONDSKIP    	<description line skipped due to conditional>
 CIRCDEP	    	<circular dependency found for target !AZ>/FAO=1
 CONNEXION   	<target !AZ found in circular dependency>/FAO=1
+INSFARGS	<insufficient function parameters for '!AZ'>/FAO=1
+TOOMANYARGS	<too many function parameters for '!AZ'>/FAO=1
+WARN		<!AZ>/FAO=1
 
 .SEVERITY   	INFORMATION
 OPENDESC    	<reading description file !AZ>/FAO=1
@@ -68,12 +81,13 @@ TRGNUPD	    	<target !AZ is out of date - update required>/FAO=1
 TRGRDT	    	<target !AZ revision date is !%D>/FAO=2
 SRCRDT	    	<source !AZ revision date is !%D>/FAO=2
 PERFUPD	    	<performing actions to update !AZ>/FAO=1
-IDENT	    	<this is the MadGoat Make Utility !AZ>/FAO=1
+IDENT	    	<this is the MMK Make Utility !AZ>/FAO=1
 COPYRIGHT   	<!AZ>/FAO=1
 ACTNOUPD    	<action did not update target !AZ>/FAO=1
 ERRLOC	    	<at line number !UL in file !AD>/FAO=3
 NEEDSUPD    	<an update is required for target !AZ>/FAO=1
 TRGCURRENT   	<no update required for target !AZ>/FAO=1
+INFO		<!AZ>/FAO=1
 
 .SEVERITY   	SUCCESS
 NOUPDATE    	<target !AZ is up-to-date>/FAO=1

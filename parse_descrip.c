@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -81,12 +82,18 @@
 **  	27-DEC-1998 V2.0    Madison 	Cleanup, add support for .IFNDEF.
 **      30-MAR-2001 V2.0-1  Madison     Fix comma in SYM2DEP handling.
 **      03-MAY-2004 V2.1    Madison     Integrate IA64 changes.
+**	10-OCT-2008 V2.2    Sneddon	Added support for more MMS features
+**					  as well as .CASE_SENSITIVE. This feature
+**					  was part of another fork of MMK by
+**					  Kris Clippeleyr.
+**	01-JUL-2009 V2.3    Sneddon	Changed definition for tpa0.  Now
+**					 works better with older compilers.
+**	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.1"
+#pragma module PARSE_DESCRIP "V2.3-1"
 #include "mmk.h"
 #include "globals.h"
-#define __NEW_STARLET
 #include <tpadef.h>
 
 #pragma nostandard
@@ -102,7 +109,7 @@
 #define TPA_K_COUNT 	(TPA$K_COUNT0+4)
 
     struct TPABLK {
-    	TPADEF             tpa0;
+    	struct tpadef	   tpa0;
     	char    	  *tpa_l_stringbase;
     	char    	  *tpa_l_upbase;
     	FILEHANDLE  	  *tpa_l_unit;
@@ -159,6 +166,20 @@
 #define	PRS_K_CMD_LFORCED   36
 #define PRS_K_CMD_SETFLAGS  37
 #define PRS_K_DIR_IFNDEF    38
+#define PRS_K_DIR_IFGEQ     39
+#define PRS_K_DIR_IFLEQ     40
+#define PRS_K_DIR_IFGTR     41
+#define PRS_K_DIR_IFLSS     42
+#define PRS_K_DIR_NOT       43
+#define PRS_K_DIR_AND	    44
+#define PRS_K_DIR_OR	    45
+#define PRS_K_DIR_BUILTIN   46
+#define PRS_K_DIR_CASE	    47
+#define PRS_K_DIR_ELSIF	    48
+#define PRS_K_CHECK_GNU     49
+#define PRS_K_DIR_GNU	    50
+#define PRS_K_SYM_DEFINED   51
+#define PRS_K_SYM_APPEND    52
 
 /*
 ** .IFDEF context block.  Used for tracking when we're in and out
@@ -167,7 +188,7 @@
 
     static struct IF {
     	struct IF *flink, *blink;
-    	int do_it, in_else;
+    	int do_it, in_else, matched;
     } ifque = {&ifque,&ifque,0,0};
 
     static int just_did_rule = 0;
@@ -242,7 +263,7 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
     tpablk.tpa0.tpa$l_count = TPA_K_COUNT;
     tpablk.tpa0.tpa$l_options = TPA$M_BLANKS;
     tpablk.tpa0.tpa$l_stringcnt = linelen;
-    tpablk.tpa0.tpa$l_stringptr = upline;
+    tpablk.tpa0.tpa$l_stringptr = (unsigned int)upline;
     tpablk.tpa_l_stringbase = line;
     tpablk.tpa_l_upbase = upline;
     tpablk.tpa_l_unit = newu;
@@ -295,8 +316,9 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
 */
 int parse_store (struct TPABLK *tpa) {
 
-    int len, i;
-    char *cp, *cp1;
+    int append = 0, len, i, do_it;
+    char *cp, *cp1, *vl_cp;
+    int vl_sb, vl_tp, vl_ub;
     struct SYMBOL *s;
     unsigned int status;
     static struct CMD *current_cmd;
@@ -309,6 +331,7 @@ int parse_store (struct TPABLK *tpa) {
     static char *trg_str, *src_str;
     static struct dsc$descriptor iflhs, ifrhs;
     static unsigned int iftype, tmp_cmdflags;
+    static unsigned int and = 0, not = 0, or = 0, elsif = 0;
     static int trg_str_size, trg_str_len;
     static int double_colon;
     struct OBJECT *obj;
@@ -321,7 +344,7 @@ int parse_store (struct TPABLK *tpa) {
 */
 
     switch (tpa->tpa0.tpa$l_param) {
-    	char symnam[33];
+    	char symnam[MMK_S_SYMBOL];
 
     case PRS_K_CHECK_COND:
     	for (ifent = ifque.flink; ifent != &ifque; ifent = ifent->flink) {
@@ -330,11 +353,24 @@ int parse_store (struct TPABLK *tpa) {
     	return SS$_NORMAL;
     	break;
 
+    case PRS_K_CHECK_GNU:
+	if (gnu_syntax) return SS$_NORMAL;
+	return 0;
+	break;
+
     case PRS_K_DIR_IFDEF:
     case PRS_K_DIR_IFNDEF:
-    	ifent = malloc(sizeof(struct IF));
-    	queue_insert(ifent, &ifque);
-    	strncpy(symnam, tpa->tpa0.tpa$l_tokenptr, tpa->tpa0.tpa$l_tokencnt);
+	if (elsif) {
+	    elsif = 0;
+	    ifent = ifque.flink;
+	    if (ifent->matched) return SS$_NORMAL;
+	} else {
+	    ifent = malloc(sizeof(struct IF));
+	    ifent->matched = 0;
+	    queue_insert(ifent, &ifque);
+	}
+    	strncpy(symnam, (char *)tpa->tpa0.tpa$l_tokenptr,
+		    tpa->tpa0.tpa$l_tokencnt);
     	*(symnam+tpa->tpa0.tpa$l_tokencnt) = 0;
     	s = Lookup_Symbol(symnam);
     	ifent->do_it = (s != 0) && (s->value != 0) && (s->value[0] != '\0');
@@ -342,6 +378,10 @@ int parse_store (struct TPABLK *tpa) {
     	    ifent->do_it = !ifent->do_it;
     	ifent->in_else = 0;
     	return SS$_NORMAL;
+
+    case PRS_K_DIR_NOT:
+        not = 1;
+        return SS$_NORMAL;
 
     case PRS_K_DIR_IFLHS:
     	iflhs.dsc$w_length = tpa->tpa0.tpa$l_tokencnt;
@@ -353,29 +393,99 @@ int parse_store (struct TPABLK *tpa) {
 
     case PRS_K_DIR_IFEQL:
     case PRS_K_DIR_IFNEQ:
-    	iftype = tpa->tpa0.tpa$l_param;
-    	return SS$_NORMAL;
+    case PRS_K_DIR_IFGEQ:
+    case PRS_K_DIR_IFLEQ:
+    case PRS_K_DIR_IFGTR:
+    case PRS_K_DIR_IFLSS:
+        iftype = tpa->tpa0.tpa$l_param;
+        return SS$_NORMAL;
 
     case PRS_K_DIR_IFRHS:
-    	ifrhs.dsc$w_length = tpa->tpa0.tpa$l_tokencnt;
-    	ifrhs.dsc$a_pointer = tpa->tpa_l_stringbase +
+	if (and || or || elsif) {
+	    ifent = ifque.flink;
+	} else {
+	    ifent = malloc(sizeof(struct IF));
+	    ifent->matched = 0;
+            queue_insert(ifent, &ifque);
+	}
+	if (ifent->matched) {
+	    elsif = 0;
+	    return SS$_NORMAL;
+	}
+        /*
+	** If the length of the rhs token is zero then this is the symbol form of
+	** .IF. MMS has obsoleted .IF[N]DEF and replaced it with '.IF [.NOT] symbol'.
+	** So, we do a lookup instead. If the symbol exists, then the test result
+	** is positive.
+        */
+	if (tpa->tpa0.tpa$l_tokencnt == 0) {
+            strncpy(symnam, iflhs.dsc$a_pointer, iflhs.dsc$w_length);
+            *(symnam+iflhs.dsc$w_length) = 0;
+            s = Lookup_Symbol(symnam);
+            do_it = (s != 0) && (s->value != 0) && (s->value[0] != '\0');
+        } else {
+            ifrhs.dsc$w_length = tpa->tpa0.tpa$l_tokencnt;
+            ifrhs.dsc$a_pointer = tpa->tpa_l_stringbase +
     	    	(((char *)tpa->tpa0.tpa$l_tokenptr)-tpa->tpa_l_upbase);
-    	ifrhs.dsc$b_dtype = DSC$K_DTYPE_T;
-    	ifrhs.dsc$b_class = DSC$K_CLASS_S;
-    	ifent = malloc(sizeof(struct IF));
-    	queue_insert(ifent, &ifque);
-    	i = str$case_blind_compare(&iflhs, &ifrhs);
-    	ifent->do_it = (iftype == PRS_K_DIR_IFEQL) ? !i : i;
-    	ifent->in_else = 0;
-    	return SS$_NORMAL;
+            ifrhs.dsc$b_dtype = DSC$K_DTYPE_T;
+            ifrhs.dsc$b_class = DSC$K_CLASS_S;
+            i = str$case_blind_compare(&iflhs, &ifrhs);
+            switch (iftype) {
+
+            case PRS_K_DIR_IFEQL:
+                do_it = (i == 0) ? 1 : 0;
+                break;
+            case PRS_K_DIR_IFNEQ:
+                do_it = (i != 0) ? 1 : 0;
+                break;
+            case PRS_K_DIR_IFGEQ:
+                do_it = (i >= 0) ? 1 : 0;
+                break;
+            case PRS_K_DIR_IFLEQ:
+                do_it = (i <= 0) ? 1 : 0;
+                break;
+            case PRS_K_DIR_IFGTR:
+                do_it = (i >  0) ? 1 : 0;
+                break;
+            case PRS_K_DIR_IFLSS:
+                do_it = (i <  0) ? 1 : 0;
+                break;
+            }
+        }
+        do_it = (not) ? !do_it : do_it;
+	do_it = (and) ? ifent->do_it && do_it : do_it;
+	do_it = (or ) ? ifent->do_it || do_it : do_it;
+	ifent->do_it = do_it;
+        ifent->in_else = 0;
+	or = not = and = elsif = 0;
+        return SS$_NORMAL;
+
+    case PRS_K_DIR_AND:
+	and = 1;
+	return SS$_NORMAL;
+
+    case PRS_K_DIR_OR:
+	or = 1;
+	return SS$_NORMAL;
 
     case PRS_K_DIR_ELSE:
     	ifent = ifque.flink;
     	if (ifent == &ifque) return MMK__ELSENOIF;
     	if (ifent->in_else) return MMK__ELSENOIF;
-    	ifent->do_it = !ifent->do_it;
+	if (!ifent->matched) ifent->do_it = !ifent->do_it;
     	ifent->in_else = 1;
     	return SS$_NORMAL;
+
+    case PRS_K_DIR_ELSIF:
+	ifent = ifque.flink;
+	if (ifent == &ifque) return MMK__ELSIFNOIF;
+	if (ifent->in_else) return MMK__ELSIFAFTELSE;
+	elsif = 1;
+	if (ifent->do_it) {
+	     ifent->matched = 1;
+	     ifent->do_it = 0;
+	}
+	return SS$_NORMAL;
 
     case PRS_K_DIR_ENDIF:
     	if (!queue_remove(ifque.flink, &ifent)) return MMK__ENDIFNOIF;
@@ -395,8 +505,8 @@ int parse_store (struct TPABLK *tpa) {
 
     case PRS_K_SYM_INIT:
     	current_sym = mem_get_symbol();
-    	Resolve_Symbols(tpa->tpa0.tpa$l_tokenptr, tpa->tpa0.tpa$l_tokencnt,
-    	    	    	    &cp, &len, 0);
+    	Resolve_Symbols((char *)tpa->tpa0.tpa$l_tokenptr,
+			    tpa->tpa0.tpa$l_tokencnt, &cp, &len, 0);
     	if (len >= sizeof(current_sym->name)) len = sizeof(current_sym->name)-1;
     	strncpy(current_sym->name, cp, len);
     	*(current_sym->name+len) = '\0';
@@ -455,6 +565,21 @@ int parse_store (struct TPABLK *tpa) {
     	just_did_rule = 0;
     	break;
 
+    case PRS_K_DIR_CASE:
+	if (!override_case) case_sensitive = 1;
+	just_did_rule = 0;
+	break;
+
+    case PRS_K_DIR_BUILTIN:
+	if (!override_builtins) builtins = 1;
+	just_did_rule = 0;
+	break;
+
+    case PRS_K_DIR_GNU:
+	if (!override_gnu_syntax) gnu_syntax = 1;
+	just_did_rule = 0;
+	break;
+
     case PRS_K_DIR_DEFAULT:
     	default_rule = mem_get_rule();
     	current_cmdque = (struct QUE *) &default_rule->cmdque;
@@ -464,7 +589,7 @@ int parse_store (struct TPABLK *tpa) {
 
     case PRS_K_DIR_INCLUDE:
     	i = tpa->tpa0.tpa$l_stringcnt;
-    	cp = tpa->tpa0.tpa$l_stringptr;
+    	cp = (char *)tpa->tpa0.tpa$l_stringptr;
     	while (i > 0 && isspace(*cp)) {
     	    cp++; i--;
     	}
@@ -650,9 +775,18 @@ int parse_store (struct TPABLK *tpa) {
     	current_sym = (struct SYMBOL *) 0;
 	break;
 
+    case PRS_K_SYM_DEFINED:
+	if (Lookup_Symbol(current_sym->name) != (struct SYMBOL *) 0) {
+    	    mem_free_symbol(current_sym);
+    	    current_sym = (struct SYMBOL *) 0;
+    	    just_did_rule = 0;
+    	    break;
+	}
+    case PRS_K_SYM_APPEND:
+	if (tpa->tpa0.tpa$l_param == PRS_K_SYM_APPEND) append = 1;
     case PRS_K_SYM_VALUE:
     	if (tpa->tpa0.tpa$l_stringcnt == 0) {
-    	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, "", 0);
+    	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, "", 0, append);
     	} else {
     	    Resolve_Symbols((tpa->tpa_l_stringbase+
     	    	(((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
@@ -679,7 +813,7 @@ int parse_store (struct TPABLK *tpa) {
     	    	}
     	    	cp1++; i--;
     	    }
-    	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len);
+    	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, append);
     	    free(cp);
     	}
     	mem_free_symbol(current_sym);
@@ -692,7 +826,16 @@ int parse_store (struct TPABLK *tpa) {
     	    trg_str_size += 64;
     	    trg_str = realloc(trg_str, trg_str_size);
     	}
-    	*(trg_str+trg_str_len) = tpa->tpa0.tpa$b_char;
+	if (case_sensitive) {
+	    vl_sb = (int) tpa->tpa_l_stringbase;
+	    vl_tp = (int) tpa->tpa0.tpa$l_tokenptr;
+	    vl_ub = (int) tpa->tpa_l_upbase;
+	    vl_cp = (char *) (vl_sb + vl_tp - vl_ub);
+
+	    *(trg_str+trg_str_len) = *vl_cp;
+	} else {
+    	    *(trg_str+trg_str_len) = tpa->tpa0.tpa$b_char;
+	}
     	trg_str_len++;
     	break;
 
@@ -702,7 +845,16 @@ int parse_store (struct TPABLK *tpa) {
     	    trg_str = realloc(trg_str, trg_str_size);
     	}
     	*(trg_str+trg_str_len) = ',';
-    	*(trg_str+trg_str_len+1) = tpa->tpa0.tpa$b_char;
+	if (case_sensitive) {
+	    vl_sb = (int) tpa->tpa_l_stringbase;
+	    vl_tp = (int) tpa->tpa0.tpa$l_tokenptr;
+	    vl_ub = (int) tpa->tpa_l_upbase;
+	    vl_cp = (char *) (vl_sb - vl_tp - vl_ub);
+
+	    *(trg_str+trg_str_len) = *vl_cp;
+	} else {
+    	    *(trg_str+trg_str_len+1) = tpa->tpa0.tpa$b_char;
+	}
     	trg_str_len += 2;
     	break;
 

@@ -52,9 +52,10 @@
 **  	04-JUN-1993 V1.1    Madison 	Add default rule support.
 **  	22-DEC-1996 V1.2    Madison 	Support for MMK V3.6.
 **  	27-DEC-1998 V1.2-1  Madison 	General cleanup.
+**	03-JUN-2009 V1.3    Sneddon	Added support for type in SYMBOL.
 **--
 */
-#pragma module GENSTRUC "V1.2-1"
+#pragma module GENSTRUC "V1.3"
 #include "mmk.h"
 #include "globals.h"
 #include <stdio.h>
@@ -156,11 +157,11 @@ void Generate_Structures(char *infile, char *outfile) {
     	for (sym = global_symbols.symlist[j].head;
     	    	sym != (struct SYMBOL *) &global_symbols.symlist[j];
     	    	sym = sym->flink) {
-    	    static $DESCRIPTOR(fao, "    !AD{0,0,\"!AD\",\"!AD\"}");
+    	    static $DESCRIPTOR(fao, "    !AD{0,0,!UL,\"!AD\",\"!AD\"}");
     	    fix_string(sym->name, tmp);
     	    fix_string(sym->value, tmp2);
     	    lib$sys_fao(&fao, 0, &dsc, (i > 0 ? 1 : 0), (i > 0 ? "," : ""),
-    	    	strlen(tmp), tmp, strlen(tmp2), tmp2);
+    	    	MMK_K_SYM_DEFAULT, strlen(tmp), tmp, strlen(tmp2), tmp2);
     	    status = file_write(unit, dsc.dsc$a_pointer, dsc.dsc$w_length);
     	    i += 1;
     	}

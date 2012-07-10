@@ -4,6 +4,7 @@
 **  Main #include file for the MMK Make utilty.
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -46,6 +47,14 @@
 **  03-OCT-1995	    Madison 	Let symbol name be up to 39 chars.
 **  22-DEC-1996	    Madison 	Add support for rules with must-execute commands.
 **  27-DEC-1998	    Madison 	Add prototypes.
+**  02-JUN-2009	    Sneddon 	Add type to SYMBOL as well as MMK_K_SYM_CLI
+**				and MMK_K_SYM_DEFAULT.
+**  03-JUN-2009	    Sneddon	Added MMK_K_SYM_TEMPORARY and SDESC.
+**  07-APR-2010	    Sneddon 	Updated definition of Define_Symbol.
+**  17-DEC-2010     Sneddon	Added cat function.
+**  10-FEB-2011	    Sneddon	Added itoa function.
+**  12-APR-2011	    Sneddon     Added trim function.
+**  02-JUN-2012	    Sneddon	Update find_char definition. Remove MMK_S_MODULE.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -59,12 +68,13 @@
 /*
 **  Status codes
 */
-#include "mmk_msg.h"
+#include "etc_dir:mmk_msg.h"
 
 /*
 ** Some private type names that I use sometimes
 */
 #include <descrip.h>
+#include <rms.h>
 #include <stsdef.h>
 #include <ssdef.h>
 #include <lib$routines.h>
@@ -95,8 +105,20 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
     	    str.dsc$b_class=DSC$K_CLASS_S; str.dsc$b_dtype=DSC$K_DTYPE_T;}
 #define ITMLST_INIT(itm,c,s,a,r) {itm.bufsiz=(s); itm.itmcod=(c);\
     	    itm.bufadr=(POINTER)(a); itm.retlen=(POINTER)(r);}
+#define SDESC(s) {sizeof(s),DSC$K_DTYPE_T,DSC$K_CLASS_S,s}
 
-#ifdef __ALPHA
+#ifdef min
+#undef min
+#endif
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
+#ifdef max
+#undef max
+#endif
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
+#define queue_empty(addr) ((((struct QUE *)(addr))->head) == (((struct QUE *)(addr))->tail))
+#if defined(__ALPHA) || defined(__ia64__)
 #define queue_insert(item,pred) __PAL_INSQUEL((void *)(pred),(void *)(item))
 #define queue_remove(entry,addr) (((struct QUE *)(entry))->head == \
    (struct QUE *) (entry) ? 0:(__PAL_REMQUEL((void *)(entry),(void *)(addr)),1))
@@ -110,12 +132,18 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 ** Structure definitions.  The following size definitions are just
 ** for the sizes of names for things, not for the structures themselves.
 */
-
-#define MMK_S_SFX   	41  	/* 39 + leading dot + trailing null */
-#define MMK_S_SYMBOL	40  	/* 39 to allow for file names + trailing null */
-                                /* Symbols can really only be 32 chars though */
-#define MMK_S_MODULE	33  	/* 32 is librarian limit, + trailing null */
-#define MMK_S_FILE  	256 	/* 255 is RMS limit, + trailing null */
+#define MMK_S_SYMBOL	237	/* 237 to allow for file names + trailing null */
+#if defined(__ALPHA) || defined(__ia64__)
+#define MMK_S_SFX       237     /* 235 + leading dot + trailing null */
+#define MMK_S_FILE      4096    /* 4095 is RMS limit, + trailing null */
+#define MMK_S_DCL	4097	/* 4096 is DCL command line + trailing null */
+#define MMK_S_MAXRSS	NAML$C_MAXRSS
+#else
+#define MMK_S_SFX       41      /* 39 + leading dot + trailing null */
+#define MMK_S_FILE      256     /* 255 is RMS limit, + trailing null */
+#define MMK_S_DCL	256	/* 255 is DCL command line + trailing null */
+#define MMK_S_MAXRSS	NAML$C_MAXRSS
+#endif
 
 /*
 ** Generic absolute queue header
@@ -134,17 +162,20 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 ** is dynamically allocated.
 */
 
+    enum Symbol_Types {
+    	MMK_K_SYM_BUILTIN, MMK_K_SYM_DESCRIP,
+    	MMK_K_SYM_CMDLINE, MMK_K_SYM_LOCAL,
+	MMK_K_SYM_DEFAULT, MMK_K_SYM_CLI,
+	MMK_K_SYM_TEMPORARY
+    };
+    typedef enum Symbol_Types SYMTYPE;
+
     struct SYMBOL {
     	struct SYMBOL *flink, *blink;
+	SYMTYPE type;
     	char name[MMK_S_SYMBOL];
     	char *value;
     };
-
-    enum Symbol_Types {
-    	MMK_K_SYM_BUILTIN, MMK_K_SYM_DESCRIP,
-    	MMK_K_SYM_CMDLINE, MMK_K_SYM_LOCAL
-    };
-    typedef enum Symbol_Types SYMTYPE;
 
 #define MMK_K_SYMTABLE_SIZE 	256
     struct SYMTABLE {
@@ -312,7 +343,7 @@ typedef POINTER SPHANDLE;
 **  SYMBOLS
 */
     struct SYMBOL * Lookup_Symbol(char *name);
-    void Define_Symbol(SYMTYPE symtype, char *name, char *val, int vallen);
+    void Define_Symbol(SYMTYPE symtype, char *name, char *val, int vallen, ...);
     int Resolve_Symbols(char *in, int inlen, char * *out, int *outlen, int dont_resolve_unknowns);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *dep, struct OBJREF *srcref, struct QUE *chgque);
@@ -338,7 +369,10 @@ typedef POINTER SPHANDLE;
 **  MISC
 */
     void Build_Suffix_List(char *line, int linelen);
-    char * find_char(char *base, char *end, char ch);
+    char * itoa(int);
+    char * cat(char *dest, char *src, int slen);
+    char * trim(char *s);
+    char * find_char(char *base, char *end, char *charset);
     void upcase(char *str);
     int extract_name(char *dest, char *src);
     int extract_prefix(char *dest, char *src);

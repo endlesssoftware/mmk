@@ -52,7 +52,9 @@
     EXTERN struct CMD       do_last;
     EXTERN int  	    verify, do_log, did_an_update, noaction, check_status;
     EXTERN int	    	    force, from_sources, ignore, use_cms, skip_intermediates;
+    EXTERN int		    builtins, case_sensitive, gnu_syntax, mms_syntax;
     EXTERN int	    	    override_silent, override_ignore, symbol_override;
+    EXTERN int		    override_builtins, override_case, override_gnu_syntax, override_mms_syntax;
     EXTERN unsigned int     exit_status;
     EXTERN char	    	    cms$lib[];
     EXTERN char	    	    cms_default_generation[];

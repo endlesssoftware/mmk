@@ -77,16 +77,19 @@
 **  	20-JUN-1997 V1.4-4  Madison 	Silently ignore null objects.
 **  	27-DEC-1998 V1.5    Madison 	General cleanup.
 **      03-MAY-2004 V1.6    Madison     Integrate IA64 changes.
+**	16-Oct-2008 V1.7    Sneddon	Added support for /CASE_SENSITIVE changes
+**					from Kris G.G. Clippeleyr.
+**      01-JUL-2009 V1.8    Sneddon 	Changed definition for tpa0.  Now
+**                                      works better with older compilers.
 **--
 */
-#pragma module PARSE_OBJECTS "V1.6"
+#pragma module PARSE_OBJECTS "V1.8"
 #include "mmk.h"
 #pragma nostandard
     globalvalue int LIB$_SYNTAXERR;
 #pragma standard
 #include "globals.h"
 #include <fscndef.h>
-#define __NEW_STARLET
 #include <tpadef.h>
 
 /*
@@ -96,7 +99,7 @@
 #define TPA_K_COUNT 	(TPA$K_COUNT0+1)
 
     struct TPABLK {
-    	TPADEF tpa0;
+    	struct tpadef tpa0;
     	int tpa_l_istarget;
     	struct QUE *tpa_l_objqptr;
     };
@@ -169,7 +172,7 @@ void Parse_Objects (char *line, int linelen, struct QUE *objque, int is_target) 
     tpablk.tpa0.tpa$l_count = TPA_K_COUNT;
     tpablk.tpa0.tpa$l_options = TPA$M_BLANKS;
     tpablk.tpa0.tpa$l_stringcnt = linelen;
-    tpablk.tpa0.tpa$l_stringptr = line;
+    tpablk.tpa0.tpa$l_stringptr = (unsigned int)line;
     tpablk.tpa_l_istarget = is_target;
     tpablk.tpa_l_objqptr = objque;
 
@@ -233,7 +236,10 @@ int parse_obj_store (struct TPABLK *tpa) {
     case PO_K_APPNAM_CMS:
     	obj->type = MMK_K_OBJ_CMSFILE;
     case PO_K_APPNAM:
-    	*namptr++ = toupper(tpa->tpa0.tpa$b_char);
+	if (case_sensitive)
+	    *namptr++ = tpa->tpa0.tpa$b_char;
+	else
+	    *namptr++ = toupper(tpa->tpa0.tpa$b_char);
     	*namptr = '\0';
     	break;
 
@@ -261,7 +267,10 @@ int parse_obj_store (struct TPABLK *tpa) {
     	break;
 
     case PO_K_APPMOD:
-    	*namptr++ = toupper(tpa->tpa0.tpa$b_char);
+	if (case_sensitive)
+	    *namptr++ = tpa->tpa0.tpa$b_char;
+	else
+	    *namptr++ = toupper(tpa->tpa0.tpa$b_char);
     	*namptr = '\0';
     	break;
 
@@ -273,7 +282,10 @@ int parse_obj_store (struct TPABLK *tpa) {
     	break;
 
     case PO_K_APPFIL:
-    	*namptr++ = toupper(tpa->tpa0.tpa$b_char);
+	if (case_sensitive)
+	    *namptr++ = tpa->tpa0.tpa$b_char;
+	else
+	    *namptr++ = toupper(tpa->tpa0.tpa$b_char);
     	*namptr = '\0';
     	break;
 

@@ -11,6 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -137,13 +138,18 @@
 **      29-JAN-2004 V3.9-8  Madison     Don't define MMS$CMS_LIBRARY when CMS library is CMS$LIB.
 **      03-MAY-2004 V3.9-9  Madison     Integrate IA64 changes, courtesy of Dan O'Reilly and Hunter Goatley.
 **      02-MAR-2008 V4.0    Madison     Cleanup for open-source release.
+**	10-OCT-2008 V4.1    Sneddon 	New MMS compat. features.
+**	01-APR-2010 V4.1-1  Sneddon 	Updated version number for minor release.  Added MMSTARGETS.
+**	04-OCT-2010 V5.0    Sneddon	New version.
 **--
 */
-#define MMK_VERSION 	  "V4.0"
-#define MMK_MAJOR_VERSION "4"
+#define MMK_VERSION 	  "V5.0"
+#define MMK_MAJOR_VERSION "5"
 #define MMK_MINOR_VERSION "0"
 #define MMK_REVISION	  "0"
-#define MMK_COPYRIGHT	"Copyright (c) 2008, Matthew Madison.  See LICENSE.TXT in distribution kit for license information."
+#define MMK_COPYRIGHT	"Copyright (c) 2008, Matthew Madison.\r\n" \
+		        "    Copyright (c) 2012, Endless Software Solutions.\r\n" \
+			"  See LICENSE.TXT in distribution kit for license information."
 
 #pragma module MMK MMK_VERSION
 
@@ -201,8 +207,10 @@
     GLOBAL struct CMD       do_first;
     GLOBAL struct CMD       do_last;
     GLOBAL int  	    verify, do_log, did_an_update, noaction, check_status;
+    GLOBAL int		    builtins, mms_syntax, gnu_syntax, case_sensitive;
     GLOBAL int	    	    from_sources, force, ignore, use_cms, skip_intermediates;
     GLOBAL int	    	    override_silent, override_ignore, symbol_override;
+    GLOBAL int		    override_builtins, override_case, override_gnu_syntax, override_mms_syntax;
     GLOBAL unsigned int	    exit_status;
     GLOBAL char	    	    cms$lib[256*16];
     GLOBAL char	    	    cms_default_generation[256];
@@ -270,6 +278,12 @@ unsigned int main (void) {
     unsigned short len;
     FILEHANDLE munit;
 
+    struct TARGET {
+        struct TARGET *flink, *blink;
+        char *name;
+    } targetque = {&targetque,&targetque,NULL}, *targetent;
+
+
 /*
 ** Initialize the globals
 */
@@ -287,8 +301,12 @@ unsigned int main (void) {
     INIT_QUEUE(do_first);
     INIT_QUEUE(do_last);
     exit_status = SS$_NORMAL;
-    ignore = override_silent = override_ignore = symbol_override = 0;
+    ignore = override_silent = override_ignore = symbol_override;
     skip_intermediates = 0;
+    builtins = override_builtins = 0;
+    case_sensitive = override_case = 0;
+    gnu_syntax = override_gnu_syntax = 0;
+    mms_syntax = override_mms_syntax = 0;
 
 /*
 ** Fetch and parse command string
@@ -375,6 +393,28 @@ unsigned int main (void) {
     if (check_status) {
     	add_to_mmsqual("/CHECK_STATUS");
     	noaction = 1;
+    }
+
+    if (cli_present("EXTENDED_SYNTAX") == CLI$_PRESENT) {
+	add_to_mmsqual("/EXTENDED_SYNTAX=(");
+
+	mms_syntax = OK(cli_present("EXTENDED_SYNTAX.MMS_SYNTAX"));
+	if (mms_syntax) add_to_mmsqual("MMS_SYNTAX");
+
+	gnu_syntax = (cli_present("EXTENDED_SYNTAX.GNU_SYNTAX") == CLI$_PRESENT);
+	if (gnu_syntax) {
+	    if (mms_syntax) add_to_mmsqual(",");
+	    add_to_mmsqual("GNU_SYNTAX");
+	}
+
+	case_sensitive = (cli_present("EXTENDED_SYNTAX.CASE_SENSITIVE") == CLI$_PRESENT);
+	if (case_sensitive) {
+	    if (mms_syntax || gnu_syntax) add_to_mmsqual(",");
+
+	    add_to_mmsqual("CASE_SENSITIVE");
+	}
+
+	add_to_mmsqual(")");
     }
 
     if (cli_present("CMS_LIBRARY") == CLI$_PRESENT) {
@@ -598,12 +638,28 @@ unsigned int main (void) {
 ** Now that all the dependencies are defined, we can do the build.
 */
     status = cli_present("TARGET");
-    if (status == CLI$_PRESENT) cli_get_value("TARGET", target, sizeof(target));
-    else target[0] = '\0';
+    if (status == CLI$_PRESENT) {
+	cli_get_value("TARGET", target, sizeof(target));
+	while (1) {
+	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, 1);
 
+	    targetent = malloc(sizeof(struct TARGET));
+	    targetent->name = strdup(target);
+	    queue_insert(targetent, &targetque);
+
+	    if (!OK(cli_get_value("TARGET", target, sizeof(target)))) break;
+	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", ",", 1, 1);
+	}
+    } else {
+	target[0] = '\0';
+	targetque.name = target;
+	Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, 0);
+    }
+
+    targetent = targetque.flink;
     do {
     	did_an_update = 0;
-    	Build_Target(target);
+    	Build_Target(targetent->name);
 
     	if ($VMS_STATUS_SEVERITY(exit_status) == STS$K_SEVERE) break;
 
@@ -617,18 +673,19 @@ unsigned int main (void) {
     	    static unsigned int gsym = LIB$K_CLI_GLOBAL_SYM;
     	    lib$set_symbol(&mms$status, did_an_update ? &zero : &one, &gsym);
     	    if (did_an_update) {
-    	    	lib$signal(MMK__NEEDSUPD, 1, target);
+    	    	lib$signal(MMK__NEEDSUPD, 1, targetent->name);
     	    } else {
-    	    	lib$signal(MMK__TRGCURRENT, 1, target);
+    	    	lib$signal(MMK__TRGCURRENT, 1, targetent->name);
     	    }
     	} else {
     	    if (!did_an_update) {
-    	    	lib$signal(MMK__NOUPDATE, 1, target);
+    	    	lib$signal(MMK__NOUPDATE, 1, targetent->name);
     	    	if (exit_status == SS$_NORMAL) exit_status = MMK__NOUPDATE;
     	    }
     	}
 
-    } while (OK(cli_get_value("TARGET", target, sizeof(target))));
+	targetent = targetent->flink;
+    } while (targetent != &targetque);
 /*
 ** If we did have to execute some commands, there will be a subprocess
 ** hanging around that we should kill.

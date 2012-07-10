@@ -1,7 +1,38 @@
-MMK V4.0, 02-MAR-2008
+MMK V5.0, 24-MAR-2011
 
 FIXES AND UPDATES
 -----------------
+
+MMK V5.0, 24-MAR-2011
+
+* Renamed MadGoat Make back to MMK.
+
+* Previous fixes in V4.1* have been rolled into V5.0.  The
+  list below is a combination of both lists.
+
+* Maintenance for MMK has now shifted to Endless Software
+  Solutions.  The new MMK webpage is:
+
+   http://www.endlesssoftwaresolutions.com.au/main/MMK
+
+  All queries should be directed to either the maintainer
+  at mmk@endlesssoftwaresolutions.com.au or the MMK mailing
+  list (subscription information at the address above).
+
+* MMSTARGETS and MMSDESCRIPTION_FILE built-in macros are
+  now supported.
+
+* Introduction of .IF .ELSIF and comparison operators to
+  bring MMK more inline with current MMS features.
+
+* Introduction of support for GNU make conditionals.
+
+* This release also includes Kris G.G. Clippeleyr's case
+  sensitivity extensions from his MMK fork, MMKcs.
+
+* Inclusion of all MMS and GNU make built-in functions,
+  including $(SHELL), as well as several functions
+  unique to MMK.
 
 MMK V4.0, 02-MAR-2008
 

@@ -56,10 +56,13 @@
 **  	22-DEC-1996 V1.4    Madison 	Changes for MMK V3.6.
 **  	27-DEC-1998 V1.5    Madison 	General cleanup.
 **      03-MAY-2004 V1.6    Madison     Integrate IA64 changes.
+**	16-OCT-2008 V1.7    Sneddon	Added new globals.
 **--
 */
-#define MMKC_VERSION 	"V1.6"
-#define MMKC_COPYRIGHT	"Copyright (c) 2008, Matthew Madison.  See LICENSE.TXT in distribution kit for license information."
+#define MMKC_VERSION 	"V1.7"
+#define MMKC_COPYRIGHT  "Copyright (c) 2008, Matthew Madison.\n" \
+                        "Copyright (c) 2011, Endless Software Solutions.\n" \
+                        "  See LICENSE.TXT in distribution kit for license information."
 
 #pragma module MMK_COMPILE_RULES MMKC_VERSION
 
@@ -96,8 +99,10 @@
     GLOBAL struct CMD       do_first;
     GLOBAL struct CMD       do_last;
     GLOBAL int  	    verify, do_log, did_an_update, noaction, check_status;
+    GLOBAL int		    builtins, case_sensitive, gnu_syntax, mms_syntax;
     GLOBAL int	    	    from_sources, force, ignore, use_cms, skip_intermediates;
     GLOBAL int	    	    override_silent, override_ignore, symbol_override;
+    GLOBAL int		    override_builtins, override_case, override_gnu_syntax, override_mms_syntax;
     GLOBAL unsigned int	    exit_status;
     GLOBAL char	    	    cms$lib[256*16];
     GLOBAL char	    	    cms_default_generation[256];

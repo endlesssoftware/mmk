@@ -78,9 +78,12 @@
 **      09-DEC-2003 V1.8-5  Madison     CMS objects aren't always usable.
 **      02-MAR-2008 V1.9    Madison     Make base-name-match the default; fetch
 **                                      newer makefiles out of CMS, if present.
+**	30-SEP-2009 V1.10   Sneddon	Added MMSDESCRIPTION_FILE.
+**	07-APR-2010 V1.10-1 Sneddon 	Got ahead of myself with symbols.  Changed
+**                                      MMSDESCRIPTION_FILE to MMK_K_SYM_BUILTIN.
 **--
 */
-#pragma module READDESC "V1.9"
+#pragma module READDESC "V1.10-1"
 #include <ctype.h>
 #include "mmk.h"
 #include "globals.h"
@@ -191,6 +194,10 @@ void Read_Description (char *fspec, char *defspec, int rules_file) {
     	    lib$signal(MMK__NOOPNDSC, 1, fspec, status);
     	}
     	return;
+    }
+
+    if (!rules_file) {
+	Define_Symbol(MMK_K_SYM_BUILTIN, "MMSDESCRIPTION_FILE", resspec, strlen(resspec));
     }
 
     if (do_log) {

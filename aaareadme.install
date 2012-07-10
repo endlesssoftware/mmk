@@ -7,6 +7,7 @@ sources on recent versions of OpenVMS.
 Requirements:
   * a recent-vintage DEC C/HP C compiler
   * MACRO (on VAX) or the MACRO-32 compiler (Alpha and IA64)
+  * SDL
 
 Optional:
   * RUNOFF (for building the help file)

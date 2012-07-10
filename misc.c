@@ -11,6 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -64,9 +65,16 @@
 **  	27-DEC-1998 V1.7    Madison 	General cleanup.
 **  	20-JAN-2001 V1.8    Madison 	More fixes for rule application, from
 **  	    	    	    	    	Chuck Lane.
+**      17-DEC-2010 V1.9    Sneddon     Add cat.
+**	10-FEB-2011 V1.10   Sneddon	Add itoa.
+**	11-APR-2011 V1.10-1 Sneddon     Minor change to help cat cope with
+**					null source strings.
+**	12-APR-2011 V1.11   Sneddon	Add trim.
+**	02-jul-2012 v1.12   Sneddon	Change find_char to find first out of
+**					a list of characters.
 **--
 */
-#pragma module MISC "V1.8"
+#pragma module MISC "V1.12"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -74,12 +82,16 @@
 #include <dvidef.h>
 #include <fscndef.h>
 #include <builtins.h>
+#include <stdio.h>
 
 /*
 ** Forward declarations
 */
     void Build_Suffix_List(char *, int);
-    char *find_char(char *, char *, char);
+    char *itoa(int);
+    char *cat(char *, char *, int);
+    char *trim(char *);
+    char *find_char(char *, char *, char *);
     void upcase(char *);
     int extract_name(char *, char *);
     int extract_prefix(char *, char *);
@@ -165,6 +177,138 @@ void Build_Suffix_List (char *line, int linelen) {
 
 /*
 **++
+**  ROUTINE:	itoa
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Converts an integer into its string representation.  Anything
+**  returned by this function will need to be free()'d by the caller.
+**
+**  RETURNS:	pointer to char
+**
+**  PROTOTYPE:
+**
+**  	itoa(int i)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    0: memory allocation error
+**  	non-0: pointer to the character
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+char *itoa(int i) {
+    char s[12];
+
+    sprintf(s, "%d", i);
+
+    return strdup(s);
+}
+
+/*
+**++
+**  ROUTINE:	cat
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Concatenates null-terminated strings, dynamically.  Anything
+**  returned by this function will need to be free()'d by the caller.
+**
+**  RETURNS:	pointer to char
+**
+**  PROTOTYPE:
+**
+**  	cat(char *dest, char *src, int len)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    0: memory allocation error
+**  	non-0: pointer to the character
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+char *cat(char *dest, char *src, int len) {
+
+    int dlen, slen;
+    char *r = (char *) 0;
+
+    if (!src)
+	return dest;
+
+    slen = (len < 0) ? strlen(src) : len;
+    if (slen == 0)
+	return dest;
+
+    if (!dest) {
+        if (r = malloc(slen+1)) {
+            strncpy(r, src, slen);
+            r[slen] = '\0';
+        }
+    } else {
+        dlen = slen + strlen(dest);
+        if (r = realloc(dest, dlen+1)) {
+            strncat(r, src, slen);
+        }
+    }
+
+    return r;
+}
+
+/*
+**++
+**  ROUTINE:	trim
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Trims the leading and trailing space characters of of a
+**  NUL-terminated string.
+**
+**  RETURNS:	pointer to char
+**
+**  PROTOTYPE:
+**
+**	trim(char *s)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    0: Illegal string address.
+**  	non-0: pointer to the trimmed string.
+**
+**  SIDE EFFECTS:
+**	This function edits the string in place.  To preserve
+**  the original string, use strdup (or something similar).
+**  However, beware that the pointer returned by this function
+**  may not necessarily be the same as the pointer in.
+**
+**--
+*/
+char *trim(char *s) {
+    char *sp, *tp;
+
+    if (!s) return NULL;
+
+    for (sp = s; isspace(*sp) && (*sp != '\0'); sp++);
+    for (tp = sp + strlen(sp) - 1; isspace(*tp) && (tp > sp); tp--);
+    *++tp = '\0';
+
+    return sp;
+}
+
+/*
+**++
 **  ROUTINE:	find_char
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -176,7 +320,7 @@ void Build_Suffix_List (char *line, int linelen) {
 **
 **  PROTOTYPE:
 **
-**  	find_char(char *base, char *end, char ch)
+**  	find_char(char *base, char *end, char *str)
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -190,12 +334,14 @@ void Build_Suffix_List (char *line, int linelen) {
 **
 **--
 */
-char *find_char (char *base, char *end, char ch) {
+char *find_char (char *base, char *end, char *charset) {
 
-    register char *cp;
+    register char *cp, *csp;
 
     for (cp = base; cp < end; cp++) {
-    	if (*cp == ch) return cp;
+	for (csp = charset; *csp; csp++) {
+	    if (*cp == *csp) return cp;
+	}
     }
 
     return (char *) 0;
