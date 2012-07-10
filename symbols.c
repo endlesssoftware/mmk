@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -72,11 +73,16 @@
 **  	23-MAR-1997 V2.1-3  Madison 	Fix $(sym:sfx1=sfx) resolution.
 **  	27-DEC-1998 V2.2    Madison 	Support version macros; general cleanup.
 **      29-JAN-2004 V2.2-1  Madison     Don't define MMS$CMS_LIBRARY as "CMS$LIB".
+**	07-APR-2010 V2.3    Sneddon	Added append flag to Define_Symbol plus
+**					temporary symbol support in preparation
+**					for builtin function support.
+**	02-JUL-2012 V2.4    Sneddon	Change to find_char arguments.
 **--
 */
-#pragma module SYMBOLS "V2.2-1"
+#pragma module SYMBOLS "V2.4"
 #include "mmk.h"
 #include "globals.h"
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -84,20 +90,21 @@
 ** Forward declarations
 */
     struct SYMBOL *Lookup_Symbol(char *);
-    void Define_Symbol(SYMTYPE, char *, char *, int);
+    void Define_Symbol(SYMTYPE, char *, char *, int, ...);
     int Resolve_Symbols(char *, int, char **, int *, int);
     void Clear_Local_Symbols(void);
+    static void Clear_Temporary_Symbols(unsigned);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
 
-#ifdef min
-#undef min
-#endif
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+/*
+** Own storage
+*/
 
     static struct SYMTABLE dcl_symbols;
     static int dcl_symbols_inited = 0;
+    static struct SYMBOL *temporary_symbols = 0;
 
 /*
 **++
@@ -206,58 +213,90 @@ struct SYMBOL *Lookup_Symbol (char *name) {
 **
 **--
 */
-void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen) {
+void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 
     struct SYMBOL *sym;
     struct QUE    *symq;
     char upname[MMK_S_SYMBOL+1];
     unsigned char *cp;
     unsigned int hash_value;
-    int i;
+    int actualcount, append = 0, i;
+    va_list ap;
+
+    va_count(actualcount);
+    if (actualcount > 4) {
+	va_start(ap, vallen);
+	append = va_arg(ap, int);
+	va_end(ap);
+    }
 
     strcpy(upname, name);
     upcase(upname);
 
-    hash_value = 0;
-    for (cp = (unsigned char *) upname, i = 0; *cp != '\0' && i < 4; cp++, i++) {
-    	hash_value |= *cp;
-    }
-    hash_value &= 0xff;
-
-    switch (symtype) {
-
-    case MMK_K_SYM_LOCAL:
-    	symq = &local_symbols.symlist[hash_value];
-    	break;
-    case MMK_K_SYM_DESCRIP:
-    	symq = &global_symbols.symlist[hash_value];
-    	break;
-    case MMK_K_SYM_CMDLINE:
-    	symq = &cmdline_symbols.symlist[hash_value];
-    	break;
-    case MMK_K_SYM_BUILTIN:
-    	symq = &builtin_symbols.symlist[hash_value];
-    	break;
-    default:
-    	symq = 0;   /* this will cause an ACCVIO - should never happen */
-    	break;
-    }
-
-    for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
-    	if (strcmp(upname, sym->name) == 0) break;
-    }
-    if (sym == (struct SYMBOL *) symq) {
-    	sym = malloc(sizeof(struct SYMBOL));
-    	strcpy(sym->name, upname);
-    	queue_insert(sym, symq->tail);
+    if (symtype == MMK_K_SYM_TEMPORARY) {
+	/*
+	** Temporary symbols are handled a bit differently.  As there can only
+	** be one named symbol at any given level of $(FOREACH ) invokation,
+	** they are actually stored as a singly linked list.
+	*/
+	if (temporary_symbols && append) {
+	    sym = temporary_symbols;
+	} else {
+	    sym = mem_get_symbol();
+	    strcpy(sym->name, upname);
+	    if (temporary_symbols) sym->flink = temporary_symbols;
+	    temporary_symbols = sym;
+        }
     } else {
-    	free(sym->value);
+	hash_value = 0;
+	for (cp = (unsigned char *) upname, i = 0; *cp != '\0' && i < 4; cp++, i++) {
+    	    hash_value |= *cp;
+	}
+	hash_value &= 0xff;
+
+	switch (symtype) {
+
+	case MMK_K_SYM_LOCAL:
+    	    symq = &local_symbols.symlist[hash_value];
+    	    break;
+	case MMK_K_SYM_DESCRIP:
+    	    symq = &global_symbols.symlist[hash_value];
+    	    break;
+	case MMK_K_SYM_CMDLINE:
+    	    symq = &cmdline_symbols.symlist[hash_value];
+    	    break;
+	case MMK_K_SYM_BUILTIN:
+    	    symq = &builtin_symbols.symlist[hash_value];
+    	    break;
+	default:
+    	    symq = 0;   /* this will cause an ACCVIO - should never happen */
+    	    break;
+	}
+
+	for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
+    	    if (strcmp(upname, sym->name) == 0) break;
+	}
+	if (sym == (struct SYMBOL *) symq) {
+    	    sym = malloc(sizeof(struct SYMBOL));
+    	    strcpy(sym->name, upname);
+    	    queue_insert(sym, symq->tail);
+	} else {
+	    if (!append) {
+    	        free(sym->value);
+		sym->value = 0;
+	    }
+	}
     }
 
     if (vallen < 0) vallen = strlen(val);
-    sym->value = malloc(vallen+1);
-    memcpy(sym->value, val, vallen);
-    *(sym->value+vallen) = '\0';
+    if (sym->value) {
+	vallen += strlen(sym->value);
+	sym->value = realloc(sym->value, vallen+1);
+    } else {
+	sym->value = malloc(vallen+1);
+	sym->value[0] = '\0';
+    }
+    strncat(sym->value, val, vallen);
 
 } /* Define_Symbol */
 
@@ -332,7 +371,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 /*
 ** Look for the beginning of $(...)
 */
-    	    dp = find_char(cp, inend, '$');
+    	    dp = find_char(cp, inend, "$");
     	    if (dp == (char *) 0) {
     	    	len = inend-cp;
     	    } else {
@@ -370,13 +409,13 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	dp++;
     	    	if (*dp == '(') {
     	    	    dp++;
-    	    	    pp = find_char(dp, inend, ')');
+    	    	    pp = find_char(dp, inend, ")");
 /*
 **  Check for embedded symbol references, then
 **  check for $(var:<sfx>=<sfx>)
 */
     	    	    if (pp != (char *) 0) {
-    	    	    	colp = find_char(dp, pp, '$');
+    	    	    	colp = find_char(dp, pp, "$");
     	    	    	if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
     	    	    	    	|| strchr(SPECIALS, *(colp+1)) != 0)) {
     	    	    	    tmp[curlen++] = '$';
@@ -384,7 +423,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    	    dp = colp = pp = 0;
     	    	    	    continue;
     	    	    	}
-    	    	    	colp = find_char(dp, pp, ':');
+    	    	    	colp = find_char(dp, pp, ":");
     	    	    	if (colp != 0) {
     	    	    	    char *cp;
     	    	    	    for (cp = colp; isspace(*(cp-1)); cp--);
@@ -521,6 +560,42 @@ void Clear_Local_Symbols (void) {
     }
 
 } /* Clear_Local_Symbols */
+
+/*
+**++
+**  ROUTINE:    Clear_Temporary_Symbols
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Deletes all of the symbols in the temporary symbol table.
+**
+**  RETURNS:    void
+**
+**  PROTOTYPE:
+**
+**      Clear_Temporary_Symbols(int level)
+**
+**  IMPLICIT INPUTS:    None.
+**
+**  IMPLICIT OUTPUTS:   None.
+**
+**  COMPLETION CODES:   None.
+**
+**  SIDE EFFECTS:       temporary_symbols
+**
+**--
+*/
+static void Clear_Temporary_Symbols (unsigned level) {
+
+    struct SYMBOL *sym;
+    unsigned i;
+
+    for (i = 0, sym = temporary_symbols; i < level && sym != NULL; i++, sym = temporary_symbols) {
+	temporary_symbols = sym->flink;
+	mem_free_symbol(sym);
+    }
+
+} /* Clear_Temporary_Symbols */
 
 /*
 **++
