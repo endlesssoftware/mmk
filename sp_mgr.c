@@ -395,7 +395,7 @@ unsigned int sp_send (SPHANDLE *ctxpp, void *cmdstr) {
     memcpy(spd->buf, cmdadr, cmdlen);
     status = sys$setast(0);
     queue_insert(spd, ctx->sendque.tail);
-    if (status == SS$_WASET) sys$setast(1);
+    if (status == SS$_WASSET) sys$setast(1);
     sys$dclast(try_to_send, ctx, 0);
 
     return SS$_NORMAL;
