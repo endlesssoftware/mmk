@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -58,9 +59,11 @@
 **  	27-DEC-1998 V1.4    Madison 	Prototype cleanup.
 **      19-OCT-2002 V1.4-1  Madison     Only reset WRTATTN AST if subprocess
 **                                        exists.
+**	12-JUL-2012 V1.5    Sneddon     Race condition in sp_send.  Thanks to
+**					David G. North and Craig A. Berry.
 **--
 */
-#pragma module SP_MGR "V1.4"
+#pragma module SP_MGR "V1.5"
 
     struct SPB;
     typedef struct SPB *SPHANDLE;
@@ -390,7 +393,9 @@ unsigned int sp_send (SPHANDLE *ctxpp, void *cmdstr) {
     spd = get_spd(cmdlen);
     if (spd == 0) return SS$_INSFMEM;
     memcpy(spd->buf, cmdadr, cmdlen);
+    status = sys$setast(0);
     queue_insert(spd, ctx->sendque.tail);
+    if (status == SS$_WASET) sys$setast(1);
     sys$dclast(try_to_send, ctx, 0);
 
     return SS$_NORMAL;
