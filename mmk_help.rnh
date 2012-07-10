@@ -1,0 +1,245 @@
+.!++
+.!
+.! NAME:    	MMK_HELP.RNH
+.!
+.! ABSTRACT:	MMK help file.
+.!
+.! FACILITY:	MMK Make Utility
+.!
+.! DESCRIPTION:
+.!
+.!   This is the RUNOFF source for the help library for MMK.
+.!   To create the help library, use the following commands:
+.!
+.!   	$ RUNOFF MMK_HELP.RNH
+.!   	$ LIB/CREATE/HELP MMK_HELP MMK_HELP
+.!
+.! AUTHOR:   	    M. Madison
+.! Copyright (c) 2008, Matthew Madison.
+.! 
+.! All rights reserved.
+.! 
+.! Redistribution and use in source and binary forms, with or without
+.! modification, are permitted provided that the following conditions
+.! are met:
+.! 
+.!     * Redistributions of source code must retain the above
+.!       copyright notice, this list of conditions and the following
+.!       disclaimer.
+.!     * Redistributions in binary form must reproduce the above
+.!       copyright notice, this list of conditions and the following
+.!       disclaimer in the documentation and/or other materials provided
+.!       with the distribution.
+.!     * Neither the name of the copyright owner nor the names of any
+.!       other contributors may be used to endorse or promote products
+.!       derived from this software without specific prior written
+.!       permission.
+.! 
+.! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.! "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.! LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+.! A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+.! OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+.! SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.! LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.! DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.! THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+.! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.!
+.! MODIFICATION HISTORY:
+.!
+.!  16-SEP-1993	V1.0	Madison	    Initial coding.
+.!  17-OCT-1993	V1.1	Madison	    Add /KEEP_INTERMEDIATES
+.!  21-JUN-1994	V1.2	Madison	    Multiple targets, remove /KEEP.
+.!  05-JUL-1994	V1.3	Madison	    CMS.
+.!  23-JUL-1994	V1.4	Madison	    /DUMP.
+.!  21-JUN-1995	V1.5	Madison	    /SKIP, /CHECK, /MACRO (change), /OVERRIDE.
+.!  22-AUG-1996	V1.6	Madison	    Add /CMS_LIBRARY.
+.!  06-JUN-1998	V1.7	Madison	    Add /WORKING_DIRECTORY
+.!  28-DEC-1998	V1.7-1	Madison	    /CMS_LIBRARY takes a list now.
+.!--
+.P0
+.AP
+.LM1
+.RM70
+.I-1
+1 MMK
+ Invokes the MMK Make Utility to build a software system.
+Refer to the "Guide to MMK Make Utility" for complete information
+on this command.
+.NJ
+ Format:
+
+.I+10;MMK [target-name...]
+.J 
+ A description file must exist for MMK to build the software system.  By
+default, MMK looks for a description file called DESCRIP.MMS in the current
+default directory.  If that file does not exist, it then looks for a file
+called MAKEFILE.  The /DESCRIPTION qualifier can be used to override this
+default.
+.I-1
+2 Parameter
+ target-name
+ The name of a target to be built.  The target must exist in the MMK
+description file.  Multiple targets may be specified as a comma-separated
+list.
+.I-1
+2 Qualifiers
+.I-1
+/ACTION
+ /ACTION (default)
+ /NOACTION
+ Determines whether action lines should be executed or merely displayed.
+Specifying /NOACTION causes MMK to display the action lines that would
+be executed to build the target, without actually executing them.
+.I-1
+/CHECK__STATUS
+ /CHECK__STATUS
+ /NOCHECK__STATUS (default)
+ Directs MMK to determine whether a target is up-to-date, without executing
+any action lines to do so.  MMK sets the global symbol MMS$STATUS to 0 if
+the target requires updating, or 1 if the target is up-to-date.  This qualifier
+overrides the /ACTION qualifier.
+.I-1
+/CMS
+ /CMS
+ /NOCMS  (default)
+ Determines whether a DEC/Code Management System (CMS) library is automatically
+searched for the MMK description file and for any source files.
+The default is /NOCMS, which omits any CMS checks.
+.I-1
+/CMS__LIBRARY
+ /CMS__LIBRARY=(dir-spec...)
+ Specifies one or more DEC/Code Management System (CMS) libraries to be searched for the
+MMK description file and for any source files that do not have explicit
+CMS library specifications.  Effective only when /CMS is also specified.
+If omitted, the default CMS library or libraries (from the logical name CMS$LIB or
+the CMS SET LIBRARY command) are used.
+.I-1
+/DESCRIPTION
+ /DESCRIPTION=file-spec
+ Specifies an alternative name for the MMK description file.  The default
+description file name is DESCRIP.MMS (in the current default directory).
+.I-1
+/DUMP
+ /DUMP
+ /NODUMP (default)
+ Causes MMK to dump the suffixes list, all macro definitions, all
+inference rules, and all dependencies to current output.   Useful for
+debugging problems in description files.
+.I-1
+/FORCE
+ /FORCE
+ /NOFORCE (default)
+ Specifying /FORCE causes MMK to execute only the action lines from the
+dependency rule for the target, without performing any revision date checks
+and without traversing the entire dependency tree.
+.I-1
+/FROM__SOURCE
+ /FROM__SOURCES
+ /NOFROM__SOURCES (default)
+ Specifying /FROM__SOURCES causes MMK to perform a complete build of the
+target, without performing any revision date checks.  All actions to build
+all intermediate targets will be executed.  This qualifier overrides the
+/SKIP__INTERMEDIATES qualifier.
+.I-1
+/IDENTIFICATION
+ /IDENTIFICATION
+ Specifying /IDENTIFICATION causes MMK to display its revision information
+and copyright message, without performing any other action.
+.I-1
+/IGNORE
+ /IGNORE
+ /IGNORE=ERROR
+ /IGNORE=FATAL
+ /IGNORE=WARNING
+ /NOIGNORE (default)
+ By default, MMK stops when an executed action line results in a warning,
+error, or fatal error status.  You can override this with the /IGNORE 
+qualifier.  Specifying /IGNORE or /IGNORE=FATAL causes all errors to be
+ignored, so execution continues no matter how severe an error is encountered.
+Specifying /IGNORE=ERROR causes errors and warnings to be ignored, with
+fatal errors stopping execution.  Specifying /IGNORE=WARNING causes only
+warnings to be ignored, with errors at fatal errors stopping execution.
+.I-1
+/LOCAL__RULES
+ /LOCAL__RULES (default)
+ /NOLOCAL__RULES
+ Controls whether the site-specific default dependency rule definition file
+is read in; by default, it is if the logical name MMK__LOCAL__RULES exists.
+Specifying /NOLOCAL__RULES prevents the file from being read in.
+.I-1
+/LOG
+ /LOG
+ /NOLOG (default)
+ Controls whether MMK logs a detailed description of activity.
+By default, it does not.
+.I-1
+/MACRO
+ /MACRO=file-spec | name[=value]...
+ Defines one or more macros that can be referenced by the description file.
+If a name is specified with no equals sign ("="), it is first assumed to
+be a file specification; if the file exists, macro definitions are read
+from the file.  A file type of .MMS is assumed if no file type is specified.
+If the file cannot be found, the name is treated as macro definition, and
+a value of 1 is assigned to the macro by default.
+ If an equals sign is present, the macro definition is taken directly from
+the command line.
+ Macro definitions contained in a file should have the same syntax as macro
+definitions in description files, with the added restrictions that comments
+and line continuations are not allowed.
+.I-1
+/OUTPUT
+ /OUTPUT=file-spec
+ Directs MMK output to the specified file.  By default, output is directed
+to SYS$OUTPUT.
+.I-1
+/OVERRIDE
+ /OVERRIDE
+ /NOOVERRIDE (default)
+ Determines the order in which macro references are resolved.  The default
+order is to resolve macros from command-line definitions, followed by
+definitions in the description file and any rules files, followed by MMK
+built-ins.  If a macro cannot be resolved from any of these sources, a check
+is made for a DCL symbol with the same name as the macro, and if present, the
+symbol's value is used.
+ When /OVERRIDE is specified, DCL symbols are checked before the macro
+definitions in the description and rules files, and before the MMK built-in
+macros.
+.I-1
+/RULES__FILE
+ /RULES__FILE
+ /RULES__FILE=file-spec
+ /RULES__FILE=(file-spec1,file-spec2,...)
+ /NORULES__FILE (default)
+ Specifies the name of one or more files containing default dependency rule
+definitions to be read in before the description file is processed.  If
+/RULES__FILE is specified with no file specification, the name MMS$RULES
+is used.
+.I-1
+/SKIP__INTERMEDIATES
+ /SKIP__INTERMEDIATES
+ /NOSKIP__INTERMEDIATES (default)
+ By default, MMK attempts to build missing source files if they
+can be built through the application of dependency or inference rules.
+Specifying /SKIP__INTERMEDIATES causes MMK to treat these missing sources
+as if they exist and have the same revision date/time stamp as the target
+that depends on them.
+ For example, if the target is a .EXE file which depends on a .OBJ file,
+and that .OBJ file in turn depends on a .C file, by default MMK will build
+the .OBJ file if it is missing, and then in turn build the .EXE.  If
+/SKIP__INTERMEDIATES is specified, the missing .OBJ file will not trigger
+a build; the build will only occur if the .C file is newer than the .EXE
+file.
+.I-1
+/VERIFY
+ /VERIFY (default)
+ /NOVERIFY
+ Controls whether MMK echoes the action lines it is executing to SYS$OUTPUT.
+By default, it does; /NOVERIFY can be used to suppress this output.
+.I-1
+/WORKING__DIRECTORY=dir-spec
+ /WORKING__DIRECTORY=dir-spec
+ Causes MMK to SET DEFAULT to the specified device and directory before
+processing the description file or any rules.

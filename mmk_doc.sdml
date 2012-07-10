@@ -1,0 +1,886 @@
+<FRONT_MATTER>(MMK_DOC_1)
+<TITLE_PAGE>
+<TITLE>(Guide to the MMK Make Utility)
+<ABSTRACT>(March, 2008)
+<P>This manual describes the MMK Make Utility, a <quote>(make)
+utility for VMS systems.
+<ENDABSTRACT>
+<REVISION_INFO>(This is a revised manual.)
+<REVISION_INFO>(Operating System and Version:\VAX/VMS V5.2 or later;
+OpenVMS Alpha V1.5 or later; OpenVMS IA64 V8.2 or later)
+<REVISION_INFO>(Software Version:\MMK V4.0)
+<ENDTITLE_PAGE>(Matthew Madison<LINE>Santa Cruz, California)
+
+<COPYRIGHT_PAGE>
+<PRINT_DATE>(03 March 2008)
+<p>
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+<list>(unnumbered)
+    <le>Redistributions of source code must retain the above
+      copyright notice, this list of conditions and the following
+      disclaimer.
+    <le>Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    <le>Neither the name of the copyright owner nor the names of any
+      other contributors may be used to endorse or promote products
+      derived from this software without specific prior written
+      permission.
+<endlist>
+<p>
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<P>The following are trademarks of Hewlett-Packard Development Company, LP:
+<TABLE>
+<TABLE_ATTRIBUTES>(SINGLE_SPACED)
+<TABLE_SETUP>(3\20\20)
+<TABLE_ROW>(AXP\DEC\OpenVMS)
+<TABLE_ROW>(VAX\VMS\)
+<ENDTABLE>
+<p>UNIX is a registered trademark of USL, Inc.
+<COPYRIGHT_DATE>(2008\Matthew Madison.  All rights reserved.)
+<ENDCOPYRIGHT_PAGE>
+<CONTENTS_FILE>
+<PREFACE>(7\MMK_DOC_2)
+<P>This guide explains how to install and use MMK.
+<head1>(Intended Audience\MMK_DOC_3)
+<p>This manual is intended for all MMK users, primarily programmers who
+need to build software systems.  
+<p>MMK is patterned after VAX DEC/Module Management System (DEC/MMS), which 
+is in turn based on the UNIX <emphasis>(make) utility.
+The reader is assumed to have at least cursory knowledge of <emphasis>(make)
+or DEC/MMS.
+<NOTE>
+This document does not provide a general tutorial on <emphasis>(make) utilities.
+New users are advised to learn more about description files (makefiles) by reviewing
+either DEC/MMS documentation or books on the UNIX <emphasis>(make)
+utility.
+<ENDNOTE>
+<head1>(Document Structure\MMK_DOC_4)
+<p>tbs
+<head1>(Related Documents\MMK_DOC_5)
+<p>tbs
+<head1>(Conventions\MMK_DOC_6)
+<p>In this document, the following convention will be used for the names
+of the three similar utilities:
+<list>(unnumbered)
+<le><emphasis>(MMK\BOLD) refers to the package
+    described in this document.
+<le><emphasis>(DEC/MMS\BOLD) refers to DEC/Module Management System,
+    a product of Digital Equipment Corporation.
+<le><emphasis>(<emphasis>(make\ITALIC)\BOLD) refers to the UNIX <emphasis>(make) utility.
+<endlist>
+<ENDPREFACE>
+<ENDFRONT_MATTER>
+<chapter>(Introduction\MMK_DOC_7)
+<p>This chapter describes MMK.  It includes an
+overview of MMK and basic information on its use.
+<head1>(Overview\MMK_DOC_8)
+<p>MMK is a tool for building a <quote>(software system;) that is, a collection
+of one or more executable images or other types of files that are related to a
+particular project.  Building a complex system by hand can be a difficult
+and time-consuming task; using command procedures can make the task easier,
+but it may still be time-consuming.
+<p>With MMK, you create a file called a <emphasis>(Makefile) or
+<emphasis>(MMS description file) to describe your software system: the
+<newterm>(objects) (i.e., source files, object files, etc.) that comprise the
+system, the <newterm>(dependencies) between those objects, and the commands
+used to build the system.  When you
+invoke MMK, it performs the following steps:
+<list>(numbered)
+<le>MMK reads and parses the description file, constructing a tree from
+the objects and dependencies listed in the file.
+<le>It then identifies the object to be built (called the <emphasis>(target)).
+<le>The tree of dependencies is traced from the target, and the revision dates
+for the files in that path are compared.  If an object doesn't exist or is
+older than the object it depends on, the commands to
+build the object are executed in a subprocess.  This continues until all
+objects along the dependency path have been checked and the target
+has been brought completely up-to-date.
+<endlist>
+<p>In this way, MMK can execute the commands to rebuild only those pieces of your
+software system that need rebuilding due to a change that you have made.
+This can drastically reduce development time for a project.
+<head1>(Invoking MMK\MMK_DOC_9)
+<p>Provided that MMK has been installed using the steps laid out in
+the installation instructions (file AAAREADME.INSTALL in the kit), you can
+invoke MMK from DCL as a foreign command:
+<interactive>
+<S>($)<u>(MMK)
+<endinteractive>
+<p>Full command syntax is given in <reference>(mmk_syntax).  By default,
+MMK looks for a description file called DESCRIP.MMS in the current directory;
+if that file does not exist, it then looks for a file called MAKEFILE.  If
+it cannot find that file, an error is signaled.  You can use the /DESCRIPTION
+qualifier to specify a different name for your description file, if needed.
+<p>MMK starts by reading the description file and constructing a tree
+from the <newterm>(objects) listed in the description file
+(e.g., source files, include files,
+object files, etc.) and a tree of <newterm>(dependencies) between those
+objects.  It then identifies the <newterm>(target) object to be built,
+and traverses the dependency tree to identify those objects that need to
+be built (called <emphasis>(intermediate targets)) in order to build the target.
+<p>MMK compares each target's revision date/time against the objects on which
+it depends and executes the actions for that building the target only if needed.
+You can force a complete
+rebuild by using the /FROM_SOURCES qualifier on the MMK command.
+<chapter>(Description Files\MMK_DOC_10)
+<p>The key to successfully building your software system with MMK is
+the creation of
+a complete and accurate description file.  This chapter describes the format
+for a description file and its components.
+<head1>(Description File Components\MMK_DOC_11)
+<p>A description file is a collection of the following components:
+<list>(unnumbered)
+<le><emphasis>(Dependencies\bold), which describe how one object depends
+on one or more other objects.
+<le><emphasis>(Actions\bold), which are commands to be executed when an object
+needs to be built.
+<le><emphasis>(Macro definitions\bold), for defining symbols that may be
+used in rules or actions.
+<le><emphasis>(Inference rule definitions\bold), which are rules based on
+suffixes (and possibly directories as well), from which MMK can infer
+dependencies and actions without you having to list them explicitly in
+your makefile.
+<le><emphasis>(MMK directives\bold), which provide a means for adding
+commands to be executed before or after all other actions, provide a simple
+conditional-build mechanism, and other directives for modifying MMK's behavior.
+<endlist>
+<p>Here is an example of a simple description file:
+<interactive>
+PROGRAM.EXE : MAIN.OBJ,SUBROUTINES.OBJ
+    LINK/EXEC=PROGRAM.EXE MAIN.OBJ,SUBROUTINES.OBJ
+MAIN.OBJ : MAIN.FOR
+    FORTRAN MAIN
+SUBROUTINES.OBJ : SUBROUTINES.MAR
+    MACRO SUBROUTINES
+<endinteractive>
+<p>This is a simple collection of dependencies and actions for building
+an image called PROGRAM.EXE.  PROGRAM.EXE depends on two object files,
+called MAIN.OBJ and SUBROUTINES.OBJ; MAIN is a FORTRAN module and
+SUBROUTINES is a MACRO module.
+<p>MMK accepts either a colon or the DEC/MMS DEPENDS_ON keyword to separate
+a target object from its sources.  In either case, the separator must be
+surrounded by blanks -- this differs from <emphasis>(make), but is consistent
+with DEC/MMS syntax.
+<head1>(Using Inference Rules\MMK_DOC_12)
+<p>MMK includes a collection of built-in inference rules and actions
+for most VMS programming languages.  The rules are driven by the file type
+suffix attached to the object name; you must use the default file types
+in order to make use of the default rules.
+<p>For example, the description file in the last section could be simplified
+to just:
+<interactive>
+PROGRAM.EXE : MAIN.OBJ,SUBROUTINES.OBJ
+    LINK/EXEC=PROGRAM.EXE MAIN.OBJ,SUBROUTINES.OBJ
+MAIN.OBJ : MAIN.FOR
+SUBROUTINES.OBJ : SUBROUTINES.MAR
+<endinteractive>
+<p>MMK's built-in inference rules automatically define the actions for
+building a .OBJ file from a .FOR (using the FORTRAN command) and for building
+a .OBJ file from a .MAR file (using the MACRO command).
+<P>The description file could even be simplified further, to just:
+<interactive>
+PROGRAM.EXE : MAIN.OBJ,SUBROUTINES.OBJ
+    LINK/EXEC=PROGRAM.EXE MAIN.OBJ,SUBROUTINES.OBJ
+<endinteractive>
+<p>MMK automatically searches the <emphasis>(suffixes list) when
+constructing the dependency tree and locates inference rules for
+the .OBJ files automatically.  This illustrates the second use
+for inference rules: they are used not only for inferring actions
+for a dependency that omits them, but they may also be used for
+inferring dependencies themselves based on a combination of
+source and target suffixes.  This second purpose can greatly simplify
+your makefiles, and makes the build process more automatic.
+
+<head1>(Defining Inference Rules\infrules)
+<P>
+You can define your own inference rules, either to extend or replace the
+ones built into MMK.  You may include these rule definitions in your
+makefile, or in a separate file called a <emphasis>(rules file).  Rules
+files can be included by the use of a logical name or through the /RULES
+qualifier on the MMK command; see the <reference>(mmk_syntax) for further
+information.
+<P>
+MMK supports two types of inference rules: <emphasis>(generic) and
+<emphasis>(prefixed).  Generic rules are based solely on suffixes (file types),
+as in:
+<interactive>
+.C.OBJ :
+    CC/OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+<endinteractive>
+<cp>
+which says, <quote>(to build <emphasis>(filename).OBJ from an existing file
+called <emphasis>(filename).C, use the <emphasis>(CC\bold) command.)  In
+general, generic rules work best when the source and target files reside
+in the same directory.
+<P>
+<emphasis>(Prefixed) inference rules are based on both suffixes and
+<quote>(prefixes) -- device and directory specifications.  This provides
+a way to have MMK automatically infer dependenices between files that
+reside in different directories.  For example:
+For example, the prefixed rule:
+<interactive>
+{SRC$:}.C{OBJ$:}.OBJ :
+    CC/OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+<endinteractive>
+<P>
+tells MMK, <quote>(to build OBJ$:<emphasis>(filename).OBJ from an existing
+file called SRC$:<emphasis>(filename).C, use the <emphasis>(CC\bold) command.)
+This works like the generic rule above, but with the additional provision
+of having the source and target reside in different locations.
+<p>
+You can have more than one prefixed rule for a particular pair of suffixes;
+you may also mix generic rules and prefixed rules for a pair of suffixes.
+When attempting to infer a dependency, MMK will first use the prefixed
+rules, then fall back to using the generic rule.
+<P>
+In prefixed rules, the curly braces (<quote>({) and <quote>(})) are required.
+One of the two prefixes may be null, but specifying two null prefixes is
+equivalent to defining a generic rule.
+<P>
+In order to match a prefixed rule, file specification <emphasis>(as
+it exists in the description file) must match the prefix in the rule; MMK
+performs no logical name translation on prefixes, nor can it identify
+equivalencies between two prefixes that reference the same directory using
+different syntax.
+<P>
+The first inference rule for a pair of suffixes, whether it is generic
+or prefixed, must specify an action list; subsequent rules for the same
+pair of suffixes (with different prefixes) may have the action list omitted,
+in which case MMK will use the action list from the first rule.  For example,
+MMK already has a built-in generic rule for .C.OBJ, which is:
+<interactive>
+.C.OBJ :
+    $(CC)$(CFLAGS) $(MMS$SOURCE)
+<endinteractive>
+<p>
+If you are simply adding a set of prefixed rules for the .C.OBJ suffix pair,
+you do not need to specify an action list on those rules; MMK will use the
+action list from the built-in generic rule.
+
+<head1>(Forced Setup/Teardown Actions in Inference Rules\forcedST)
+<P>
+MMK recognizes two special modifiers on action lines specified for inference
+rules.  The <emphasis>(setup) modifier, <quote>(<), forces the execution
+of an action prior to any unmodified action.  The <emphasis>(teardown)
+modifier, <quote>(>), forces the execution of an action after all other
+actions.  Setup and teardown actions are performed for all dependencies
+matching the inference rule, even if a dependency includes explicit
+actions.
+<p>For example, the inference rule
+<interactive>
+.C.OBJ :
+    < DEFINE/USER DECC$SHR V6_ROOT:[SYSLIB]DECC$SHR
+      $(CC)$(CFLAGS) $(MMS$SOURCE)
+<endinteractive>
+<P>
+would cause the logical name DECC$SHR to be defined prior to the invocation
+of the C compiler for all compilations into .OBJ files.  This would apply
+even on dependencies containing explicit actions, such as
+<interactive>
+FRED.OBJ : FRED.C
+  $(CC)$(CFLAGS)/DEFINE=FRED $(MMS$SOURCE)
+<endinteractive>
+
+<head1>(Modifying the Suffix List\MMK_DOC_13)
+<P>
+MMK uses a <emphasis>(suffix list) to determine the inference rules it
+should search for inferring a dependency.  MMK has a built-in suffix
+list which goes with its list of built-in inference rules; see
+<reference>(default_rules) for more information on the built-in rules
+and suffix list.
+<P>You can augment or replace the built-in suffix list
+with your own suffixes by using the .SUFFIXES directive in a rules
+file or a makefile.
+<P>For example, let's say you have a Modula-2 compiler on your system, whose
+source files have a file type (suffix) of .MOD. MMK has no built-in inference
+rules for this file type; you could add one with the following sequence:
+<interactive>
+.SUFFIXES : .MOD
+
+.MOD.OBJ :
+    MODULA2/OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+<endinteractive>
+<P>
+The .SUFFIXES directive above adds the .MOD suffix to the end of the
+suffix list.  This is followed by the inference rule for creating an
+object file from a Modula-2 source file.
+
+<P>
+Specifying the .SUFFIXES directive with nothing to the right of the colon
+clears the current suffix list.  You can do this to prevent MMK from
+using any inference rules for the current build, or to follow it with
+another .SUFFIXES directive that specifies only those suffixes for which you
+want inference rules to be enabled.
+
+<head1>(Using Conditionals\using_cond)
+<p>
+MMK provides several directives that can be used to modify the build sequence
+based on conditions.  These directives are .IF, .IFDEF, .IFNDEF, .ELSE, and .ENDIF.
+The .IFDEF, .ELSE, and .ENDIF directives work the same as for MMS; the .IF and
+.IFNDEF directives are MMK extensions.  The .IFNDEF directive provides the logical
+inverse to .IFDEF; the check succeeds if the specified macro is <emphasis>(not)
+defined.  The .IF directive supports more general comparisons.  Its syntax is
+<interactive>
+.IF "<emphasis>(expression1)" <emphasis>(comparison) "<emphasis>(expression2)"
+<endinteractive>
+<cp>
+where <emphasis>(expression1) and <emphasis>(expression2) can be any string
+that does not contain quotation marks.  Macro references may be used in
+the expressions as long as the macro values do not contain quotation marks.
+The <emphasis>(comparison) operator is either <keyword>(EQL) (equals) or
+<keyword>(NEQ) (not equals).  The quotation marks around the two expressions
+are required.  Comparisons are performed without regard to upper/lower case.
+
+<head1>(Deferring Macro Substitution\deferring)
+<p>
+MMK provides a way to defer the resolution of a macro that is referenced
+in the right-hand side of a macro definition, as an extension to MMS.
+Macros are normally referenced using the $(<emphasis>(name)) syntax,
+which causes the value of the macro to be substituted immediately when
+a line is parsed (except for MMK's <quote>(special) macros, such as
+MMS$SOURCE and MMS$TARGET).
+<P>
+You can defer this substitution in MMK by using the syntax ${<emphasis>(name)}
+instead.  However, this syntax is only recognized on the right-hand side
+of a macro definition.  This can be useful when defining macros in a rules
+file that rely on macros that do not get defined until another rules file
+or a description file gets processed.  For example, you might have the
+following definition in a rules file:
+<interactive>
+CFLAGS = /OBJECT=$(MMS$TARGET)/NOLIST/DEFINE=(VMS_BUILD,${MOREDEFINES})
+<endinteractive>
+<cp>then in your description file, you can define the MOREDEFINES macro:
+<interactive>
+MOREDEFINES = ANOTHER_C_DEFINE
+<endinteractive>
+<cp>This will complete the CFLAGS macro value when it is referenced later
+in the description file.
+
+<head1>(Macro String Substitution\macrosubst)
+<p>
+MMK provides two mechanisms for causing string substitution to occur when
+resolving a macro reference: suffix substitution and general string substitution.
+<HEAD2>(Suffix Substitution\suffixsubst)
+<P>
+When a string contains a list of file specifications, you can replace the file
+type suffixes on each file specification with a different suffix.  The general
+form of this type of substitution is:
+<SYNTAX>
+<EMPHASIS>($<OPAREN>\BOLD)<EMPHASIS>(macro-name)<EMPHASIS>(:\BOLD)<EMPHASIS>(old-sfx)<EMPHASIS>(=\BOLD)<EMPHASIS>(new-sfx)<EMPHASIS>(<CPAREN>\BOLD)
+<ENDSYNTAX>
+<CP>which causes the replacement of all occurences of the file type suffix <EMPHASIS>(old-sfx) with <EMPHASIS>(new-sfx).
+Both suffixes must begin with a dot.
+<P>For example,
+in these macro definitions:
+<INTERACTIVE>
+SOURCES = FIRST.C, SECOND.C, THIRD.C
+OBJECTS = $(SOURCES:.C=.OBJ)
+<ENDINTERACTIVE>
+<CP>the OBJECTS macro would have the value <QUOTE>(FIRST.OBJ, SECOND.OBJ, THIRD.OBJ).
+This form of substitution works with file specification lists separated by either
+blanks, commas, or both.  The substitution rule following the colon may also contain
+blanks, which are ignored.  Substitutions are case-insensitive.
+
+<HEAD2>(General String Substitution\stringsubst)
+<P>
+General string substitution in macro references is an extended feature of MMK.  It
+looks very similar to suffix substitution, but uses a double colon (<quote>(::))
+instead of a single colon and allows the substitution to occur anywhere within
+the string.  The syntax is:
+<SYNTAX>
+<EMPHASIS>($<OPAREN>\BOLD)<EMPHASIS>(macro-name)<EMPHASIS>(::\BOLD)<EMPHASIS>(old-str)<EMPHASIS>(=\BOLD)<EMPHASIS>(new-str)<EMPHASIS>(<CPAREN>\BOLD)
+<ENDSYNTAX>
+<CP>which causes the replacement of all occurences of the string <EMPHASIS>(old-str) with <EMPHASIS>(new-str).
+You may use a backslash <QUOTE>(<BACKSLASH>) as a <quote>(literal-next) escape when one of the strings contains
+an equals sign. Neither string may contain a right parenthesis character (<QUOTE>(<CPAREN>)), even quoted with a backslash,
+although this restriction will be lifted in a future release of MMK.
+
+For example, the following macro definitions:
+<INTERACTIVE>
+SOURCES = FIRST.C,SECOND.C,THIRD.C
+SOURCEPLUS = $(SOURCES::,=+)
+<ENDINTERACTIVE>
+<CP>would cause SOURCEPLUS to contain the list of filenames separated with plus
+signs (<QUOTE>(+)) rather than commas.
+<P>General string substitutions in macro references are case-insensitive, but
+<emphasis>(do not) ignore blanks in the macro value or in the substitution rule.
+For example, in the following definitions:
+<INTERACTIVE>
+TEST      = Xyz xYz xyZ
+REPLACED  = $(TEST::YZ =YZ,)
+<ENDINTERACTIVE>
+<CP>the REPLACED macro would have the value <QUOTE>(XYZ,xYZ,xyZ), due to the
+case-blind comparisons and the inclusion of the space in the <EMPHASIS>(old-str)
+specification.
+
+<chapter>(Using DEC/CMS with MMK\cms_chapter)
+<p>
+This chapter describes the use of Digital's DEC/Code Management System
+(DEC/CMS) with MMK.
+
+<head1>(The /CMS Qualifier\MMK_DOC_14)
+<p>
+The MMK command supports a /CMS qualifier, which activates the automatic
+use of the currently set DEC/CMS library, or another DEC/CMS library that
+you specify, for the current build.  This causes source files to be fetched
+out of the DEC/CMS library automatically, if needed.  In addition, the MMK
+description file will automatically be fetched out of the DEC/CMS library
+if it does not exist.
+<p>
+The built-in suffix list and dependency rules in MMK include default rules
+for fetching source files out of DEC/CMS libraries.  Suffixes ending in
+a tilde character (<quote>(~)) signify DEC/CMS library elements.  The
+built-in DEC/CMS element rules are used only if /CMS is specified on the
+MMK command.
+
+<head1>(Explicit CMS Element References\MMK_DOC_15)
+<p>
+You can explicitly reference a CMS library element in your MMK description
+file by adding a tilde to the end of the file specification.  For
+example:
+<interactive>
+MAIN.FOR  :  MAIN.FOR~
+<endinteractive>
+<p>
+You can also explicitly name the CMS library from which the element should
+be fetched, by specifying a device and/or directory name:
+<interactive>
+MAIN.FOR  :  SOURCE_DISK:[CMS_SOURCE]MAIN.FOR~
+<endinteractive>
+<p>If you do not explicitly name the CMS library, the currently set
+CMS library (set with CMS SET LIBRARY) will be used.
+
+<head2>(Specifying the Element Generation\MMK_DOC_16)
+<p>
+By default, MMK uses the qualifier /GENERATION=1+ on all CMS FETCH operations,
+to get the highest-numbered generation of a particular element, or whichever
+generation you specify on the MMK /GENERATION qualifier.
+If you need
+to build a dependency on a specific generation of an element, you may do
+so by specifying the /GENERATION qualifier on the file name:
+<interactive>
+MAIN.FOR  :  MAIN.FOR~/GENERATION=37
+<endinteractive>
+<p>
+The above example would cause generation 37 of the MAIN.FOR file in the
+current CMS library to be used for the build.
+
+<head1>(Inference Rules for CMS Files\MMK_DOC_17)
+<P>
+MMK comes with built-in inference rules for fetching source files from
+a CMS library.  Like DEC/MMS, MMK uses these rules <emphasis>(only) when you
+specify the /CMS qualifier on the MMK command.  This allows you to
+have a makefile like the following:
+<interactive>
+TEST.EXE : TEST.OBJ
+    $(LINK)$(LINKFLAGS) $(MMS$SOURCE)
+
+TEST.OBJ : TEST.FOR
+<endinteractive>
+<P>
+If you have a CMS library set and you specify the /CMS qualifier on the
+MMK command, MMK will automatically check to see if TEST.FOR resides
+in the CMS library and will fetch it out of the library if needed.
+<P>
+However, MMK also allows you to omit the second dependency in the makefile,
+and will automatically <quote>(double-infer) the existence the .FOR file,
+even if it has not yet been fetched out of the CMS library.
+<head2>(CMS and Prefixed Inference Rules\MMK_DOC_18)
+<p>
+You can have MMK automatically search specific CMS libraries for source
+files by using prefixed inference rules.  For example, if you were working
+on a cross-platform development project which used two CMS libraries -
+one for OS-specific source code and another for common source code - you
+might use the following prefixed rules:
+<interactive>
+{CMSSRC:[VMS_SPECIFIC]}.FOR~{}.FOR :
+{CMSSRC:[COMMON]}.FOR~{}.FOR :
+<endinteractive>
+<p>
+This sequence would cause MMK to automatically search the CMSSRC:[VMS_SPECIFIC]
+CMS library for a FORTRAN source file, then search the CMSSRC:[COMMON] library.
+If the file were not located in either library, MMK would fall back to using
+the currently set CMS library.  You must still have a CMS library set and
+you must specify the /CMS qualifier for prefixed CMS inference rules to
+be tried.
+
+<command_section>(Command Description)
+<command>(MMK\\mmk_syntax)
+<overview>
+Invokes the MMK utility to build a software system.
+<endoverview>
+
+<format>
+<fcmd>(MMK)
+<fparms>([target-name ...])
+<endformat>
+<qual_list>
+<qpair>(/[NO]ACTION\/ACTION)
+<qpair>(/[NO]CHECK_STATUS\/NOCHECK_STATUS)
+<qpair>(/[NO]CMS\/NOCMS)
+<qpair>(/CMS_LIBRARY=(dir-spec...)\)
+<qpair>(/DESCRIPTION=file-spec\)
+<qpair>(/DUMP)
+<qpair>(/[NO]FORCE\/NOFORCE)
+<qpair>(/[NO]FROM_SOURCES\/NOFROM_SOURCES)
+<qpair>(/GENERATION=string\/GENERATION="1+")
+<qpair>(/IDENTIFICATION\)
+<qpair>(/[NO]IGNORE[=level]\/NOIGNORE)
+<qpair>(/[NO]LOCAL_RULES\/LOCAL_RULES)
+<qpair>(/[NO]LOG\/NOLOG)
+<qpair>(/MACRO=file-spec <VBAR> definition...\)
+<qpair>(/OUTPUT=file-spec\)
+<qpair>(/[NO]OVERRIDE\/NOOVERRIDE)
+<qpair>(/[NO]RULES_FILE=file-spec...\)
+<qpair>(/[NO]SKIP_INTERMEDIATES\/NOSKIP_INTERMEDIATES)
+<qpair>(/[NO]VERIFY\/VERIFY)
+<qpair>(/WORKING_DIRECTORY=dir-spec\)
+<endqual_list>
+
+<paramdeflist>
+<paramitem>(target-name)
+<paramdef>
+Name of the target to be built.  The target name must be listed in the
+description file.  If no target name is specified, MMK builds the first
+target it finds in the description file.  Multiple targets may be
+specified as a comma-separated list.
+<endparamdeflist>
+
+<description>
+The MMK utility builds a software system from the
+objects and dependencies listed in a description file.  See the documentation
+for additional information.
+<enddescription>
+
+<qualdeflist>
+<qualitem>(/[NO]ACTION)
+<qualdef>
+Determines whether action lines are executed or just displayed.  Specifying
+/NOACTION causes MMK to display the action lines that would be executed
+to build the target, without actually executing them.
+
+<qualitem>(/[NO]CHECK_STATUS)
+<qualdef>
+Directs MMK to determine whether a target is up-to-date, without executing
+any action lines to do so.  MMK sets the global symbol MMS$STATUS to 0 if
+the target requires updating, or 1 if the target is up-to-date.  This qualifier
+overrides the /ACTION qualifier.
+
+<qualitem>(/[NO]CMS)
+<qualdef>
+Determines whether a DEC/Code Management System (CMS) library is automatically
+searched for the MMK description file and for any source files.
+The default is /NOCMS, which omits any CMS checks.
+
+<qualitem>(/CMS_LIBRARY=(dir-spec...))
+<qualdef>
+Specifies one or more DEC/Code Management System (CMS) libraries to be searched for the
+MMK description file and for any source files that do not have explicit
+CMS library specifications.  Effective only when /CMS is also specified.
+If omitted, the default CMS library or libraries (from the logical name CMS$LIB or
+the CMS SET LIBRARY command) are used.
+
+<qualitem>(/DESCRIPTION=file-spec)
+<qualdef>
+Specifies an alternative name for the MMK description file.  The default
+description file name is DESCRIP.MMS (in the current default directory),
+with MAKEFILE. being used if DESCRIP.MMS does not exist.
+
+<qualitem>(/DUMP)
+<qualdef>
+Causes MMK to dump the suffix list, all currently defined macros, all
+inference rules, and all dependencies to the current output before starting
+the build.  This qualifier is useful in debugging problems in rules files
+and makefiles.
+
+<qualitem>(/[NO]FORCE)
+<qualdef>
+Specifying /FORCE causes MMK to execute only the action lines from the
+dependency rule for the target, without performing any revision
+date checks and without building any intermediate targets.
+
+<qualitem>(/[NO]FROM_SOURCES)
+<qualdef>
+Specifying /FROM_SOURCES causes MMK to perform a complete build of the
+target, ignoring revision dates.  All actions to build all intermediate
+targets are executed.
+
+<qualitem>(/GENERATION=string)
+<qualdef>
+Specifies the default generation to be used when MMK fetches elements
+out of a CMS library.  If omitted, the default generation is <quote>(1+), which
+fetches the highest-numbered generation of an element.
+You can use this qualifier in combination with CMS classes
+to have MMK build a specific version of your software system, provided
+that all source code for the system is fetched from CMS during the build.
+
+<qualitem>(/IDENTIFICATION)
+<qualdef>
+Specifying /IDENTIFICATION causes MMK to display its revision information
+and a copyright message, without performing any other action.
+
+<qualitem>(/[NO]IGNORE[=level])
+<qualdef>
+By default, MMK stops when an executed action line results in a warning,
+error, or fatal error status.  You can override this by specifying /IGNORE.
+Using /IGNORE or /IGNORE=FATAL causes all errors to be ignored; specifying
+/IGNORE=ERROR causes errors and warnings to be ignored; specifying 
+/IGNORE=WARNING causes only warnings to be ignored.
+
+<qualitem>(/[NO]LOCAL_RULES)
+<qualdef>
+Controls whether  site-specific inference rule definitions are
+read in.  By default, they are if the logical name MMK_LOCAL_RULES is
+defined and points to a readable description file.  Specifying /NOLOCAL_RULES
+prevents this from occurring.
+
+<qualitem>(/[NO]LOG)
+<qualdef>
+Controls whether MMK logs a detailed description of its activity.  By default,
+it does not.
+
+<qualitem>(/MACRO=file-spec <VBAR> definintion...)
+<qualdef>
+ Defines one or more macros that can be referenced by the description file.
+If a name is specified with no equals sign (<quote>(=)), it is first assumed to
+be a file specification; if the file exists, macro definitions are read
+from the file.  A file type of .MMS is assumed if no file type is specified.
+If the file cannot be found, the name is treated as macro definition, and
+a value of <emphasis>(1\bold) is assigned to the macro by default.
+<P> If an equals sign is present, the macro definition is taken directly from
+the command line.
+<P> Macro definitions contained in a file should have the same syntax as macro
+definitions in description files, with the added restrictions that comments
+and line continuations are not allowed.
+
+<qualitem>(/OUTPUT=file-spec)
+<qualdef>
+Directs MMK output to a location other than the default, SYS$OUTPUT.
+
+<qualitem>(/[NO]OVERRIDE)
+<qualdef>
+ Determines the order in which macro references are resolved.  The default
+order is to resolve macros from command-line definitions, followed by
+definitions in the description file and any rules files, followed by MMK
+built-ins.  If a macro cannot be resolved from any of these sources, a check
+is made for a DCL symbol with the same name as the macro, and if present, the
+symbol's value is used.
+<P> When /OVERRIDE is specified, DCL symbols are checked before the macro
+definitions in the description and rules files, and before the MMK built-in
+macros.
+
+<qualitem>(/[NO]RULES_FILE[=file-spec...])
+<qualdef>
+Specifies the name of one or more description files containing inference
+rules.  If /RULES_FILE is specified with no file specification,
+the name MMS$RULES is used by default (this can be a logical name or can
+reference a file called MMS$RULES.MMS in the current directory).
+<p>
+If /NORULES_FILE is specified, the compiled-in default rules are not
+loaded when MMK is started, nor is any personal rules file (pointed to
+by the logical name MMK_PERSONAL_RULES).  /NORULES_FILE does not prevent
+the loading of local rules; you must also specify /NOLOCAL_RULES to
+prevent local rules from being loaded.
+
+<qualitem>(/[NO]SKIP_INTERMEDIATES)
+<qualdef>
+ By default, MMK attempts to build missing source files if they
+can be built through the application of dependency or inference rules.
+Specifying /SKIP_INTERMEDIATES causes MMK to treat these missing sources
+as if they exist and have the same revision date/time stamp as the target
+that depends on them.
+<P> For example, if the target is a .EXE file which depends on a .OBJ file,
+and that .OBJ file in turn depends on a .C file, by default MMK will build
+the .OBJ file if it is missing, and then in turn build the .EXE.  If
+/SKIP_INTERMEDIATES is specified, the missing .OBJ file will not trigger
+a build; the build will only occur if the .C file is newer than the .EXE
+file.
+
+<qualitem>(/[NO]VERIFY)
+<qualdef>
+Controls whether MMK echoes action lines to SYS$OUTPUT.  Enabled by default.
+
+<qualitem>(/WORKING_DIRECTORY=dir-spec)
+<qualdef>
+Causes MMK to SET DEFAULT to the specified directory before processing
+the description file.  This can be useful when using the /NOACTION
+qualifier for a build in a directory containing subdirectories with their
+own description files, since only actions invoking $(MMS) get executed when
+/NOACTION is used.  By replacing the actions:
+<INTERACTIVE>
+  SET DEFAULT [.subdirectory]
+  $(MMS) $(MMSQUALIFIERS)
+<ENDINTERACTIVE>
+<CP>with the action
+<INTERACTIVE>
+  $(MMS) $(MMSQUALIFIERS)/WORKING_DIRECTORY=[.subdirectory]
+<ENDINTERACTIVE>
+<CP>the entire multi-directory build can be tested with /NOACTION successfully.
+<endqualdeflist>
+
+<appendix>(Differences between MMK and DEC/MMS\MMK_DOC_19)
+<p>MMK is patterned after DEC/MMS, but does not fully implement all DEC/MMS
+functionality and provides other extended functionality.  This appendix lists
+some of the differences between MMK and DEC/MMS.
+<p>Besides the differences in features, there are some differences
+in processing between MMK and DEC/MMS which may lead to different results
+or syntax errors in MMK for description files which operate properly under
+DEC/MMS.  If possible, please report any such differences to the author
+so that they can be fixed.
+<head1>(DEC/MMS Features Not Supported in MMK\MMK_DOC_20)
+<p>MMK does not support the following DEC/MMS features:
+<list>(unnumbered)
+<le>MMK does not support FMS forms libraries or CDD/Repository libraries.
+<le>MMK does not honor the <quote>(; <emphasis>(action)) syntax on
+dependency rule lines that can be used with DEC/MMS.  Make sure all actions
+are on separate lines.
+<le>MMK requires the leading dot on the .INCLUDE directive.
+<le>MMK does not handle wildcard dependency rules.
+<le>MMK does not support all of the command qualifiers supported by
+DEC/MMS.  In addition, the MMK's /GENERATION qualifier is completely different
+from DEC/MMS's /GENERATE qualifier.
+<le>MMK does not have a DECwindows interface.
+<le>MMK does not automatically load the MMS$RULES file if that logical
+name is defined or that file exists in the current directory; you must
+specify /RULES on the MMK command to have it loaded.  Use the MMK_LOCAL_RULES
+or MMK_PERSONAL_RULES logical names to have rules automatically loaded by MMK.
+<endlist>
+
+<head1>(MMK Extended Features\MMK_DOC_21)
+<p>MMK includes the following features not found in DEC/MMS:
+<list>(unnumbered)
+<le>MMK gives you more options for rules files, and is set up to allow
+multiple rules files to be present.  Rule file processing follows this
+sequence:
+  <list>(numbered)
+  <le>The default rules compiled into MMK are loaded automatically unless
+      /NORULES_FILE is specified on the MMK command.
+  <le>A site-defined local rules file is loaded automatically if the
+      logical name MMK_LOCAL_RULES is defined (use /NOLOCAL_RULES to
+      override).
+  <le>If the /RULES_FILE qualifier is specified, any rules files listed
+      there are loaded; if none are listed, the default is to load
+      the file MMS$RULES.MMS (or the file pointed to by the logical name
+      MMS$RULES).
+      <p>
+      If the /RULES_FILE qualifier is omitted, a personal rules file is
+      loaded if the logical name MMK_PERSONAL_RULES is defined.   MMS$RULES
+      is <emphasis>(not) loaded in this case.
+      <p>
+      If /NORULES_FILE is specified, neither MMS$RULES nor the personal
+      rules file is loaded.
+  <endlist>
+<p>These rules-processing features, coupled with the ability to redefine
+macros defined in rules files, make it easier to customize MMK's behavior
+when needed.
+
+<le>MMK trims blanks out of $(MMS$SOURCE_LIST).
+<le>MMK includes support for the following special local macros:
+    <list>(unnumbered)
+    <le>$(MMS$SOURCE_LIST_SPACES) - source list with spaces as separators
+    	instead of commas.
+    <le>$(MMS$CHANGED_LIST_SPACES) - list of changed sources with spaces
+        as separators instead of commas.
+    <le>$(MMS$SOURCE_NAME) - like $(MMS$TARGET_NAME), but for $(MMS$SOURCE).
+    <le>$(MMS$TARGET_FNAME) - like $(MMS$TARGET_NAME), but does not include
+        the device/directory specification, just the filename.
+    <le>$(MMS$TARGET_MODULE) - name of the module being replaced in
+        a text, help, macro, or object library.
+    <ENDLIST>
+<le>MMK will display activity in the subprocess while action lines are
+being executed when you press CTRL/T.
+<le>MMK allows you to redefine macros.
+<le>MMK, in most cases, has more flexible syntax rules for its description
+files, allowing blanks where MMS does not (e.g., in library module
+specifications).
+<le>MMK pre-defines the macros __VAX__ for builds on VAX systems,
+__AXP__ for builds on Alpha systems, and __I64__ for builds on IA64 systems.
+<le>MMK supports prefixed inference rules (described in <reference>(infrules)).
+<le>When used with DEC/CMS, MMK will <quote>(double-infer) a dependency
+      on a non-existent source file, if that file currently resides in
+      a CMS library.
+<le>MMK includes a /DUMP qualifier for debugging problems with makefiles.
+<le>MMK provides a /GENERATION qualifier on the MMK command for specifying
+the default CMS generation to be used when elements are checked for 
+revisions and fetched out of CMS.
+<le>MMK provides the /WORKING_DIRECTORY qualifier.
+<le>MMK allows "generic" targets (those that do not refer to an actual
+file) to have null action lists.  MMS requires all targets to have an
+action list.
+<le>MMK adds the ${name} syntax for deferring resolution of macros
+on the right-hand side of a macro definition.
+<le>MMK adds a generic string-susbstitution function for macro
+references.
+<le>MMK adds the .IFNDEF and .IF directives to make it easier to
+conditionalize builds.
+<endlist>
+<p>You should avoid using these extended features if you need to
+maintain compatibility with DEC/MMS.
+
+<head1>(Other Differences\diff_other)
+<p>
+Besides the feature differences alrady mentioned,
+MMK operates somewhat differently from DEC/MMS in some of its processing.
+In most cases, these differences are not significant, but they are worth
+remembering if you need to port DEC/MMS description files to or from
+MMK.
+<list>(unnumbered)
+<le>MMK allows any rule, including built-in rules, to override the
+.DEFAULT actions.  DEC/MMS lets .DEFAULT actions override built-in rules.
+<le>When a build action does not update a target, MMK will issue an
+information message, except for generic targets.  DEC/MMS only issues
+such messages in certain cases.
+<le>MMK explicitly builds dependency rules for files on which library
+modules depend, even if those files are not mentioned in the description
+file.  This may lead to MMK behaving differently from DEC/MMS, although
+if the description file is correct, the end result will be the same.
+<le>MMK parses comments and continuation lines differently, so that a hyphen
+at the end of a comment is not considered a continuation of the comment.
+<le>MMK is more lenient about applying inference rules.  It only checks for
+a match on the suffix and, if present, the prefix.  If you have a dependency
+with an explicit target and source that match by suffix (and possibly prefix),
+even if the base names do not match, the inference rule can be applied.
+MMS requires that base names match to apply an inference rule.  Note that
+MMK's behavior may change to match MMS in a future release.
+<endlist>
+<p>As other differences are brought to the author's attention, they will
+either be fixed or noted here.
+<endappendix>
+
+<appendix>(Built-in Dependency Rules\default_rules)
+<p>The dependency rules built into MMK for VAX systems are shown in
+<reference>(vax_default_rules); those for
+Alpha systems are shown in <reference>(axp_default_rules); and those
+for IA64 systems are show in <reference>(ia64_default_rules).
+<figure>(MMK default dependency rules - VAX\vax_default_rules\WIDE)
+<line_art>
+<include>(MMK_DEFAULT_RULES_VAX.MMS)
+<endline_art>
+<endfigure>
+
+<figure>(MMK default dependency rules - Alpha\axp_default_rules\WIDE)
+<line_art>
+<include>(MMK_DEFAULT_RULES_ALPHA.MMS)
+<endline_art>
+<endfigure>
+
+<figure>(MMK default dependency rules - IA64\ia64_default_rules\WIDE)
+<line_art>
+<include>(MMK_DEFAULT_RULES_IA64.MMS)
+<endline_art>
+<endfigure>
+<endappendix>

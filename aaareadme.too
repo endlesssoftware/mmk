@@ -1,0 +1,665 @@
+MMK V4.0, 02-MAR-2008
+
+FIXES AND UPDATES
+-----------------
+
+MMK V4.0, 02-MAR-2008
+
+* Now released under BSD-style open source license.
+
+* Kit is now source-only.
+
+* Inference rules now default to requiring a match on the
+  base name to be applied, in line with MMS behavior.
+
+* When using CMS, makefiles are compared to their
+  corresponding elements in the CMS repository, and
+  the CMS version is fetched if newer.  In previous
+  versions, makefiles were only fetched from CMS if
+  they did not exist in the working build directory.
+
+MMK V3.9-10, 07-NOV-2004
+
+* Some corrections to the IA64 build support.
+
+* Another fix for recursive rule handling, which
+  was not correctly inferring a rule for an
+  intermediate target (source file existence was
+  required).
+
+*** NOTE: Currently, MMK applies an inference rule
+    based only on suffixes and prefixes, without
+    checking that the base name of the source and
+    target files match.  This behavior is different
+    from MMS, and will probably be changed in a 
+    future version of MMK.
+
+MMK V3.9-9, 03-MAY-2004
+
+* Integrated changes to get MMK to build and run
+  on IA64 systems, courtesy of Dan O'Reilly and
+  Hunter Goatley.
+
+MMK V3.9-8, 29-JAN-2004
+
+* Fix some issues with MMK's definition of CMS$LIB in
+  the subprocess.
+
+* Further fixes for recursive rule handling that caused
+  "missing" sources to be filled in with CMS files even
+  if /CMS wasn't specified, as well as when a rule
+  matched a source/target pair in a dependency, but
+  the base name didn't match.
+
+MMK V3.9-7, 05-OCT-2003
+
+* Fix a parsing problem when a semicolon appeared
+  in a target object name.
+
+MMK V3.9-6, 19-OCT-2002
+
+* Fix a problem with the subprocess manager's handling
+  of mailbox write-attention ASTs that caused looping
+  on VMS V7.3-1.
+
+MMK V3.9-5, 07-AUG-2002
+
+* Fixed another problem in recursive rule handling
+  which was causing it to try to fill in missing
+  sources when there was a mismatch between device and
+  directory prefixes, but a base name match, in
+  an explicit dependency.
+
+MMK V3.9-4, 27-JUL-2002
+
+* Second attempt at making double-colon dependencies
+  work like MMS.  If multiple double-colon dependencies
+  are present which don't have any commands attached to
+  them, treat them as if they were a single dependency,
+  just attaching the source list to the first one.
+
+* Also fixed some missing cases where duplicate source
+  object references weren't being eliminated.
+
+MMK V3.9-3, 11-JUL-2002
+
+* Inference rules were not being correctly applied
+  to double-colon dependencies.
+
+* Fixed an ACCVIO that occurred when using /MACRO to
+  load a macro file.
+
+MMK V3.9-2, 08-APR-2001
+
+* Fixed further problems with the recursive rule
+  handling, which was causing it to fill in missing
+  sources even when a dependency's source list was
+  sufficiently specified.
+
+MMK V3.9-1, 30-MAR-2001
+
+* Fixed problem with the new recursive rule handling
+  and prefixed rules.  From Chuck Lane.
+
+* Added built-in macros MMS$ARCH_NAME, MMSARCH_NAME,
+  MMSALPHA, and MMSVAX, for MMS compatibility.
+
+* Fixed problem with comma-separated target names getting
+  concatenated.
+
+MMK V3.9, 20-JAN-2001
+
+* Fix another behavior difference between MMK and other
+  make utilities by recursing through dependencies and
+  implicit rules when doing suffix-based matching.  From
+  Chuck Lane.
+
+MMK V3.8-3, 03-MAY-2000
+
+* Open /OUTPUT files with sharing, so you can view them while
+  they are being written.
+
+* Allow dots in symbol names, for improved compatibility with
+  UNIX makes.
+
+MMK V3.8-2, 17-JAN-2000
+
+* Fixed problem parsing blank-separated targets.
+
+MMK V3.8-1, 21-OCT-1999
+
+* Fixed problem where command verification to file would truncate
+  command line to 256 bytes.
+
+MMK V3.8, 28-DEC-1998
+
+* Fixed bug in handling of long command line elements.
+
+* Fixed bug in subprocess handler.
+
+* Fixed declaration of sys$setddir() to be compatible with
+  newer versions of STARLET that include that declaration.
+
+* Added support for .IFNDEF directive.
+
+* Fixed problem with file I/O routines' handling of stream-LF
+  files.
+
+* Consolidated function prototypes into the main MMK header file.
+
+* Added built-in MMK_VERSION, MMK_MAJOR_VERSION, and MMK_MINOR_VERSION
+  macros.
+
+* Added support for multiple CMS libraries.
+
+MMK V3.7, 06-JUN-1998
+
+* Add /WORKING_DIRECTORY qualifier to cause MMK to change
+  its working directory before processing any rules or
+  makefiles.
+
+* Add more general string substitution function for variable
+  references.
+
+MMK V3.6-2, 20-JUN-1997
+
+* Silently ignore null object references in a dependency or
+  a library module list, even when they are comma-separated,
+  for compatibility with MMS.
+
+* Add built-in inference rule for .MAR.MLB that matches that
+  for .MAC.MLB, for compatibility with MMS.
+
+MMK V3.6-1, 22-MAR-1997
+
+* Set the DCL symbol MMS$STATUS to the resulting status for each
+  executed command, just like MMS does.
+
+* Fixed resolution of $(symbol:sfx1=sfx2) references when symbol
+  value contained directory references.
+
+MMK V3.6, 15-FEB-1997
+
+* Add "<" and ">" options to inference rule action lines, which force
+  their execution before and after, respectively, the execution of
+  other actions, even when a dependency includes an explicit action.
+  This was added mainly so we can define DECC$SHR before the invocation
+  of the DEC C compiler, for building C modules against versions of VMS
+  other than the version currently installed on the system (which would
+  be easier if Digital had provided a qualifier to CC that would let us
+  specify which shareable it searches, but that's the way it goes).
+
+* Define the MMS$CMS_GEN local symbol even when there is no CMS element
+  involved in an action.  This is convenient for doing bulk CMS fetches
+  on generic dependencies.
+
+MMK V3.5, 22-AUG-1996
+
+* Add ability to specify library on /CMS qualifier.
+
+MMK V3.4-10, 29-MAY-1996
+
+* Added a special hack to PARSE_OBJECTS so it recognizes library module
+  names beginning with dots (which is legal for macro libraries).
+
+* Fixed up ${} notation so it works when it appears more than once in
+  a line.
+
+* Added support for INCLUDE directive without the leading dot, like MMS
+  allows.  Note that with this change, you cannot have a generic target
+  called "INCLUDE" -- the parser will interpret it as a directive rather
+  than a target.  This, too, is consistent with MMS.
+
+MMK V3.4-9, 21-FEB-1996
+
+* Fixed comment-stripping routine in READDESC module.  Could have led
+  to unusual things happening when comment character was first character
+  on line.
+
+MMK V3.4-8, 06-NOV-1995
+
+* Fixed MMS discrepancy regarding use of generic (non-prefixed) inference
+  rules with targets that have explicit device/directory specifications.
+  We now work like MMS does and check the target's directory for the source
+  file, rather than just the current directory.
+
+* Fixed library cache so that it doesn't open more than the allowed
+  maximum number of libraries.
+
+MMK V3.4-7, 09-OCT-1995
+
+* Fixed some more cases of using malloc() and free() incorrectly, in
+  PARSE_DESCRIP.C, and FILEIO.C, any or all of which could cause ACCVIOs.
+
+MMK V3.4-6, 05-OCT-1995
+
+* Fixed error paths in SP_MGR module that were using free() when they
+  should have used LIB$FREE_VM().
+
+MMK V3.4-5, 03-OCT-1995
+
+* Fixed logic problem resolution of embedded symbol references (as in
+  "$(sym1$(sym2))" or "$(sym1:blah=$(sym2))" and so forth).
+
+* Fixed problem in parsing target file specifications with filenames longer
+  than 32 characters (parser was truncating name at 32).
+
+* Fixed bug in handling of continuations.  Don't know why this didn't bite
+  me a long time ago!
+
+MMK V3.4-4, 21-JUL-1995
+
+* Fixed potential for ACCVIO through negative index in array in
+  Read_Description.
+
+* Fixed another problem with /SKIP_INTERMEDIATES processing, this time
+  of files that are intermediates in some dependencies and non-intermediates
+  in others.
+
+MMK V3.4-3, 17-JUL-1995
+
+* Fixed get_rdt() routine so it sets an object's have_rdt flag when it
+  successfully gets an RDT.
+
+* Changed object tree manager's node comparison routine to provide more
+  ordered list.  Some duplicate nodes were getting created.  This never
+  revealed itself until /SKIP_INTERMEDIATES came along.
+
+MMK V3.4-2, 12-JUL-1995
+
+* Fixed file I/O routines so they would properly clean up after RMS if
+  one is using search list logical names.
+
+MMK V3.4-1, 27-JUN-1995
+
+* Fixed automatic CMS fetch of description files so that it works even if
+  you specify /DESCRIPTION.  Also fixed it so it uses the generation
+  specified with /GENERATION, if present.
+
+MMK V3.4, 22-JUN-1995
+
+* Fixed ACCVIO when an action line is not preceded by a dependency or rule.
+
+MMK V3.4, 21-JUN-1995  (beta release)
+
+* Added support for specifying file names on the /MACRO qualifier.
+
+* Added support for the /CHECK_STATUS, /OVERRIDE, and /SKIP_INTERMEDIATES
+  qualifiers.
+
+* Renamed MMK to "MadGoat Make Utilty".
+
+MMK V3.3-5, 19-JUN-1995
+
+* Fixed automatic finding of sources so that it only occurs when there
+  are no explicit action lines for a particular target.
+
+MMK V3.3-4, 07-JUN-1995
+
+* Fixed CMS date/time comparisions so that the default generation specified
+  with the MMK/GENERATION qualifier is used when no explicit generation is
+  given for an element.
+
+MMK V3.3-3, 30-APR-1995
+
+* Fix for automatic prefixing of library modules.
+
+MMK V3.3-2, 16-MAR-1995
+
+* Speed up CMS library access by disabling library verification.
+
+MMK V3.3-1, 12-JAN-1995
+
+* Change .IFDEF handling so it matches MMS -- a symbol defined to a
+  null value is considered "undefined".
+
+* Reduced size of mailboxes used for IPC to more reasonable amounts for
+  people having default buffer quotas.
+
+* Changed echoing of action lines so that if /OUTPUT= is specified they
+  get echoed with a "$" prefixed (unless they already begin with a "$"),
+  just like MMS does.  Also changed definition of MMSQUALIFIERS symbol
+  so if /OUTPUT= is specified, "/OUTPUT=SYS$OUTPUT:" is passed to the
+  subprocess invocation of MMK.  Thanks once again to Pat Rankin for
+  the suggestion for this.
+
+* Fixed handling of $(MMS) in action lines so they really do get executed
+  even if /NOACTION is specified.  I thought that worked, but I didn't
+  get it right the first time.
+
+* Fixed problem where a .FIRST or .LAST directive immediately following
+  a dependency containing no action lines would have the .FIRST/.LAST
+  action lines transferred to the dependency.
+
+* Fixed MULACTION error that would happen when an explicit dependency for
+  a library module was included in a description file.  Implicit dependencies
+  for library modules that are targets are now processed after the description
+  file.
+
+* Fixed problem with commands containing quoted strings being split in
+  the middle of the quoted string, which is not valid in DCL.
+
+MMK V3.3, 29-DEC-1994
+
+* Add description file name and line number to information displayed
+  when signalling a parsing error.
+
+* Add /GENERATION qualifier to allow for setting the desired default
+  CMS generation when fetching stuff out of CMS.
+
+* Allow for multiple single-colon dependencies for one target, as long
+  as only one of the dependencies has an action list -- just like MMS does.
+
+* Add deferred macro resolution syntax, ${name}, for macro definitions.
+
+* Add .IF directive.
+
+* Make the action-line subprocess wrapper commands a bit more robust
+  (thanks to Pat Rankin @ Caltech).
+
+* Fixed a bug in the sp_send() routine (thanks again to Pat Rankin)
+
+* Fixed a bug in the parsing and printing (with /DUMP) of double-colon
+  dependencies.
+
+* Fixed the parser so comments with leading blanks are treated as null
+  lines.
+
+MMK V3.2-3, 18-OCT-1994
+
+* Fix bug in PARSE_DESCRIP where line was getting freed, _then_ being
+  used as an argument to lib$signal().  Thanks to Craig Ryan for pointing
+  this out.
+
+MMK V3.2-2, 22-AUG-1994
+
+* Fix problem where the inclusion of an explicit dependency for a library
+  module would confuse MMK (which was trying to bypass the library module
+  reference and make the object file dependent on itself).
+
+* Eliminate all the KILL_INTERMEDIATES code which was previously #ifdef'd
+  out, because with this fix it won't work any more.
+
+MMK V3.2-1, 17-AUG-1994
+
+* Suffix list wasn't getting converted to upper case like it was supposed
+  to, so file names weren't matching.
+
+* Move the definition of the MMS macro so that it's in effect before
+  the description file is read in.
+
+MMK V3.2, 22-JUL-1994
+
+* Improvements in inference rules and cross-directory build support:
+    - added support for inference rules containing device/directory
+      prefixes (like Microsoft's NMAKE)
+    - Internally-generated dependencies for library modules now have
+      the library module's corresponding object files inheriting the
+      device/directory spec from the library file, rather than assuming
+      the current directory.
+
+* Improved inference rule processing support for CMS.  Now, if an object
+  depends on a source that doesn't exist but is in a CMS library, MMK will
+  see that and automatically generate a dependency so that the file will
+  be fetched out of CMS.
+
+* Added the /DUMP qualifier to have all symbols, prefixes, rules, and
+  dependencies printed out before MMK begins the build process.
+
+* Added the MMS$TARGET_FNAME predefined macro for use in action lines.
+  The macro resolves to just the file name portion of the target file
+  specification (unlike MMS$TARGET_NAME, which includes the device
+  and directory as well).
+
+MMK V3.1, 12-JUL-1994
+
+* Fixed a bug in .DEFAULT directive handling.
+
+* Fixed .SUFFIXES directive so it doesn't require a colon.
+
+* Fixed .xxx.xxx rule parsing so it doesn't require a blank before the colon.
+
+* Fixed .IFDEF/.ELSE/.ENDIF so that lines that shouldn't be processed don't
+  even get parsed.
+
+* Added support for double-colon dependencies.
+
+* Changed behavior of /NORULES so it doesn't even map in the default rules,
+  just like MMS.
+
+* Added code to detect circular dependencies.
+
+* Added a check after an update is performed that notifies the user whether
+  or not the actions executed really updated the target or not.
+
+  -- Thanks to Neil Readwin for supplying the description files that     --
+  -- pointed out the differences between MMK and MMS for most of these.  --
+
+MMK V3.0-1, 06-JUL-1994 [sigh - wouldn't you know]
+
+* Fixed a bug in the RDT comparison code.
+
+* Fixed a bug in how CMS was being called.
+
+* Fixed another syntax discrepancy with MMS where ".sfx.sfx :" was OK but
+  just plain ".sfx.sfx" wasn't.
+
+* Added file name to the default file specifications used when opening
+  the description files.
+
+MMK V3.0, 05-JUL-1994
+
+* Added support for using DEC/CMS with MMK.  It works like it does with
+  MMS -- use /CMS to have the CMS rules tried automatically, or, if you
+  need to, use explicit dependencies with a tilde attached to the suffix
+  to have the file referenced out of the CMS library.  You can specify
+  the CMS library directory and the /GENERATION= qualifier when using
+  explicity dependencies, too, just like in MMS.  MMK will also automatically
+  fetch your DESCRIP.MMS file out of CMS if you specify /CMS, just like MMS.
+
+  PLEASE NOTE that MMK will run just fine on systems without CMS.  The
+  CMS routines MMK uses are mapped in at run-time, just as MMS does.
+  You don't need to re-link MMK if you install or remove CMS from your
+  system.
+
+* If an action is taken to update a target, the revision date MMK uses
+  for the target object is now the current date/time stamp, instead of
+  the actual revision date of the target.  This is to be more compatible
+  with MMS.  It also makes more sense with CMS -- it's weird to see MMK
+  fetch a source file out of CMS then not compile it because the revision
+  date/time of the source file is still older than the object file.
+
+MMK V2.6, 29-JUN-1994
+
+* Changed the way data is sent to the subprocess so that now you can
+  run programs like TEX (which does character-at-a-time I/O) without
+  hanging anything.
+
+* Fixed discrepancy between MMK and MMS syntax which allows LIBRARY(MODULE)
+  as a target for a dependency and automatically infers the dependency
+  as applying to the file on which the library module depends.
+
+* Fixed misplaced break statement in needs_updating() which was preventing
+  proper search of source lists when looking for a built-in rule.
+
+MMK V2.5, 21-JUN-1994
+
+* Added support for specifying multiple targets on the command line
+  (thanks to Richard Levitte).
+
+* Fixed a parsing bug where blank following last "module=filename" pair
+  inside a library specifcation resulted in an extra null module being
+  added to the dependency list.
+
+MMK V2.4-8, 06-MAY-1994
+
+* Include all commands, even @-prefixed ones, in the verify output when
+  /NOACTION is specified, just like MMS does.  This allows you to use
+  /NOACTION/OUTPUT=filename to build a command procedure that contains
+  all the commands used to build the target.
+
+MMK V2.4-7, 14-APR-1994
+
+* Several further minor bug fixes.
+
+MMK V2.4-6, 11-APR-1994
+
+* Changed the default rules to make them more like those in
+  MMS.  There was a subtle difference in the way the compiler
+  flag strings were listed.
+
+MMK V2.4-5, 08-APR-1994
+
+* Fix parsing of space-separated targets on dependency lines.
+
+MMK V2.4-4, 04-APR-1994
+
+* More action-line symbol problems.  Fixed things so that for build
+  rules, symbol resolution is deferred.
+
+MMK V2.4-3, 04-APR-1994
+
+* Fixed /MACRO=symbol so it defines the symbol; previously, symbols would
+  only be defined if you used "symbol=value".
+
+* Fixed MMS$TARGET_NAME definition so it works even on generic targets.
+
+MMK V2.4-2, 03-MAR-1994
+
+* Fix problem where symbols weren't getting resolved on action lines
+  during description parsing.
+
+MMK V2.4-1, 02-MAR-1994
+
+* Fix problem in Resolve_Symbols where a symbol to remain unresolved
+  was actually a special (like "$@").
+
+* Fixed handling of @- and -@ on action lines.
+
+MMK V2.4, 12-DEC-1993
+
+* Added support for the $(MMS) and $(MMSQUALIFIERS) macros.
+  NOTE: for $(MMS) to work properly, you must be using "MMK" as the command
+        to invoke MMK.
+
+* Added support for cumulative dependencies.  A target may now be specified
+  in more than one dependency rule IF only one of the dependency rules
+  contains a set of actions.  The other source dependencies are simply
+  added to the list.
+
+* Updated documentation to reflect requirement for VMS V5.2 or later.
+  I forgot that the !AZ $FAO directive does not work correctly under
+  VMS V5.0 and V5.1.
+
+MMK V2.3-6, 09-DEC-1993
+
+* Fix extract_name to use $FILESCAN so that names are extracted properly
+  even when full file specs are used.
+
+MMK V2.3-5, 02-DEC-1993
+
+* Fix Resolve_Symbols so that $(CFILES:.c=$(OBJ)) is acceptable
+  syntax.
+
+* Backed out code that does automatic deletion of intermediate
+  files until I can figure out a clean way to deal with multiple
+  library references.
+
+MMK V2.3-4, 01-DEC-1993
+
+* The /IGNORE qualifier setting was not honored when perform_update
+  executed an implied rule.
+
+KNOWN PROBLEM:
+    The automatic deletion of intermediate object files might not happen
+under some circumstances.  Specifically, if an object file is a module
+in more than one object library, and only a subset of those libraries is
+actually built in a single MMK session, then the object file won't be
+deleted.
+
+MMK V2.3-3, 22-NOV-1993
+
+* A target specified on the command line is now parsed as an object name,
+  so that library modules can be specified (for consistency with MMS).
+
+MMK V2.3-2, 28-OCT-1993
+
+* Fix looping in recursive symbol references (i.e., make them non-recursive).
+
+* Fix definition of command-line symbols that have names that match symbols
+  in other tables.
+
+* Fix .SUFFIXES directive so it only clears the suffixes list when the
+  right hand side is blank.
+
+MMK V2.3-1, 22-OCT-1993
+
+* MMK would ACCVIO if a description file had just blanks or tabs on it.
+
+* When modules in multiple libraries depended upon the same intermediate
+  file, MMK would get confused.  MMK now correctly handles this, and deletes
+  the intermediate (if it is built by MMK) after all replacements in libraries.
+
+* The parser was not correctly handling targets with no sources.
+
+MMK V2.3, 20-OCT-1993
+
+* Added CTRL/T support.  MMK will now report the process information
+  of its subprocess if you press CTRL/T while the subprocess is
+  executing an action line.
+
+MMK V2.2-1, 19-OCT-1993
+
+* Fixed parsing of leading "@" and "-" on action lines to correspond with
+  MMS's parsing rules.
+
+MMK V2.2, 17-OCT-1993
+
+* Eliminated need to keep intermediate files around for library modules.
+  Revision date checks are made directly against the library module, rather
+  than the intermediate file, and intermediate files are automatically deleted
+  after library modules have been replaced.  (This is primarily for object
+  libraries, but applies to other libraries as well.)
+
+* Added /KEEP_INTERMEDIATES qualifer to prevent the deletion of library
+  modules' intermediate files.
+
+MMK V2.1, 17-OCT-1993
+
+* Added support for $(var:oldsfx=newsfx) notation in variable references.
+
+* Added support for blank as module name separator in library references.
+
+* Added module identifiers to all C modules.
+
+MMK V2.0-4, 27-SEP-1993
+
+* Retracted the shared opens added in -2, -3.
+
+* Changed the default rules so that tests for library presence are
+  not silenced (so it's more like MMS).
+
+* Fixed the implied-.OLB code introduced in -2 so it works better.
+
+MMK V2.0-3, 27-SEP-1993
+
+* Have the file RDT fetch routine do shared opens.
+
+MMK V2.0-2, 27-SEP-1993
+
+* Fix parser so that FILENAME(modules) notation implies .OLB suffix (like MMS).
+
+* Open /OUTPUT= files for shared write.
+
+MMK V2.0-1, 24-SEP-1993
+
+* Fix /FROM_SOURCES problem where intermediate targets would get
+  repeatedly updated when they weren't supposed to.
+
+MMK V2.0, 18-SEP-1993
+
+* Prepare for first public release.  Rename program to MMK.
+
+MMK V1.0, 20-AUG-1992
+
+* Initial coding.
