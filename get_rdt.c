@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -56,9 +57,10 @@
 **  	17-JUL-1995 V1.2-2  Madison 	Set have_rdt flag if successful.
 **  	06-NOV-1995 V1.2-3  Madison 	Don't open too many libraries.
 **  	27-DEC-1998 V1.3    Madison 	General cleanup.
+**	07-AUG-2010 V1.4    Berryman	Made Library module lookups case insensitive
 **--
 */
-#pragma module GET_RDT "V1.3"
+#pragma module GET_RDT "V1.4"
 #include "mmk.h"
 #include <rms.h>
 #include <mhddef.h>
@@ -85,16 +87,64 @@
     static struct QUE lbrque = {&lbrque, &lbrque};
     static int lbrcount = 0;
 
+    static struct dsc$descriptor *mod2search4;
+    static unsigned short *return_rfa_here;
+
 /*
 ** External references
 */
     extern unsigned int lbr$ini_control(), lbr$open(), lbr$lookup_key();
-    extern unsigned int lbr$set_module(), lbr$close();
+    extern unsigned int lbr$set_module(), lbr$close(), lbr$get_index();
 
 #pragma nostandard
     globalvalue unsigned int LBR$_HDRTRUNC;
 #pragma standard
 
+
+/*
+**++
+**  ROUTINE:	caseblindsearch
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Support routine for lbr$get_index
+**
+**  RETURNS:	!cond_value, longword (unsigned), write only, by value
+**
+**		Because lbr$get_index requires a success code from this
+**		routine to continue searching, this routine must return
+**		opposite condition values.  It returns a 1 for failure
+**		(which means get_index would have returned every module
+**		 in the library and none matched) and a 2 for success 
+**		(any value with the low bit clear would work).
+**
+**  PROTOTYPE:
+**
+**	caseblindsearch(struct dsc$descriptor *module_name, unsigned short *rfa)
+**
+**  module_name:	ASCID descriptor naming module returned by get_index,
+**			read only, by reference
+**  rfa: 		RFA of this module, read only, by reference
+**
+**  IMPLICIT INPUTS:	static variables mod2search4 and return_rfa_here
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	See returns description
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+unsigned int caseblindsearch(struct dsc$descriptor *module_name,
+			     unsigned short *rfa) {
+
+    if (!str$case_blind_compare(module_name, mod2search4)) {
+	memcpy(return_rfa_here, rfa, sizeof(unsigned short[3]));/* sizeof rfa in lbr_get_rdt */
+	return 2;						/* tell lbr$get_index to stop searching */
+    }								/*  and return 2 to the caller of lbr$get_index */
+    return 1;							/* this one didn't match, tell lbr$get_index to keep searching */
+}								/*  if no more modules in library, caller will get the 1 */
 
 /*
 **++
@@ -126,7 +176,7 @@
 */
 unsigned int lbr_get_rdt (char *lib, char *mod, TIME *rdt) {
 
-    unsigned int lbrfunc=LBR$C_READ;
+    unsigned int lbrfunc=LBR$C_READ, lbr$c_knf = 0x08680F2, libidx = 1;
     char real_name[256];
     unsigned char fid[28];
     struct dsc$descriptor libdsc, moddsc;
@@ -182,8 +232,11 @@ unsigned int lbr_get_rdt (char *lib, char *mod, TIME *rdt) {
 ** Look up the module in question...
 */
     INIT_SDESC(moddsc, strlen(mod), mod);
-    status = lbr$lookup_key(&lbr->lbrctx, &moddsc, rfa);
-    if (!OK(status)) return status;
+/*    status = lbr$lookup_key(&lbr->lbrctx, &moddsc, rfa); */
+    mod2search4 = &moddsc;
+    return_rfa_here = rfa;
+    status = lbr$get_index(&lbr->lbrctx, &libidx, &caseblindsearch);
+    if (status != 2) return lbr$c_knf;		/* caseblindsearch returns 2 on success, 1 on failure */
 
 /*
 **  ... and get the RDT from the module header
