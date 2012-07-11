@@ -14,7 +14,7 @@
 ; AUTHOR:   	    M. Madison
 ;
 ; Copyright (c) 2008, Matthew Madison.
-; Copyright (c) 2011, Endless Software Solutions.
+; Copyright (c) 2012, Endless Software Solutions.
 ; 
 ; All rights reserved.
 ; 
@@ -80,6 +80,7 @@
 ;   05-OCT-2003 V2.0-3  Madison     Allow semicolons in target object names.
 ;   10-OCT-2008 V2.1	Sneddon     Added support for more recent MMS directives.
 ;   17-MAY-2011 V2.2    Sneddon	    Add support for '?=' and '+='.
+;   07-JUL-2012 V2.3	Sneddon	    Add support for '!='.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -152,6 +153,7 @@ PRS_K_CHECK_GNU   = 49
 PRS_K_DIR_GNU     = 50
 PRS_K_SYM_DEFINED = 51
 PRS_K_SYM_APPEND  = 52
+PRS_K_SYM_DO	  = 53
 
 ; Transition codes used with routine PARSE_OBJECTS.  Must match the
 ; corresponding definitions in that module.
@@ -376,6 +378,7 @@ TILDE		= 126
 	$TRAN	'=',SYMDEF1
 	$TRAN	'?',SYMDEF2
 	$TRAN	'+',SYMDEF3
+	$TRAN	'!',SYMDEF4
     	$TRAN	COMMA,DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
 	$TRAN	'-',DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
 	$TRAN	'(',DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
@@ -406,17 +409,21 @@ TILDE		= 126
 
 	$STATE	SYMDEF2
 	$TRAN	'=',SYMDEF2A
-
 	$STATE	SYMDEF2A
 	$TRAN	TPA$_BLANK,SYMDEF2A
 	$TRAN	TPA$_LAMBDA,TPA$_EXIT,PRS_STORE,,,PRS_K_SYM_DEFINED
 
 	$STATE	SYMDEF3
 	$TRAN	'=',SYMDEF3A
-
 	$STATE	SYMDEF3A
 	$TRAN	TPA$_BLANK,SYMDEF3A
 	$TRAN	TPA$_LAMBDA,TPA$_EXIT,PRS_STORE,,,PRS_K_SYM_APPEND
+
+	$STATE	SYMDEF4
+	$TRAN	'=',SYMDEF4A
+	$STATE	SYMDEF4A
+	$TRAN	TPA$_BLANK,SYMDEF4A
+	$TRAN	TPA$_LAMBDA,TPA$_EXIT,PRS_STORE,,,PRS_K_SYM_DO
 
 	$STATE	DEPEND
 	$TRAN	TPA$_BLANK,DEPEND1

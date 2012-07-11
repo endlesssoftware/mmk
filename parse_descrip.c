@@ -89,6 +89,7 @@
 **	01-JUL-2009 V2.3    Sneddon	Changed definition for tpa0.  Now
 **					 works better with older compilers.
 **	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
+**	07-JUL-2012 V2.4    Sneddon	Added support for '!='.
 **--
 */
 #pragma module PARSE_DESCRIP "V2.3-1"
@@ -180,6 +181,7 @@
 #define PRS_K_DIR_GNU	    50
 #define PRS_K_SYM_DEFINED   51
 #define PRS_K_SYM_APPEND    52
+#define PRS_K_SYM_DO	    53
 
 /*
 ** .IFDEF context block.  Used for tracking when we're in and out
@@ -817,6 +819,20 @@ int parse_store (struct TPABLK *tpa) {
     	    free(cp);
     	}
     	mem_free_symbol(current_sym);
+    	current_sym = (struct SYMBOL *) 0;
+    	just_did_rule = 0;
+    	break;
+
+    case PRS_K_SYM_DO:
+	Resolve_Symbols((tpa->tpa_l_stringbase+
+    	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+    	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 2);
+
+	//sp_once(cp, len, &result, &resultlen); -- custom routine?
+
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+
+	mem_free_symbol(current_sym);
     	current_sym = (struct SYMBOL *) 0;
     	just_did_rule = 0;
     	break;
