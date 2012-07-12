@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.2'
+	.IDENT	'V2.3'
 ;++
 ;
 ; FACILITY: 	    MMK
