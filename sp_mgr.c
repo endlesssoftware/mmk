@@ -60,10 +60,11 @@
 **      19-OCT-2002 V1.4-1  Madison     Only reset WRTATTN AST if subprocess
 **                                        exists.
 **	12-JUL-2012 V1.5    Sneddon     Race condition in sp_send.  Thanks to
-**					David G. North and Craig A. Berry.
+**					  David G. North and Craig A. Berry.
+**	13-JUL-2012 V1.6    Sneddon	Add sp_once.
 **--
 */
-#pragma module SP_MGR "V1.5"
+#pragma module SP_MGR "V1.6"
 
     struct SPB;
     typedef struct SPB *SPHANDLE;
@@ -104,17 +105,33 @@
     };
 
 /*
+**  Context block for sp_once
+*/
+
+    struct ONCE {
+	SPHANDLE spctx;
+	int command_complete;
+    	void (*actrtn)(void *, struct dsc$descriptor *);
+    	void *param;
+	struct dsc$descriptor buffer;
+	struct dsc$descriptor eom;
+    };
+
+/*
 ** Forward declarations
 */
     unsigned int sp_open(SPHANDLE *, void *, unsigned int (*)(void *), void *);
     unsigned int sp_close(SPHANDLE *);
     unsigned int sp_send(SPHANDLE *, void *);
     unsigned int sp_receive(SPHANDLE *, void *, int *);
+    void sp_once (void *, void (*)(void *, struct dsc$descriptor *), void *);
+    static unsigned int sp_once_ast (void *);
     static unsigned int sp_wrtattn_ast(SPHANDLE );
     static unsigned int sp_readattn_ast(SPHANDLE );
     static unsigned int try_to_send(SPHANDLE );
     static unsigned int send_completion(struct SPD *);
     static unsigned int exit_handler(unsigned int *, struct QUE *);
+    unsigned int sp_show_subprocess (SPHANDLE );
     static struct SPD *get_spd(int);
     static void free_spd(struct SPD *);
 
@@ -450,6 +467,95 @@ unsigned int sp_receive (SPHANDLE *ctxpp, void *rcvstr, int *rcvlen) {
     return status;
 
 } /* sp_receive */
+
+/*
+**++
+**  ROUTINE:	sp_once
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	sp_once(struct dsc$descriptor *cmd, struct dsc$descriptor *rcvstr,
+**  	    	    	int *rcvlen)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    SS$_NORMAL:  normal successful completion
+**  	    SS$_NONEXPR: subprocess doesn't exist any more
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
+	      void *param) {
+
+    static const char *eom = "MMK___SP_ONCE_EOM";
+
+    struct ONCE *ctx;
+    struct dsc$descriptor eomcmd;
+    unsigned int status;
+
+    $DESCRIPTOR(eomfao, "WRITE SYS$OUTPUT \"!AZ\"");
+
+    ctx = malloc(sizeof(struct ONCE));
+    if (ctx == 0) return;
+    memset(ctx, 0, sizeof(struct ONCE));
+    INIT_SDESC(ctx->eom, sizeof(eom)-1, eom);
+    ctx->actrtn = actrtn;
+    ctx->param = param;
+
+    INIT_DYNDESC(eomcmd);
+    lib$sys_fao(&eomfao, 0, &eomcmd, eom);
+    status = sp_open(&ctx->spctx, cmd, sp_once_ast, ctx);
+    if (OK(status)) {
+        status = sp_send(&ctx->spctx, &eomcmd);
+	if (OK(status)) {
+	    do {
+		sys$hiber();
+	    } while (!ctx->command_complete);
+	}
+    }
+
+    free(ctx);
+
+} /* sp_once */
+
+static unsigned int sp_once_ast (void *once) {
+
+    struct ONCE *ctx = once;
+    int pos, status;
+    struct dsc$descriptor rcvstr;
+
+    INIT_DYNDESC(rcvstr);
+    while (OK(status = sp_receive(&ctx->spctx, &rcvstr, 0))) {
+		rcvstr.dsc$a_pointer); fflush(stderr);
+	if (rcvstr.dsc$w_length >= ctx->eom.dsc$w_length) {
+	    pos = str$position(&rcvstr, &ctx->eom);
+	    if (pos != 0) {
+		if (pos > 1) {
+		    struct dsc$descriptor s;
+		    INIT_SDESC(s, pos, rcvstr.dsc$a_pointer);
+		    ctx->actrtn(ctx->param, &s);
+		}
+		ctx->command_complete = 1;
+		sys$wake(0, 0);
+		break;
+	    }
+	}
+	ctx->actrtn(ctx->param, &rcvstr);
+    }
+    str$free1_dx(&rcvstr);
+    return SS$_NORMAL;
+
+} /* sp_once_ast */
 
 /*
 **++

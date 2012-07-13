@@ -124,6 +124,7 @@
     int parse_store(struct TPABLK *);
     static void make_objrefs(struct QUE *, struct QUE *);
     static void copy_objrefs(struct OBJREF *, struct QUE *);
+    static void sym_do_actrtn(void *, struct dsc$descriptor *);
 
 /*
 ** Parse function codes.  Must match counterparts in PARSE_TABLE.MAR.
@@ -273,6 +274,11 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
 
     status = lib$tparse(&tpablk, &parse_state, &parse_key);
 
+    printf("line=%-*.*s\n", linelen, linelen, upline);
+    printf("sol=%p\n", upline);
+    printf("tokenptr=%p, tokencnt=%d\n", tpablk.tpa0.tpa$l_tokenptr,
+		tpablk.tpa0.tpa$l_tokencnt);
+
     free(upline);
     if (!OK(status) && status != MMK__CONDSKIP)
     	    lib$signal(MMK__PARSERR, 2, linelen, line,
@@ -323,6 +329,7 @@ int parse_store (struct TPABLK *tpa) {
     int vl_sb, vl_tp, vl_ub;
     struct SYMBOL *s;
     unsigned int status;
+    struct dsc$descriptor cmd, result;
     static struct CMD *current_cmd;
     static struct SYMBOL *current_sym;
     static struct QUE *current_cmdque, trgque, srcque, refque;
@@ -828,10 +835,16 @@ int parse_store (struct TPABLK *tpa) {
     	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
     	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 2);
 
-	//sp_once(cp, len, &result, &resultlen); -- custom routine?
+	INIT_DYNDESC(result);
+	INIT_SDESC(cmd, len, cp);
 
-	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+	sp_once(&cmd, sym_do_actrtn, &result);
 
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name,
+			result.dsc$a_pointer, result.dsc$w_length, 0);
+
+	str$free1_dx(&result);
+	free(cp);
 	mem_free_symbol(current_sym);
     	current_sym = (struct SYMBOL *) 0;
     	just_did_rule = 0;
@@ -1041,3 +1054,13 @@ static void copy_objrefs (struct OBJREF *destq, struct QUE *srcq) {
     }
 
 } /* copy_objrefs */
+
+static void sym_do_actrtn(void *ctx,
+			  struct dsc$descriptor *in) {
+
+    static const struct dsc$descriptor space = SDESC(" ");
+    struct dsc$descriptor *result = ctx;
+
+    str$concat(result, &space, in);
+
+} /* sym_do_actrtn */

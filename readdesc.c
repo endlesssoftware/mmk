@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -81,9 +82,10 @@
 **	30-SEP-2009 V1.10   Sneddon	Added MMSDESCRIPTION_FILE.
 **	07-APR-2010 V1.10-1 Sneddon 	Got ahead of myself with symbols.  Changed
 **                                      MMSDESCRIPTION_FILE to MMK_K_SYM_BUILTIN.
+**	12-JUL-2012 V1.11   Sneddon	Tweak strip_comments to support '!='.
 **--
 */
-#pragma module READDESC "V1.10-1"
+#pragma module READDESC "V1.11"
 #include <ctype.h>
 #include "mmk.h"
 #include "globals.h"
@@ -338,7 +340,9 @@ static void strip_comments (char *dest, char *source) {
     	if (quote) {
     	    if (*cp == '"') quote = !quote;
     	} else {
-    	    if (*cp == '!' || *cp == '#') break;
+	    if (*cp == '!') {
+		if (*(cp+1) != '=') break;
+	    } else if (*cp == '#') break;
     	}
     	*cp1++ = *cp;
     }
