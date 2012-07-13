@@ -277,7 +277,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     	    if (strcmp(upname, sym->name) == 0) break;
 	}
 	if (sym == (struct SYMBOL *) symq) {
-    	    sym = malloc(sizeof(struct SYMBOL));
+    	    sym = mem_get_symbol();
     	    strcpy(sym->name, upname);
     	    queue_insert(sym, symq->tail);
 	} else {
