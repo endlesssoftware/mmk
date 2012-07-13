@@ -55,6 +55,8 @@
 **  10-FEB-2011	    Sneddon	Added itoa function.
 **  12-APR-2011	    Sneddon     Added trim function.
 **  02-JUN-2012	    Sneddon	Update find_char definition. Remove MMK_S_MODULE.
+**  12-JUL-2012	    Sneddon	Add sp_once.
+**  13-JUL-2012	    Sneddon	Fix length for SDESC.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -105,7 +107,7 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
     	    str.dsc$b_class=DSC$K_CLASS_S; str.dsc$b_dtype=DSC$K_DTYPE_T;}
 #define ITMLST_INIT(itm,c,s,a,r) {itm.bufsiz=(s); itm.itmcod=(c);\
     	    itm.bufadr=(POINTER)(a); itm.retlen=(POINTER)(r);}
-#define SDESC(s) {sizeof(s),DSC$K_DTYPE_T,DSC$K_CLASS_S,s}
+#define SDESC(s) {sizeof(s)-1,DSC$K_DTYPE_T,DSC$K_CLASS_S,s}
 
 #ifdef min
 #undef min
@@ -332,6 +334,7 @@ typedef POINTER SPHANDLE;
     unsigned int sp_close(SPHANDLE *ctxpp);
     unsigned int sp_send(SPHANDLE *ctxpp, void *cmdstr);
     unsigned int sp_receive(SPHANDLE *ctxpp, void *rcvstr, int *rcvlen);
+    void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *), void *param);
     unsigned int sp_show_subprocess(SPHANDLE ctx);
 /*
 **  GET_RDT
