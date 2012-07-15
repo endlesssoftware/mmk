@@ -57,6 +57,9 @@
 **  02-JUN-2012	    Sneddon	Update find_char definition. Remove MMK_S_MODULE.
 **  12-JUL-2012	    Sneddon	Add sp_once.
 **  13-JUL-2012	    Sneddon	Fix length for SDESC.
+**  14-JUL-2012	    Sneddon	Adjust testing for MMK_S_DCL depending on VMS
+**				 version.  Is based on WRK_C_INPBUFSIZ in
+**				 [DCL]DCLDEF.SDL (VMS source).
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -138,7 +141,11 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 #if defined(__ALPHA) || defined(__ia64__)
 #define MMK_S_SFX       237     /* 235 + leading dot + trailing null */
 #define MMK_S_FILE      4096    /* 4095 is RMS limit, + trailing null */
-#define MMK_S_DCL	4097	/* 4096 is DCL command line + trailing null */
+#if __VMS_VER >= 70320022	/* OpenVMS Alpha V7.3-2 and higher has... */
+#define MMK_S_DCL	4097	/*  4096 is DCL command line + trailing null */
+#else				/* OpenVMS Alpha V7.3-1 and lower has... */
+#define MMK_S_DCL	256	/* 255 is DCL command line + trailing null */
+#endif
 #define MMK_S_MAXRSS	NAML$C_MAXRSS
 #else
 #define MMK_S_SFX       41      /* 39 + leading dot + trailing null */
