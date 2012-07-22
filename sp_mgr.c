@@ -71,6 +71,7 @@
 
 #define SP_MGR_MODULE_BUILD
 #include "mmk.h"
+#include <stdio.h>
 #include <iodef.h>
 #include <dvidef.h>
 #include <clidef.h>
@@ -497,6 +498,32 @@ unsigned int sp_receive (SPHANDLE *ctxpp, void *rcvstr, int *rcvlen) {
 void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
 	      void *param) {
 
+    SPHANDLE spctx;
+    struct dsc$descriptor rcvstr;
+    int command_complete = 0, status;
+
+    INIT_DYNDESC(rcvstr);
+
+    status = sp_open(&spctx, cmd, sp_once_ast, 0);
+    if (OK(status)) {
+	status = sp_send(&spctx, &eomcmd);
+	if (OK(status)) {
+	    do {
+		sys$hiber();
+		while (OK(sp_receive(&spctx, &rcvstr, 0))) {
+	    	    // if eom
+		        // nreak
+	    	    // else
+	                // call user-routine
+		}
+	    } while (!command_complete);
+	}
+	sp_close();
+    }
+
+    str$free1_dx(&rcvstr);
+}
+
     static const char *eom = "MMK___SP_ONCE_EOM";
 
     struct ONCE *ctx;
@@ -515,8 +542,10 @@ void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
     INIT_DYNDESC(eomcmd);
     lib$sys_fao(&eomfao, 0, &eomcmd, eom);
     status = sp_open(&ctx->spctx, cmd, sp_once_ast, ctx);
+    fprintf(stderr,"sp_once: sp_open = %d\n", status); fflush(stderr);
     if (OK(status)) {
         status = sp_send(&ctx->spctx, &eomcmd);
+	fprintf(stderr,"sp_once: sp_send = %d\n", status); fflush(stderr);
 	if (OK(status)) {
 	    do {
 		sys$hiber();
@@ -534,12 +563,19 @@ static unsigned int sp_once_ast (void *once) {
     int pos, status;
     struct dsc$descriptor rcvstr;
 
+    fprintf(stderr,"sp_once_ast: enter\n");
+
     INIT_DYNDESC(rcvstr);
+    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
+		rcvstr.dsc$a_pointer);
     while (OK(status = sp_receive(&ctx->spctx, &rcvstr, 0))) {
+	fprintf(stderr,"sp_once_ast: go round, %d\n", status); fflush(stderr);
+    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
 		rcvstr.dsc$a_pointer); fflush(stderr);
 	if (rcvstr.dsc$w_length >= ctx->eom.dsc$w_length) {
 	    pos = str$position(&rcvstr, &ctx->eom);
 	    if (pos != 0) {
+	fprintf(stderr,"sp_once_ast: pos = %d\n", pos); fflush(stderr);
 		if (pos > 1) {
 		    struct dsc$descriptor s;
 		    INIT_SDESC(s, pos, rcvstr.dsc$a_pointer);
@@ -550,9 +586,13 @@ static unsigned int sp_once_ast (void *once) {
 		break;
 	    }
 	}
+    fprintf(stderr,"sp_once_ast: status=%d\n", status); fflush(stderr);
+    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
+		rcvstr.dsc$a_pointer); fflush(stderr);
 	ctx->actrtn(ctx->param, &rcvstr);
     }
     str$free1_dx(&rcvstr);
+    fprintf(stderr,"sp_once_ast: leave\n"); fflush(stderr);
     return SS$_NORMAL;
 
 } /* sp_once_ast */
