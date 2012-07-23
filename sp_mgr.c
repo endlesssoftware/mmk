@@ -500,102 +500,50 @@ void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
 
     SPHANDLE spctx;
     struct dsc$descriptor rcvstr;
-    int command_complete = 0, status;
+    int command_complete = 0, pos, status;
+
+    $DESCRIPTOR(eomcmd, "WRITE SYS$OUTPUT \"MMK___SP_ONCE_EOM\"");
+    $DESCRIPTOR(eom,                       "MMK___SP_ONCE_EOM");
 
     INIT_DYNDESC(rcvstr);
-
+printf ("sp_once...\n"); fflush(stdout);
     status = sp_open(&spctx, cmd, sp_once_ast, 0);
+printf("sp_open = %d\n", status); fflush(stdout);
     if (OK(status)) {
 	status = sp_send(&spctx, &eomcmd);
+printf("sp_send = %d\n", status); fflush(stdout);
+#if 0
 	if (OK(status)) {
 	    do {
+printf("before sys$hiber()\n");
 		sys$hiber();
-		while (OK(sp_receive(&spctx, &rcvstr, 0))) {
-	    	    // if eom
-		        // nreak
-	    	    // else
-	                // call user-routine
+printf("after sys$hiber()\n");
+		while (OK(status = sp_receive(&spctx, &rcvstr, 0))) {
+		printf("status = %d\n", status);
+		printf("rcvstr = <%-*.*s>\n", rcvstr.dsc$w_length, rcvstr.dsc$w_length, rcvstr.dsc$a_pointer);
+
+
+		    pos = str$position(&rcvstr, &eom);
+		    if (pos != 0) {
+			command_complete = 1;
+		    } else {
+			actrtn(param, &rcvstr);
+		    }
 		}
+		printf("status = %d\n", status);
 	    } while (!command_complete);
 	}
-	sp_close();
+#endif
+	sp_close(&spctx);
     }
 
     str$free1_dx(&rcvstr);
 }
 
-    static const char *eom = "MMK___SP_ONCE_EOM";
-
-    struct ONCE *ctx;
-    struct dsc$descriptor eomcmd;
-    unsigned int status;
-
-    $DESCRIPTOR(eomfao, "WRITE SYS$OUTPUT \"!AZ\"");
-
-    ctx = malloc(sizeof(struct ONCE));
-    if (ctx == 0) return;
-    memset(ctx, 0, sizeof(struct ONCE));
-    INIT_SDESC(ctx->eom, sizeof(eom)-1, eom);
-    ctx->actrtn = actrtn;
-    ctx->param = param;
-
-    INIT_DYNDESC(eomcmd);
-    lib$sys_fao(&eomfao, 0, &eomcmd, eom);
-    status = sp_open(&ctx->spctx, cmd, sp_once_ast, ctx);
-    fprintf(stderr,"sp_once: sp_open = %d\n", status); fflush(stderr);
-    if (OK(status)) {
-        status = sp_send(&ctx->spctx, &eomcmd);
-	fprintf(stderr,"sp_once: sp_send = %d\n", status); fflush(stderr);
-	if (OK(status)) {
-	    do {
-		sys$hiber();
-	    } while (!ctx->command_complete);
-	}
-    }
-
-    free(ctx);
-
-} /* sp_once */
-
-static unsigned int sp_once_ast (void *once) {
-
-    struct ONCE *ctx = once;
-    int pos, status;
-    struct dsc$descriptor rcvstr;
-
-    fprintf(stderr,"sp_once_ast: enter\n");
-
-    INIT_DYNDESC(rcvstr);
-    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
-		rcvstr.dsc$a_pointer);
-    while (OK(status = sp_receive(&ctx->spctx, &rcvstr, 0))) {
-	fprintf(stderr,"sp_once_ast: go round, %d\n", status); fflush(stderr);
-    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
-		rcvstr.dsc$a_pointer); fflush(stderr);
-	if (rcvstr.dsc$w_length >= ctx->eom.dsc$w_length) {
-	    pos = str$position(&rcvstr, &ctx->eom);
-	    if (pos != 0) {
-	fprintf(stderr,"sp_once_ast: pos = %d\n", pos); fflush(stderr);
-		if (pos > 1) {
-		    struct dsc$descriptor s;
-		    INIT_SDESC(s, pos, rcvstr.dsc$a_pointer);
-		    ctx->actrtn(ctx->param, &s);
-		}
-		ctx->command_complete = 1;
-		sys$wake(0, 0);
-		break;
-	    }
-	}
-    fprintf(stderr,"sp_once_ast: status=%d\n", status); fflush(stderr);
-    fprintf(stderr,"sp_once_ast: rcvstr=%p,len=%d,ptr=%p\n",&rcvstr,rcvstr.dsc$w_length,
-		rcvstr.dsc$a_pointer); fflush(stderr);
-	ctx->actrtn(ctx->param, &rcvstr);
-    }
-    str$free1_dx(&rcvstr);
-    fprintf(stderr,"sp_once_ast: leave\n"); fflush(stderr);
-    return SS$_NORMAL;
-
-} /* sp_once_ast */
+static unsigned int sp_once_ast(void *not_used) {
+    sys$wake(0,0);
+    return 1;
+}
 
 /*
 **++
