@@ -90,9 +90,10 @@
 **					 works better with older compilers.
 **	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
 **	07-JUL-2012 V2.4    Sneddon	Added support for '!='.
+**	25-JUL-2012 V2.4-1  Sneddon	Add some comments to sym_do_actrtn.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.3-1"
+#pragma module PARSE_DESCRIP "V2.4-1"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -124,6 +125,7 @@
     int parse_store(struct TPABLK *);
     static void make_objrefs(struct QUE *, struct QUE *);
     static void copy_objrefs(struct OBJREF *, struct QUE *);
+    static void sym_do_actrtn(void *, struct dsc$descriptor *);
 
 /*
 ** Parse function codes.  Must match counterparts in PARSE_TABLE.MAR.
@@ -323,6 +325,7 @@ int parse_store (struct TPABLK *tpa) {
     int vl_sb, vl_tp, vl_ub;
     struct SYMBOL *s;
     unsigned int status;
+    struct dsc$descriptor cmd, result;
     static struct CMD *current_cmd;
     static struct SYMBOL *current_sym;
     static struct QUE *current_cmdque, trgque, srcque, refque;
@@ -828,10 +831,16 @@ int parse_store (struct TPABLK *tpa) {
     	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
     	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 2);
 
-	//sp_once(cp, len, &result, &resultlen); -- custom routine?
+	INIT_DYNDESC(result);
+	INIT_SDESC(cmd, len, cp);
 
-	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+	sp_once(&cmd, sym_do_actrtn, &result);
 
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name,
+			result.dsc$a_pointer, result.dsc$w_length, 0);
+
+	str$free1_dx(&result);
+	free(cp);
 	mem_free_symbol(current_sym);
     	current_sym = (struct SYMBOL *) 0;
     	just_did_rule = 0;
@@ -1041,3 +1050,40 @@ static void copy_objrefs (struct OBJREF *destq, struct QUE *srcq) {
     }
 
 } /* copy_objrefs */
+
+/*
+**++
+**  ROUTINE:	sym_do_actrtn
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Call back routine for sp_once to accumulate output
+**  for '!='.
+**
+**  RETURNS:	None.
+**
+**  PROTOTYPE:
+**
+**      sym_do_actrtn(struct dsc$descriptor *accumulator,
+**			  struct dsc$descriptor *in) {
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static void sym_do_actrtn(void *ctx,
+			  struct dsc$descriptor *in) {
+
+    static const struct dsc$descriptor space = SDESC(" ");
+    struct dsc$descriptor *result = ctx;
+
+    str$concat(result, &space, in);
+
+} /* sym_do_actrtn */
