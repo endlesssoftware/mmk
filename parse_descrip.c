@@ -274,11 +274,6 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
 
     status = lib$tparse(&tpablk, &parse_state, &parse_key);
 
-    printf("line=%-*.*s\n", linelen, linelen, upline);
-    printf("sol=%p\n", upline);
-    printf("tokenptr=%p, tokencnt=%d\n", tpablk.tpa0.tpa$l_tokenptr,
-		tpablk.tpa0.tpa$l_tokencnt);
-
     free(upline);
     if (!OK(status) && status != MMK__CONDSKIP)
     	    lib$signal(MMK__PARSERR, 2, linelen, line,
