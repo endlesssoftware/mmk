@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -88,9 +89,12 @@
 **  	23-MAR-1997 V2.5-1  Madison 	Set symbol MMS$STATUS to action status.
 **  	07-SEP-1998 V2.5-2  Madison 	Fix endless loop on long cmd tokens.
 **  	27-DEC-1998 V2.6    Madison 	Prototype cleanup.
+**  	14-JUL-2012 V2.7    Sneddon 	github issue #1: add support for
+**					  extended DCL command line. Thanks to
+**					  Craig A. Berry.
 **--
 */
-#pragma module BUILD_TARGET "V2.6"
+#pragma module BUILD_TARGET "V2.7"
 #include "mmk.h"
 #include "globals.h"
 #include <rmsdef.h>
@@ -984,15 +988,15 @@ static unsigned int send_cmd_and_wait (SPHANDLE *spctxp, char *cmd, int cmdlen, 
     set_ctrlt_ast(sp_show_subprocess, *spctxp);
 
     cp = cmd;
-    while (cmdlen > 254) {
+    while (cmdlen > MMK_S_DCL) {
     	inquotes = 0;
-    	for (i = 0; i < 254; i++) {
+    	for (i = 0; i < MMK_S_DCL; i++) {
     	    if (cp[i] == '"') {
     	    	inquotes = !inquotes;
     	    	last_quote = i;
     	    }
     	}
-    	i = inquotes ? last_quote : 254;
+    	i = inquotes ? last_quote : MMK_S_DCL;
     	if (i == 0) {
     	    clear_ctrlt_ast();
     	    return MMK__CMDLENERR;
