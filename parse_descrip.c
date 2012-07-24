@@ -90,9 +90,10 @@
 **					 works better with older compilers.
 **	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
 **	07-JUL-2012 V2.4    Sneddon	Added support for '!='.
+**	25-JUL-2012 V2.4-1  Sneddon	Add some comments to sym_do_actrtn.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.3-1"
+#pragma module PARSE_DESCRIP "V2.4-1"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -1050,6 +1051,33 @@ static void copy_objrefs (struct OBJREF *destq, struct QUE *srcq) {
 
 } /* copy_objrefs */
 
+/*
+**++
+**  ROUTINE:	sym_do_actrtn
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Call back routine for sp_once to accumulate output
+**  for '!='.
+**
+**  RETURNS:	None.
+**
+**  PROTOTYPE:
+**
+**      sym_do_actrtn(struct dsc$descriptor *accumulator,
+**			  struct dsc$descriptor *in) {
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
 static void sym_do_actrtn(void *ctx,
 			  struct dsc$descriptor *in) {
 
