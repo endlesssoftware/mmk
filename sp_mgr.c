@@ -60,16 +60,20 @@
 **      19-OCT-2002 V1.4-1  Madison     Only reset WRTATTN AST if subprocess
 **                                        exists.
 **	12-JUL-2012 V1.5    Sneddon     Race condition in sp_send.  Thanks to
-**					David G. North and Craig A. Berry.
+**					  David G. North and Craig A. Berry.
+**	13-JUL-2012 V1.6    Sneddon	Add sp_once.
+**	24-JUL-2012 V1.6-1  Sneddon	Timing issue discovered by sp_once in
+**					  sp_open.  Comments for sp_once_ast.
 **--
 */
-#pragma module SP_MGR "V1.5"
+#pragma module SP_MGR "V1.6-1"
 
     struct SPB;
     typedef struct SPB *SPHANDLE;
 
 #define SP_MGR_MODULE_BUILD
 #include "mmk.h"
+#include <stdio.h>
 #include <iodef.h>
 #include <dvidef.h>
 #include <clidef.h>
@@ -104,17 +108,33 @@
     };
 
 /*
+**  Context block for sp_once
+*/
+
+    struct ONCE {
+	SPHANDLE spctx;
+	int command_complete;
+    	void (*actrtn)(void *, struct dsc$descriptor *);
+    	void *param;
+	char *eom;
+	int eom_len;
+    };
+
+/*
 ** Forward declarations
 */
     unsigned int sp_open(SPHANDLE *, void *, unsigned int (*)(void *), void *);
     unsigned int sp_close(SPHANDLE *);
     unsigned int sp_send(SPHANDLE *, void *);
     unsigned int sp_receive(SPHANDLE *, void *, int *);
+    void sp_once (void *, void (*)(void *, struct dsc$descriptor *), void *);
+    static unsigned int sp_once_ast (void *);
     static unsigned int sp_wrtattn_ast(SPHANDLE );
     static unsigned int sp_readattn_ast(SPHANDLE );
     static unsigned int try_to_send(SPHANDLE );
     static unsigned int send_completion(struct SPD *);
     static unsigned int exit_handler(unsigned int *, struct QUE *);
+    unsigned int sp_show_subprocess (SPHANDLE );
     static struct SPD *get_spd(int);
     static void free_spd(struct SPD *);
 
@@ -178,6 +198,12 @@ unsigned int sp_open (SPHANDLE *ctxpp, void *inicmd, unsigned int (*rcvast)(void
 
     status = lib$get_vm(&spb_size, &ctx);
     if (!OK(status)) return status;
+
+/*
+** Assign the SPHANDLE address for the caller immediately to avoid timing issues with
+** WRTATTN AST that passes the ctx as rcvastprm (which sp_once does).
+*/
+    *ctxpp = ctx;
     ctx->sendque.head = ctx->sendque.tail = &ctx->sendque;
     ctx->ok_to_send = 0;
 
@@ -284,7 +310,6 @@ unsigned int sp_open (SPHANDLE *ctxpp, void *inicmd, unsigned int (*rcvast)(void
     str$free1_dx(&inbox);
     str$free1_dx(&outbox);
 
-    *ctxpp = ctx;
     return SS$_NORMAL;
 
 } /* sp_open */
@@ -450,6 +475,108 @@ unsigned int sp_receive (SPHANDLE *ctxpp, void *rcvstr, int *rcvlen) {
     return status;
 
 } /* sp_receive */
+
+/*
+**++
+**  ROUTINE:	sp_once
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	sp_once(struct dsc$descriptor *cmd, struct dsc$descriptor *rcvstr,
+**  	    	    	int *rcvlen)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    SS$_NORMAL:  normal successful completion
+**  	    SS$_NONEXPR: subprocess doesn't exist any more
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
+	      void *param) {
+
+    struct ONCE ctx;
+    int status;
+    struct dsc$descriptor eomcmd;
+
+    static char *eom = "MMK___SP_ONCE_EOM";
+    static $DESCRIPTOR(eomfao, "WRITE SYS$OUTPUT \"!AZ\"");
+
+    memset(&ctx, 0, sizeof(struct ONCE));
+    ctx.actrtn = actrtn;
+    ctx.param = param;
+    ctx.eom = eom;
+    ctx.eom_len = sizeof(eom)-1;
+
+    INIT_DYNDESC(eomcmd);
+    lib$sys_fao(&eomfao, 0, &eomcmd, eom);
+
+    status = sp_open(&ctx.spctx, cmd, sp_once_ast, &ctx);
+    if (OK(status)) {
+	status = sp_send(&ctx.spctx, &eomcmd);
+	if (OK(status)) {
+	    do {
+		sys$hiber();
+	    } while (!ctx.command_complete);
+	}
+	sp_close(&ctx.spctx);
+    }
+    str$free1_dx(&eomcmd);
+} /* sp_once */
+
+/*
+**++
+**  ROUTINE:	sp_once_ast
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	sp_once(struct ONCE *ctx)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    SS$_NORMAL:  normal successful completion
+**  	    SS$_NONEXPR: subprocess doesn't exist any more
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static unsigned int sp_once_ast(void *once) {
+
+    struct ONCE *ctx = once;
+    struct dsc$descriptor rcvstr;
+
+    INIT_DYNDESC(rcvstr);
+    while (OK(sp_receive(&ctx->spctx, &rcvstr, 0))) {
+        if (rcvstr.dsc$w_length > ctx->eom_len &&
+                strncmp(rcvstr.dsc$a_pointer, ctx->eom, ctx->eom_len) == 0) {
+            ctx->command_complete = 1;
+            sys$wake(0,0);
+            break;
+        }
+        (ctx->actrtn)(ctx->param, &rcvstr);
+    }
+    str$free1_dx(&rcvstr);
+    return SS$_NORMAL;
+} /* sp_once_ast */
 
 /*
 **++
