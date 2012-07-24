@@ -62,9 +62,11 @@
 **	12-JUL-2012 V1.5    Sneddon     Race condition in sp_send.  Thanks to
 **					  David G. North and Craig A. Berry.
 **	13-JUL-2012 V1.6    Sneddon	Add sp_once.
+**	24-JUL-2012 V1.6-1  Sneddon	Timing issue discovered by sp_once in
+**					  sp_open.  Comments for sp_once_ast.
 **--
 */
-#pragma module SP_MGR "V1.6"
+#pragma module SP_MGR "V1.6-1"
 
     struct SPB;
     typedef struct SPB *SPHANDLE;
@@ -196,6 +198,12 @@ unsigned int sp_open (SPHANDLE *ctxpp, void *inicmd, unsigned int (*rcvast)(void
 
     status = lib$get_vm(&spb_size, &ctx);
     if (!OK(status)) return status;
+
+/*
+** Assign the SPHANDLE address for the caller immediately to avoid timing issues with
+** WRTATTN AST that passes the ctx as rcvastprm (which sp_once does).
+*/
+    *ctxpp = ctx;
     ctx->sendque.head = ctx->sendque.tail = &ctx->sendque;
     ctx->ok_to_send = 0;
 
@@ -302,7 +310,6 @@ unsigned int sp_open (SPHANDLE *ctxpp, void *inicmd, unsigned int (*rcvast)(void
     str$free1_dx(&inbox);
     str$free1_dx(&outbox);
 
-    *ctxpp = ctx;
     return SS$_NORMAL;
 
 } /* sp_open */
@@ -526,7 +533,32 @@ void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
     }
     str$free1_dx(&eomcmd);
 } /* sp_once */
-
+
+/*
+**++
+**  ROUTINE:	sp_once_ast
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	sp_once(struct ONCE *ctx)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    SS$_NORMAL:  normal successful completion
+**  	    SS$_NONEXPR: subprocess doesn't exist any more
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
 static unsigned int sp_once_ast(void *once) {
 
     struct ONCE *ctx = once;
@@ -536,15 +568,13 @@ static unsigned int sp_once_ast(void *once) {
     while (OK(sp_receive(&ctx->spctx, &rcvstr, 0))) {
         if (rcvstr.dsc$w_length > ctx->eom_len &&
                 strncmp(rcvstr.dsc$a_pointer, ctx->eom, ctx->eom_len) == 0) {
-            str$free1_dx(&rcvstr);
             ctx->command_complete = 1;
             sys$wake(0,0);
             break;
         }
         (ctx->actrtn)(ctx->param, &rcvstr);
-        str$free1_dx(&rcvstr);
     }
-    // str$free1_dx(&rcvstr);
+    str$free1_dx(&rcvstr);
     return SS$_NORMAL;
 } /* sp_once_ast */
 
