@@ -114,8 +114,8 @@
 	int command_complete;
     	void (*actrtn)(void *, struct dsc$descriptor *);
     	void *param;
-	struct dsc$descriptor buffer;
-	struct dsc$descriptor eom;
+	char *eom;
+	int eom_len;
     };
 
 /*
@@ -498,52 +498,55 @@ unsigned int sp_receive (SPHANDLE *ctxpp, void *rcvstr, int *rcvlen) {
 void sp_once (void *cmd, void (*actrtn)(void *, struct dsc$descriptor *),
 	      void *param) {
 
-    SPHANDLE spctx;
-    struct dsc$descriptor rcvstr;
-    int command_complete = 0, pos, status;
+    struct ONCE ctx;
+    int status;
+    struct dsc$descriptor eomcmd;
 
-    $DESCRIPTOR(eomcmd, "WRITE SYS$OUTPUT \"MMK___SP_ONCE_EOM\"");
-    $DESCRIPTOR(eom,                       "MMK___SP_ONCE_EOM");
+    static char *eom = "MMK___SP_ONCE_EOM";
+    static $DESCRIPTOR(eomfao, "WRITE SYS$OUTPUT \"!AZ\"");
 
-    INIT_DYNDESC(rcvstr);
-printf ("sp_once...\n"); fflush(stdout);
-    status = sp_open(&spctx, cmd, sp_once_ast, 0);
-printf("sp_open = %d\n", status); fflush(stdout);
+    memset(&ctx, 0, sizeof(struct ONCE));
+    ctx.actrtn = actrtn;
+    ctx.param = param;
+    ctx.eom = eom;
+    ctx.eom_len = sizeof(eom)-1;
+
+    INIT_DYNDESC(eomcmd);
+    lib$sys_fao(&eomfao, 0, &eomcmd, eom);
+
+    status = sp_open(&ctx.spctx, cmd, sp_once_ast, &ctx);
     if (OK(status)) {
-	status = sp_send(&spctx, &eomcmd);
-printf("sp_send = %d\n", status); fflush(stdout);
-#if 0
+	status = sp_send(&ctx.spctx, &eomcmd);
 	if (OK(status)) {
 	    do {
-printf("before sys$hiber()\n");
 		sys$hiber();
-printf("after sys$hiber()\n");
-		while (OK(status = sp_receive(&spctx, &rcvstr, 0))) {
-		printf("status = %d\n", status);
-		printf("rcvstr = <%-*.*s>\n", rcvstr.dsc$w_length, rcvstr.dsc$w_length, rcvstr.dsc$a_pointer);
-
-
-		    pos = str$position(&rcvstr, &eom);
-		    if (pos != 0) {
-			command_complete = 1;
-		    } else {
-			actrtn(param, &rcvstr);
-		    }
-		}
-		printf("status = %d\n", status);
-	    } while (!command_complete);
+	    } while (!ctx.command_complete);
 	}
-#endif
-	sp_close(&spctx);
+	sp_close(&ctx.spctx);
     }
+    str$free1_dx(&eomcmd);
+} /* sp_once */
 
-    str$free1_dx(&rcvstr);
-}
+static unsigned int sp_once_ast(void *once) {
 
-static unsigned int sp_once_ast(void *not_used) {
-    sys$wake(0,0);
-    return 1;
-}
+    struct ONCE *ctx = once;
+    struct dsc$descriptor rcvstr;
+
+    INIT_DYNDESC(rcvstr);
+    while (OK(sp_receive(&ctx->spctx, &rcvstr, 0))) {
+        if (rcvstr.dsc$w_length > ctx->eom_len &&
+                strncmp(rcvstr.dsc$a_pointer, ctx->eom, ctx->eom_len) == 0) {
+            str$free1_dx(&rcvstr);
+            ctx->command_complete = 1;
+            sys$wake(0,0);
+            break;
+        }
+        (ctx->actrtn)(ctx->param, &rcvstr);
+        str$free1_dx(&rcvstr);
+    }
+    // str$free1_dx(&rcvstr);
+    return SS$_NORMAL;
+} /* sp_once_ast */
 
 /*
 **++
