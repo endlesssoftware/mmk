@@ -1,18 +1,18 @@
 <FRONT_MATTER>(MMK_DOC_1)
 <TITLE_PAGE>
 <TITLE>(Guide to the MMK Make Utility)
-<ABSTRACT>(March, 2008)
+<ABSTRACT>(July, 2012)
 <P>This manual describes the MMK Make Utility, a <quote>(make)
 utility for VMS systems.
 <ENDABSTRACT>
 <REVISION_INFO>(This is a revised manual.)
 <REVISION_INFO>(Operating System and Version:\VAX/VMS V5.2 or later;
 OpenVMS Alpha V1.5 or later; OpenVMS IA64 V8.2 or later)
-<REVISION_INFO>(Software Version:\MMK V4.0)
-<ENDTITLE_PAGE>(Matthew Madison<LINE>Santa Cruz, California)
+<REVISION_INFO>(Software Version:\MMK V5.0)
+<ENDTITLE_PAGE>(Endless Software Solutions<LINE>Perth, Western Australia)
 
 <COPYRIGHT_PAGE>
-<PRINT_DATE>(03 March 2008)
+<PRINT_DATE>(23 July 2012)
 <p>
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -51,6 +51,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ENDTABLE>
 <p>UNIX is a registered trademark of USL, Inc.
 <COPYRIGHT_DATE>(2008\Matthew Madison.  All rights reserved.)
+<COPYRIGHT_DATE>(2012\Endless Software Solutions.  All rights reserved.)
 <ENDCOPYRIGHT_PAGE>
 <CONTENTS_FILE>
 <PREFACE>(7\MMK_DOC_2)
@@ -345,6 +346,8 @@ The <emphasis>(comparison) operator is either <keyword>(EQL) (equals) or
 <keyword>(NEQ) (not equals).  The quotation marks around the two expressions
 are required.  Comparisons are performed without regard to upper/lower case.
 
+...this part needs to include the syntax changes to support MMS and GNU make
+
 <head1>(Deferring Macro Substitution\deferring)
 <p>
 MMK provides a way to defer the resolution of a macro that is referenced
@@ -426,6 +429,27 @@ REPLACED  = $(TEST::YZ =YZ,)
 <CP>the REPLACED macro would have the value <QUOTE>(XYZ,xYZ,xyZ), due to the
 case-blind comparisons and the inclusion of the space in the <EMPHASIS>(old-str)
 specification.
+
+<head1>(Macro Definitions]macrodef)
+<p>
+...describe '+=', '?=', and '!='...
+...also describe that different macros have types...
+...pointer to $(ORIGIN <emphasis>(name)) below to find out where from...
+
+<head1>(Special Macros\specialmacros)
+<p>
+
+<head1>(Reserved Macros\reservedmacros)
+<p>
+...need to describe MMS special case also...mention that we can identify
+MMK with __MMK__ (and other macros) instead.
+
+<head1>(Builtin Functions\builtins)
+<p>
+
+<head1>(User Defined Functions\userfunc)
+<p>
+...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
 
 <chapter>(Using DEC/CMS with MMK\cms_chapter)
 <p>
@@ -535,6 +559,7 @@ Invokes the MMK utility to build a software system.
 <qpair>(/CMS_LIBRARY=(dir-spec...)\)
 <qpair>(/DESCRIPTION=file-spec\)
 <qpair>(/DUMP)
+<qpair>(/EXTENDED_SYNTAX\)
 <qpair>(/[NO]FORCE\/NOFORCE)
 <qpair>(/[NO]FROM_SOURCES\/NOFROM_SOURCES)
 <qpair>(/GENERATION=string\/GENERATION="1+")
@@ -606,6 +631,10 @@ Causes MMK to dump the suffix list, all currently defined macros, all
 inference rules, and all dependencies to the current output before starting
 the build.  This qualifier is useful in debugging problems in rules files
 and makefiles.
+
+<qualitem>(/EXTENDED_SYNTAX)
+<qualdef>
+...describe what this does, largely for MMS compatability...
 
 <qualitem>(/[NO]FORCE)
 <qualdef>
@@ -825,8 +854,6 @@ action list.
 on the right-hand side of a macro definition.
 <le>MMK adds a generic string-susbstitution function for macro
 references.
-<le>MMK adds the .IFNDEF and .IF directives to make it easier to
-conditionalize builds.
 <endlist>
 <p>You should avoid using these extended features if you need to
 maintain compatibility with DEC/MMS.
