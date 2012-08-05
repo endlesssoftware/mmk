@@ -19,14 +19,11 @@ it.
 MMK is written entirely in C (with a little Macro).  Complete source code is
 provided.
 
+The following describes the source modules:
 
-Files included in MMK.ZIP:
---------------------------
-
-AAAREADME.DOC             This file.
-AAAREADME.INSTALL         Installation instructions.
-AAAREADME.TOO             Revision information.
+INSTALL.TXT               Installation instructions.
 LICENSE.TXT               License information.
+README.TXT                This file.
 
 BUILD_TARGET.C            Routines for building targets.
 CLIDEFS.H                 CLI$ interface definitions.
@@ -63,6 +60,7 @@ PARSE_DESCRIP.C           Routines for parsing description files.
 PARSE_OBJECTS.C           Routines for parsing object references.
 PARSE_TABLES.MAR          LIB$TPARSE table for parsing description files.
 READDESC.C                Routines for reading in description files.
+RELEASE_NOTES.SDML        Revision information.
 SP_MGR.C                  Subprocess management routines.
 SYMBOLS.C                 Routines for managing the symbol tables.
 
@@ -71,6 +69,7 @@ SYMBOLS.C                 Routines for managing the symbol tables.
 COPYRIGHT NOTICE
 
 Copyright (c) 2008, Matthew Madison.
+Copyright (c) 2012, Endless Software Solutions.
 
 All rights reserved.
 
