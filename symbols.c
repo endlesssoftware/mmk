@@ -1003,7 +1003,7 @@ static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
     while (cp < inend) {
 	cp = find_char(ap, ",)$");
 	if (cp == (char *)0) {
-	    // error?  what does MMS do?
+	    // need to return UTLBADMAC
 	} else {
 	    if (*cp == '$') {
 		// if SPECIALS
@@ -1018,7 +1018,7 @@ static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
 		    // ap = ++cp;
 		}
 	    } else if (*cp == ')') {
-		// if depth == 0
+		if (depth == 0) {
 	    	    // loop over stack
 		        // count arguments + resolve arguments (according to f)
 	    	    // if argument < f->argc
@@ -1027,8 +1027,11 @@ static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
 		        // too many arguments
 
 	            // call 'f' and pass in the call stack
-		// else
-		    // depth--;
+
+		    // free the call stack.
+		} else {
+		    depth--;
+		}
 	    }
 	}
     }
