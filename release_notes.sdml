@@ -3,6 +3,7 @@
 
 <TITLE_PAGE>
 <TITLE>(MMK Release Notes)
+<ABSTRACT>(<REFERENCE>(RELMONTH))
 <P>
 This file contains the release notes for the MMK Make Utility
 <REFERENCE>(VER).  It describes any features, restrictions, changes,

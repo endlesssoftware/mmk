@@ -1,0 +1,47 @@
+<COPYRIGHT_PAGE>
+<PRINT_DATE>(<REFERENCE>(PRTDATE))
+<COPYRIGHT_DATE>(2008\Matthew Madison.)
+<COPYRIGHT_DATE>(<REFERENCE>(COPYYEAR)\Endless Software Solutions.)
+<p>
+All rights reserved.
+<p>
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+<list>(unnumbered)
+    <le>Redistributions of source code must retain the above
+      copyright notice, this list of conditions and the following
+      disclaimer.
+    <le>Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    <le>Neither the name of the copyright owner nor the names of any
+      other contributors may be used to endorse or promote products
+      derived from this software without specific prior written
+      permission.
+<endlist>
+<p>
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<P>
+Portions of the software were adapted from other open source projects.  Refer
+to the Release Notes for copyright and license information.
+<P>The following are trademarks of Hewlett-Packard Development Company, LP:
+<TABLE>
+<TABLE_ATTRIBUTES>(SINGLE_SPACED)
+<TABLE_SETUP>(3\20\20)
+<TABLE_ROW>(AXP\DEC\OpenVMS)
+<TABLE_ROW>(VAX\VMS\)
+<ENDTABLE>
+<p>UNIX is a registered trademark of USL, Inc.
+<ENDCOPYRIGHT_PAGE>
