@@ -26,36 +26,89 @@ that is not provided elsewhere in the MMK manual.
 This chapter contains items of interest pertaining to the installation
 of MX.
 
-
 <HEAD1>(Upgrade Information)
-<P>
-
+<P>This release includes a new feature that makes it possible to assign
+the output from the execution of a command to a macro.  The syntax for
+this assignment has been taken from BSD make (where the feature itself
+first appeared).
+<P>However, using this syntax does introduce a potential incompatability with
+existing MMK description files.  To assign the output of a command it is
+necessary to use the '!=' operator.  However, the '!' character is already
+a comment delimiter in MMK.  To resolve this, the MMK description file parser
+now tests for an '=' character immediately following a '!'.  Usually when
+detecting a '!' character the remainder of the line (including the comment
+delimiter) will be stripped from the output.  However, in this special case
+the delimiter and the following characters will not be stripped and instead
+parsed as an assignment.  This may create issues for existing procedures
+that contain comments that match this pattern.
+<P>However, it is worth noting that this restriction only applies to the
+'!' comment delimiter.  It is still possible to use '#' in any place
+and achieve the desired result.
+
 <CHAPTER>(New Features and Changes in MMX V5.0)
 <P>
 This chapter notes the changes that were made in MMK V5.0.
 
 <HEAD1>(Name Change)
-<P>MadGoat Make has been renamed back to MMK.
+<P>MadGoat Make has been renamed back to MMK, now that MadGoat
+has ceased to exist and turned MMK over to the open source
+community.
 
 <HEAD1>(New builtin macros)
-<P>This release of 
-* MMSTARGETS and MMSDESCRIPTION_FILE built-in macros are
-  now supported.
+<P>This release of MMK includes the following builtin macros to
+return MMK to feature parity with MMS.
+<LIST>(UNNUMBERED)
+<LE>MMSTARGETS
+<LE>MMSESCRIPTION_FILE
+<ENDLIST>
 
-<HEAD1>(Maintainenace)
-* Maintenance for MMK has now shifted to Endless Software
-  Solutions.  The new MMK webpage is:
+<HEAD1>(Development and Support)
+<P>The last release of MMK from MadGoat was released under a BSD-style
+open source license.  In support of this MMK has been moved to the
+github repository:
+
+    http://github.com/endlesssoftware/mmk
+
+Now that MadGoat has ceased operation Endless Software Solutions has
+taken over stweardship of this software and contained to provide
+updated releases and maintain a user community.
+
+<P>If you are using MMK in a commercial environment and are interested
+in seeing more features, a higher level of support and response and
+the continued general improvement of the product, then you or your
+business might like to consider a support contract with Endless Software
+Solutions.  For further information regarding support and how to obtain
+a quote, please follow your browser to:
 
    http://www.endlesssoftwaresolutions.com.au/main/MMK
 
-  All queries should be directed to either the maintainer
-  at mmk@endlesssoftwaresolutions.com.au or the MMK mailing
-  list (subscription information at the address above).
+For all other queries, please consider joining the MMK mailing list be
+sending a mail containg only the word SUBSCRIBE to:
+
+    MMK-List-request@endlesssoftware.com.au
+
+Alternatively, you can submit bug/enchancement/etc. reports to the github
+Issues tracking system for this project.
+
+<HEAD1>(Macro Assignment)
+<P>This release includes support for the following macro assignment operators,
+borrowed from BSD and GNU make:
+<LIST>(UNNUMBERED)
+<LE>+= - concatenate to existing macro definition
+<LE>?= - assign only if macro is undefined
+<LE>!= - assign output from a command line
+<ENDLIST>
+
+<HEAD1>(New Else-If Directive)
+<P>MMK now supports the .ELSIF directive, also available in DEC/MMS.
+
 
 * Introduction of .IF .ELSIF and comparison operators to
   bring MMK more inline with current MMS features.
     -- LIST THEM ALL HERE...
 
+<HEAD1>(GNU Conditionals)
+<P>MMK Now supports the use of GNU make-style conditionals.  A full
 * Introduction of support for GNU make conditionals.
     -- LIST THEM ALL HERE...
 
@@ -68,7 +121,7 @@ This chapter notes the changes that were made in MMK V5.0.
   unique to MMK.
     -- MENTION ASSIGNMENT, POINTER TO BIT IN MANUAL
        HOWEVER, NO $(shell)
-
+
 <CHAPTER>(New Features and Changes in MMX V4.0)
 <P>
 This chapter notes the changes that were made in MMK V4.0, released
@@ -546,7 +599,7 @@ actually built in a single MMK session, then the object file won't be
 deleted.
 <ENDLIST>
 
-<CHAPTER>(New Features and Changes in MMX V2.2
+<CHAPTER>(New Features and Changes in MMX V2.2)
 <P>
 This chapter notes the changes that were made in MMK V2.2
 and its minor releases, produced between 17-OCT-1993 and
