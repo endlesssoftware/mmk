@@ -60,7 +60,7 @@ PARSE_DESCRIP.C           Routines for parsing description files.
 PARSE_OBJECTS.C           Routines for parsing object references.
 PARSE_TABLES.MAR          LIB$TPARSE table for parsing description files.
 READDESC.C                Routines for reading in description files.
-RELEASE_NOTES.SDML        Revision information.
+RELEASE_NOTES.SDML        VAX DOCUMENT source for MMK revision information.
 SP_MGR.C                  Subprocess management routines.
 SYMBOLS.C                 Routines for managing the symbol tables.
 
