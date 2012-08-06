@@ -1,18 +1,19 @@
+<INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
 <FRONT_MATTER>(MMK_DOC_1)
 <TITLE_PAGE>
 <TITLE>(Guide to the MMK Make Utility)
-<ABSTRACT>(July, 2012)
+<ABSTRACT>(<REFERENCE>(RELMONTH))
 <P>This manual describes the MMK Make Utility, a <quote>(make)
 utility for VMS systems.
 <ENDABSTRACT>
 <REVISION_INFO>(This is a revised manual.)
 <REVISION_INFO>(Operating System and Version:\VAX/VMS V5.2 or later;
 OpenVMS Alpha V1.5 or later; OpenVMS IA64 V8.2 or later)
-<REVISION_INFO>(Software Version:\MMK V5.0)
+<REVISION_INFO>(Software Version:\MMK <REFERENCE>(VER))
 <ENDTITLE_PAGE>(Endless Software Solutions<LINE>Perth, Western Australia)
 
 <COPYRIGHT_PAGE>
-<PRINT_DATE>(23 July 2012)
+<PRINT_DATE>(<REFERENCE>(PRTDATE))
 <p>
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -51,7 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ENDTABLE>
 <p>UNIX is a registered trademark of USL, Inc.
 <COPYRIGHT_DATE>(2008\Matthew Madison.  All rights reserved.)
-<COPYRIGHT_DATE>(2012\Endless Software Solutions.  All rights reserved.)
+<COPYRIGHT_DATE>(<REFERENCE>(COPYYEAR)\Endless Software Solutions.  All rights reserved.)
 <ENDCOPYRIGHT_PAGE>
 <CONTENTS_FILE>
 <PREFACE>(7\MMK_DOC_2)
