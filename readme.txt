@@ -5,10 +5,20 @@ systems based on a "description file" (or "makefile") you create that lists
 the sources and objects of a system and the dependencies between them.
 
 MMK is similar in functionality to Digital's DEC/Module Management System (MMS),
-and understands a syntax in its description files which is mostly compatible
-with MMS (at least, older versions of MMS).  It also includes support for
-creating inference rules that separate source and target directories, the
-syntax for which was borrowed from NMAKE.
+and understands a syntax in its description files which is a superset of
+that which is understood by MMS.  It also includes other features, such as:
+
+   * Support for creating inference rules that separate source and target
+     directories, the syntax for which was borrowed from NMAKE.  
+
+   * Conditional execution support based on MMS, MMK's own syntax and
+     GNU make.
+
+   * Extensive builtin functions, as well as the ability to call user-written
+     macros.
+
+   * The ability to assign the output of a command (or command procedure)
+     to a symbol.
 
 MMK runs on VAX/VMS, OpenVMS VAX, OpenVMS AXP, and OpenVMS IA64 systems.
 It should build and run on versions of VMS older than V7.0, but is only
@@ -17,9 +27,11 @@ has support for the DEC/CMS code management system, but does not require
 it.
 
 MMK is written entirely in C (with a little Macro).  Complete source code is
-provided.
+provided via github.  To download the latest kit, point your browser at:
 
-The following describes the source modules:
+    http://github.com/endlesssoftware/mmk
+
+The following describes the source modules contained within the kit:
 
 INSTALL.TXT               Installation instructions.
 LICENSE.TXT               License information.
@@ -100,3 +112,4 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
