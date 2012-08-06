@@ -101,6 +101,6 @@ SETDEFERR   	<error changing working directory to !AD>/FAO=2
 CMDLENERR   	<command line element too long>
 
 .SEVERITY	WARNING
-UTLBADMAC	<unterminated macro name "!AZ" at line !UL>
+UTLBADMAC	<unterminated macro named '!AZ' at line !UL>
 
 .END
