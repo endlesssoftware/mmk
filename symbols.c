@@ -112,7 +112,7 @@
 				int *, int);
     static int apply_origin(int argc, char **out, int *outlen) {return 0;}
     static int apply_word(int, char **, int*);
-    static int apply_words(int argc, char **out, int *outlen) {return 0;}
+    static int apply_words(int, char **, int *);
 
 /*
 ** Own storage
@@ -1134,6 +1134,60 @@ static int apply_word(int argc, char **out, int *outlen) {
 	    memcpy(*out, ep, *outlen);
 	}
     }
+
+    return 0;
+}
+
+/*
+**++
+**  ROUTINE:	apply_words
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in WORDS function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_words(int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend;
+    int e;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    e = 0;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    e++;
+	    while ((strchr(WHITESPACE, *++cp) == (char *)0)
+		&& (cp < inend))
+		;
+	}
+	while ((strchr(WHITESPACE, *++cp) != (char *)0)
+	    && (cp < inend))
+	    ;
+    }
+
+    *out = itoa(e);
+    *outlen = strlen(*out);
 
     return 0;
 }
