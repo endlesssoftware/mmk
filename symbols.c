@@ -85,15 +85,17 @@
 #include "globals.h"
 #include <stdarg.h>
 #include <string.h>
+#include <ots$routines.h>
 #include <ctype.h>
+#define ARGMAX (sizeof(int) * 8)
 /*
 ** Builtin function descriptor
 */
-struct FUNCTION {
-    char *name;
-    int vararg, maxarg;
-    void (*handler)(void);
-};
+    struct FUNCTION {
+	char *name;
+	int vararg, maxarg;
+	int (*handler)(int, char **, int *);
+    };
 
 /*
 ** Forward declarations
@@ -107,10 +109,10 @@ struct FUNCTION {
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static int apply_builtin (struct FUNCTION *, char *, int, char **, int *,
-				int);
-    static void apply_origin(void) {}
-    static void apply_word(void) {}
-    static void apply_words(void) {}
+				int *, int);
+    static int apply_origin(int argc, char **out, int *outlen) {return 0;}
+    static int apply_word(int, char **, int*);
+    static int apply_words(int argc, char **out, int *outlen) {return 0;}
 
 /*
 ** Own storage
@@ -119,6 +121,8 @@ struct FUNCTION {
     static struct SYMTABLE dcl_symbols;
     static int dcl_symbols_inited = 0;
     static struct SYMBOL *temporary_symbols = 0;
+    static struct dsc$descriptor argv[ARGMAX];
+    static char *WHITESPACE = " \r\n\t\v\f";
     static char SPECIALS[] = "@*<+?%&";
     static char *SPECIAL_VAR[] = {"MMS$TARGET","MMS$TARGET_NAME",
     	    	    	    	  "MMS$SOURCE","MMS$SOURCE_LIST",
@@ -132,7 +136,7 @@ struct FUNCTION {
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
 	{ "ORIGIN",		0, 1, apply_origin,	},
-	{ "WORD",		0, 1, apply_word,	},
+	{ "WORD",		0, 2, apply_word,	},
 	{ "WORDS",		0, 1, apply_words,	}, };
 
 /*
@@ -446,8 +450,10 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 
 			    if (i < sizeof(functions) /
 				    sizeof(functions[0])) {
+				++colp;
 				did_one = apply_builtin(&functions[i], colp,
-						inend-colp, &out, &outlen,
+						inend-colp, 0, 0,
+						&resolved_MMS_macro,
 						dont_resolve_unknowns);
 			    } else {
 				// what do we do here?
@@ -981,232 +987,153 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 */
 static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
 			  char **out, int *outlen,
+			  int *resolved_MMS_macro,
 			  int dont_resolve_unknowns) {
 
-    struct ARG {
-	struct ARG *flink, *blink;
-	char *value;
-	int len;
-    };
-
-    struct ARG stack;
     char *ap, *cp, *inend;
-    int depth;
+    int argc, depth, i, status;
 
-    INIT_QUEUE(stack);
-
-    // declare call stack/queue
-
+    argc = 0;
     depth = 0;
     inend = in + inlen;
     ap = cp = in;
     while (cp < inend) {
-	cp = find_char(ap, ",)$");
+	cp = find_char(ap, inend, ",)$");
 	if (cp == (char *)0) {
-	    // need to return UTLBADMAC
+	    lib$signal(MMK__UTLBADMAC, 2, f->name, 1); // where is line no.?
+	    break;
 	} else {
 	    if (*cp == '$') {
-		// if SPECIALS
-		    //
-		// else if enough characters && next char is '('
-		    // depth++
-		    // continue
-	    }
-            if (*cp == ',') {
-		if (depth == 0) {
-		    // push ap, length = cp-ap
-		    // ap = ++cp;
+		if (cp <= inend-1 && strchr(SPECIALS, *(cp+1))) {
+		    // is a special
+		    cp++; 
+		} else if (cp <= inend-3 && *(++cp) == '(') {
+		    depth++;
+		    continue;
 		}
-	    } else if (*cp == ')') {
+	    } else  if (*cp == ',' || *cp == ')') {
 		if (depth == 0) {
-	    	    // loop over stack
-		        // count arguments + resolve arguments (according to f)
-	    	    // if argument < f->argc
-		        // too few args
-	    	    // else if !f->is_vriable && argument > f->argc
-		        // too many arguments
-
-	            // call 'f' and pass in the call stack
-
-		    // free the call stack.
+		    if (argc >= ARGMAX) {
+			lib$signal(MMK__TOOMANYARGS);
+		    } else {
+		    	argv[argc].dsc$a_pointer = ap;
+			argv[argc].dsc$b_class = DSC$K_CLASS_S;
+			argv[argc].dsc$b_dtype = DSC$K_DTYPE_T;
+		    	argv[argc].dsc$w_length = cp-ap;
+			argc++;
+			if (*cp == ')')
+			    break;
+			ap = ++cp;
+		    }
 		} else {
-		    depth--;
+		    if (*cp == ')')
+			depth--;
 		}
 	    }
 	}
     }
 
+    /*
+    ** Check the function to make sure we have enough arguments, etc.
+    ** and call the builtin handler.
+    */
+    if (argc < f->maxarg) {
+	lib$signal(MMK__INSFARGS, 1, f->name);
+    } else if (!f->vararg && argc > f->maxarg) {
+	lib$signal(MMK__TOOMANYARGS, 1, f->name);
+    } else {
+	for (i = 0; i < argc; i++) {
+	    if (0) {  // not supposed to process the argument...
+	        // copy the arguments with malloc/memcpy
+	    } else {
+	        char *rptr;
+	        int rlen;
+	        *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
+						argv[i].dsc$w_length, &rptr,
+						&rlen, dont_resolve_unknowns);
+		argv[i].dsc$a_pointer = rptr;
+		argv[i].dsc$w_length = (unsigned short)rlen;
+	    }
+	}
 
-// parse out the arguments...
-#if 0
-    	while (cp < inend) {
+	// if unresolved
+	    // no call....what do we do?
+	// else
+	    *resolved_MMS_macro |= (f->handler)(argc, out, outlen);
 
-    	    colp = 0;
-    	    free_val = 0;
-/*
-** Look for the beginning of $(...)
-*/
-    	    dp = find_char(cp, inend, "$");
-    	    if (dp == (char *) 0) {
-    	    	len = inend-cp;
-    	    } else {
-    	    	len = dp-cp;
-    	    	if ((dp == inend-1) || ((strchr(SPECIALS, *(dp+1)) == 0)
-    	    	    	    	    	    && (*(dp+1) != '('))) {
-    	    	    len++;
-    	    	    dp = (char *) 0;
-    	    	} else  if (dp > inend-3 && *(dp+1) == '(') {
-    	    	    len++;
-    	    	    dp = (char *) 0;
-    	    	}
-    	    }
+	for (i = 0; i < argc; i++) {
+	    if (argv[i].dsc$a_pointer != 0) {
+		free(argv[i].dsc$a_pointer);
+		argv[i].dsc$a_pointer = 0;
+		argv[i].dsc$w_length = 0;
+	    }
+	}
+    }
 
-/*
-** Copy everything up to the "$(" into the output string, expanding its
-** size if necessary.
-*/
-    	    if (curlen+len > tmplen) {
-    	    	tmplen = curlen+len+128;
-    	    	tmp = realloc(tmp, tmplen);
-    	    }
-    	    memcpy(tmp+curlen, cp, len);
-    	    curlen += len;
+    exit(1);
 
-/*
-** If we found "$(", locate the closing ")" and extract the symbol name,
-** then look it up and stuff the resulting value into the output string.
-*/
-    	    if (dp == (char *) 0) {
-    	    	cp += len;
-    	    } else {
-    	    	int is_special = 0;
-    	    	int pct;
-    	    	dp++;
-    	    	if (*dp == '(') {
-    	    	    dp++;
-    	    	    pp = find_char(dp, inend, ")");
-/*
-**  Check for function calls, then embedded symbol references and lastly,
-**  check for $(var:<sfx>=<sfx>).
-*/
-    	    	    if (pp != (char *) 0) {
-			colp = find_char(dp, pp, " :");
-			if (colp != 0 && *colp == ' ') {
-			    len = min(colp-dp, MMK_S_SYMBOL);
-			    strncpy(var, dp, len);
-			    var[len] = '\0';
-			    upcase(var);
-
-			    // look up in functions
-			    // if found
-				// call apply_builtin with pointer to found block
-				// go round again
-			    // else
-				// fallthrough
-			}
-
-    	    	    	colp = find_char(dp, pp, "$");
-    	    	    	if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
-    	    	    	    	|| strchr(SPECIALS, *(colp+1)) != 0)) {
-    	    	    	    tmp[curlen++] = '$';
-    	    	    	    cp += len + 1;
-    	    	    	    dp = colp = pp = 0;
-    	    	    	    continue;
-    	    	    	}
-    	    	    	colp = find_char(dp, pp, ":");
-    	    	    	if (colp != 0) {
-    	    	    	    char *cp;
-    	    	    	    for (cp = colp; isspace(*(cp-1)); cp--);
-    	    	    	    len = min(cp-dp, MMK_S_SYMBOL);
-    	    	    	} else {
-    	    	    	    len = min(pp-dp,MMK_S_SYMBOL);
-    	    	    	}
-    	    	    	strncpy(var, dp, len);
-    	    	    	var[len] = '\0';
-    	    	    	upcase(var);
-    	    	    }
-    	    	} else {
-    	    	    pp = strchr(SPECIALS, *dp);
-    	    	    if (pp != 0) {
-    	    	    	strcpy(var, SPECIAL_VAR[pp-SPECIALS]);
-    	    	    	pp = dp;
-    	    	    	is_special = 1;
-    	    	    }
-    	    	}
-    	    	if (pp != 0) {
-    	    	    valsym = Lookup_Symbol(var);
-    	    	    if (valsym != (struct SYMBOL *) 0) {
-    	    	    	did_one = 1;
-    	    	    	if (strcmp(valsym->name, "MMS") == 0) resolved_MMS_macro = 1;
-    	    	    	if (colp != 0) {
-    	    	    	    apply_subst_rule(valsym->value, colp+1, &val, &len);
-    	    	    	    free_val = 1;
-    	    	    	} else {
-    	    	    	    val = valsym->value;
-    	    	    	    len = strlen(val);
-    	    	    	}
-    	    	    	cp = pp + 1;
-    	    	    } else {
-/*
-** If dont_resolve_unknowns is set and we didn't find the symbol in the
-** symbol table, just copy the symbol reference into the output string.
-** Otherwise, the symbol reference resolves to a null string.
-**
-** When dont_resolve_unknowns is set to 2, we resolve unknowns unless they
-** are on the special "non_resolvables" list.
-*/
-    	    	    	if (dont_resolve_unknowns == 1) {
-    	    	    	    len = 1;
-    	    	    	    val = is_special ? dp-1 : dp-2;
-    	    	    	    cp = is_special ? dp : dp-1;
-    	    	    	} else {
-    	    	    	    if (dont_resolve_unknowns == 2) {
-    	    	    	    	for (i = 0; i < sizeof(non_resolvables)/
-    	    	    	    	    	    	sizeof(non_resolvables[0]); i++) {
-    	    	    	    	    if (strcmp(var, non_resolvables[i]) == 0) break;
-    	    	    	    	}
-    	    	    	    	if (i < sizeof(non_resolvables)/
-    	    	    	    	    	    	sizeof(non_resolvables[0])) {
-    	    	    	    	    len = 1;
-    	    	    	    	    val = is_special ? dp-1 : dp-2;
-    	    	    	    	    cp = is_special ? dp : dp-1;
-    	    	    	    	} else {
-    	    	    	    	    len = 0;
-    	    	    	    	    val = dp;
-    	    	    	    	    cp = pp + 1;
-    	    	    	    	}
-    	    	    	    } else {
-    	    	    	    	len = 0;
-    	    	    	    	val = dp;
-    	    	    	    	cp = pp + 1;
-    	    	    	    }
-    	    	    	}
-    	    	    }
-    	    	} else {
-    	    	    len = 1;
-    	    	    val = dp-2;
-    	    	    cp = dp-1;
-    	    	}
-    	    	if (curlen+len > tmplen) {
-    	    	    tmplen = curlen+len+128;
-    	    	    tmp = realloc(tmp, tmplen);
-    	    	}
-    	    	memcpy(tmp+curlen, val, len);
-    	    	curlen += len;
-    	    	if (free_val) free(val);
-    	    }
-    	}
-
-    	if (!first) free(in);
-    	first = 0;
-
-    	if (did_one) {
-    	    in = tmp;
-    	    inlen = curlen;
-    	}
-
-    } while (did_one);
-
-#endif
     return 0;
 } /* apply_builtin */
+
+/*
+**++
+**  ROUTINE:	apply_word
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in WORD function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_word(int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend;
+    int e, n, status;
+
+    *out = 0;
+    *outlen = 0;
+
+    status = ots$cvt_tu_l(&argv[0], &n);
+    if (OK(status)) {
+	in = cp = argv[1].dsc$a_pointer;
+	inend = in + argv[1].dsc$w_length;
+	ep = 0;
+	e = 0;
+	while (cp < inend) {
+	    if (strchr(WHITESPACE, *cp) == (char *)0) {
+		e++;
+		ep = cp;
+		while ((strchr(WHITESPACE, *++cp) == (char *)0)
+		    && (cp < inend))
+		    ;
+	    }
+	    if (e == n) break;
+	    while ((strchr(WHITESPACE, *++cp) != (char *)0)
+		&& (cp < inend))
+		;
+	    ep = 0;
+	}
+	if (ep != (char *)0) {
+	    *outlen = ep-cp;
+	    *out = malloc(*outlen);
+	    memcpy(*out, ep, *outlen);
+	}
+    }
+
+    return 0;
+}
