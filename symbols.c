@@ -1136,7 +1136,7 @@ static int apply_word(int argc, char **out, int *outlen) {
     }
 
     return 0;
-}
+} /* apply_word */
 
 /*
 **++
@@ -1190,4 +1190,4 @@ static int apply_words(int argc, char **out, int *outlen) {
     *outlen = strlen(*out);
 
     return 0;
-}
+} /* apply_words */
