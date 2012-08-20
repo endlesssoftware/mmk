@@ -110,7 +110,7 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static int apply_builtin (struct FUNCTION *, char *, int, char **, int *,
 				int *, int);
-    static int apply_origin(int argc, char **out, int *outlen) {return 0;}
+    static int apply_origin(int, char **, int *);
     static int apply_word(int, char **, int*);
     static int apply_words(int, char **, int *);
 
@@ -1074,6 +1074,56 @@ static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
 
     return 0;
 } /* apply_builtin */
+
+/*
+**++
+**  ROUTINE:	apply_origin
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in ORIGIN function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_origin(int argc, char **out, int *outlen) {
+
+    static char *ORIGINS[] = { "UNDEFINED", "SPECIAL", "FILE",
+	"COMMAND LINE", "SPECIAL", "DEFAULT", "CLI SYMBOL", "TEMPORARY" };
+
+    struct SYMBOL *sym;
+    char *var;
+    int type;
+
+    var = malloc(argv[0].dsc$w_length+1);
+    memcpy(var, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
+    var[argv[0].dsc$w_length] = '\0';
+
+    sym = Lookup_Symbol(var);
+    if (sym == (struct SYMBOL *)0) {
+	*out = strdup(ORIGINS[0]);
+    } else {
+	type = (sym->type & ~0x7) + 1;
+	*out = strdup(ORIGINS[type]);
+    }
+    *outlen = strlen(*out);
+
+    return 0;
+} /* apply_origin */
 
 /*
 **++
