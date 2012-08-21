@@ -108,8 +108,8 @@
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
-    static int apply_builtin (struct FUNCTION *, char *, int, char **, int *,
-				int *, int);
+    static char *apply_builtin (struct FUNCTION *, char *, int, char **,
+				int *, int *, int);
     static int apply_origin(int, char **, int *);
     static int apply_word(int, char **, int*);
     static int apply_words(int, char **, int *);
@@ -388,6 +388,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 
     	    colp = 0;
     	    free_val = 0;
+	    val = 0;
 /*
 ** Look for the beginning of $(...)
 */
@@ -438,6 +439,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 			colp = find_char(dp, pp, " :");
 			if (colp != 0 && *colp == ' ') {
 			    int i;
+			    pp = 0;
 			    len = min(colp-dp, MMK_S_SYMBOL);
 			    strncpy(var, dp, len);
 			    var[len] = '\0';
@@ -447,40 +449,43 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 				if (strcmp(functions[i].name, var) == 0)
 				    break;
 			    }
-
 			    if (i < sizeof(functions) /
 				    sizeof(functions[0])) {
 				++colp;
-				did_one = apply_builtin(&functions[i], colp,
-						inend-colp, 0, 0,
+				cp = apply_builtin(&functions[i], colp,
+						inend-colp, &val, &len,
 						&resolved_MMS_macro,
 						dont_resolve_unknowns);
+// FIX THIS---------------------------------+
+//	Should not do this every time...    |
+//					    V
+				free_val = did_one = 1;
 			    } else {
 				// what do we do here?
+				//  warning with an unknown function and
+				//  replace with ''
 			    }
-
-			    // bail out?>
+			} else {
+    	    	    	    colp = find_char(dp, pp, "$");
+    	    	    	    if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
+    	    	    	        	|| strchr(SPECIALS, *(colp+1)) != 0)) {
+    	    	    	    	tmp[curlen++] = '$';
+    	    	    	    	cp += len + 1;
+    	    	    	    	dp = colp = pp = 0;
+    	    	    	    	continue;
+    	    	    	    }
+    	    	    	    colp = find_char(dp, pp, ":");
+    	    	    	    if (colp != 0) {
+    	    	    	    	char *cp;
+    	    	    	    	for (cp = colp; isspace(*(cp-1)); cp--);
+    	    	    	    	len = min(cp-dp, MMK_S_SYMBOL);
+    	    	    	    } else {
+    	    	    	    	len = min(pp-dp,MMK_S_SYMBOL);
+    	    	    	    }
+    	    	    	    strncpy(var, dp, len);
+    	    	    	    var[len] = '\0';
+    	    	    	    upcase(var);
 			}
-
-    	    	    	colp = find_char(dp, pp, "$");
-    	    	    	if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
-    	    	    	    	|| strchr(SPECIALS, *(colp+1)) != 0)) {
-    	    	    	    tmp[curlen++] = '$';
-    	    	    	    cp += len + 1;
-    	    	    	    dp = colp = pp = 0;
-    	    	    	    continue;
-    	    	    	}
-    	    	    	colp = find_char(dp, pp, ":");
-    	    	    	if (colp != 0) {
-    	    	    	    char *cp;
-    	    	    	    for (cp = colp; isspace(*(cp-1)); cp--);
-    	    	    	    len = min(cp-dp, MMK_S_SYMBOL);
-    	    	    	} else {
-    	    	    	    len = min(pp-dp,MMK_S_SYMBOL);
-    	    	    	}
-    	    	    	strncpy(var, dp, len);
-    	    	    	var[len] = '\0';
-    	    	    	upcase(var);
     	    	    }
     	    	} else {
     	    	    pp = strchr(SPECIALS, *dp);
@@ -539,7 +544,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    	    }
     	    	    	}
     	    	    }
-    	    	} else {
+    	    	} else if (val == 0) {
     	    	    len = 1;
     	    	    val = dp-2;
     	    	    cp = dp-1;
@@ -985,10 +990,9 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 **
 **
 */
-static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
-			  char **out, int *outlen,
-			  int *resolved_MMS_macro,
-			  int dont_resolve_unknowns) {
+static char *apply_builtin (struct FUNCTION *f, char *in, int inlen,
+			    char **out, int *outlen, int *resolved_MMS_macro,
+			    int dont_resolve_unknowns) {
 
     char *ap, *cp, *inend;
     int argc, depth, i, status;
@@ -1070,9 +1074,7 @@ static int apply_builtin (struct FUNCTION *f, char *in, int inlen,
 	}
     }
 
-    exit(1);
-
-    return 0;
+    return ++cp;
 } /* apply_builtin */
 
 /*
@@ -1121,6 +1123,7 @@ static int apply_origin(int argc, char **out, int *outlen) {
 	*out = strdup(ORIGINS[type]);
     }
     *outlen = strlen(*out);
+    free(var);
 
     return 0;
 } /* apply_origin */
@@ -1179,7 +1182,7 @@ static int apply_word(int argc, char **out, int *outlen) {
 	    ep = 0;
 	}
 	if (ep != (char *)0) {
-	    *outlen = ep-cp;
+	    *outlen = cp-ep;
 	    *out = malloc(*outlen);
 	    memcpy(*out, ep, *outlen);
 	}
