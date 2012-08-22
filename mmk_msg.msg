@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.13"
+.IDENT		"V1.14"
 !++
 !
 ! DESCRIPTION:
@@ -32,6 +32,7 @@
 !   09-FEB-2011 V1.11	Sneddon	    Add NYI, BADPARAM.
 !   10-FEB-2011 V1.12	Sneddon	    Add INFO, WARN, ERROR
 !   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
+!   03-AUG-2012 V1.14   Sneddon	    Add UTLBADMAC.
 !--
 
 .SEVERITY   	FATAL
@@ -98,5 +99,8 @@ SETDEF	    	<changed working directory to !AD>/FAO=2
 .SEVERITY   	ERROR
 SETDEFERR   	<error changing working directory to !AD>/FAO=2
 CMDLENERR   	<command line element too long>
+
+.SEVERITY	WARNING
+UTLBADMAC	<unterminated macro named '!AZ' at line !UL>
 
 .END

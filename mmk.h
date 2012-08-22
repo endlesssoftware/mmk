@@ -354,7 +354,7 @@ typedef POINTER SPHANDLE;
 */
     struct SYMBOL * Lookup_Symbol(char *name);
     void Define_Symbol(SYMTYPE symtype, char *name, char *val, int vallen, ...);
-    int Resolve_Symbols(char *in, int inlen, char * *out, int *outlen, int dont_resolve_unknowns);
+    int Resolve_Symbols(char *in, int inlen, char * *out, int *outlen, int dont_resolve_unknowns, ...);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *dep, struct OBJREF *srcref, struct QUE *chgque);
 /*
