@@ -102,14 +102,14 @@
 */
     struct SYMBOL *Lookup_Symbol(char *);
     void Define_Symbol(SYMTYPE, char *, char *, int, ...);
-    int Resolve_Symbols(char *, int, char **, int *, int);
+    int Resolve_Symbols(char *, int, char **, int *, int, ...);
     void Clear_Local_Symbols(void);
     static void Clear_Temporary_Symbols(unsigned);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (struct FUNCTION *, char *, int, char **,
-				int *, int *, int);
+				int *, int *, int *, int);
     static int apply_origin(int, char **, int *);
     static int apply_word(int, char **, int*);
     static int apply_words(int, char **, int *);
@@ -365,13 +365,24 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 **--
 */
 int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
-    	    	    	int dont_resolve_unknowns) {
+    	    	    	int dont_resolve_unknowns, ...) {
 
+    va_list ap;
     char *cp, *inend, *dp, *pp, *tmp, *val, *colp;
     struct SYMBOL *valsym;
     char var[MMK_S_SYMBOL+1];
     int len, curlen, tmplen, first, did_one, free_val, i;
-    int resolved_MMS_macro;
+    int actualcount, resolved_MMS_macro, *was_one;
+
+    va_count(actualcount);
+    if (actualcount > 5) {
+	va_start(ap, dont_resolve_unknowns);
+	was_one = va_arg(ap, int *);
+	*was_one = 0;
+	va_end(ap);
+    } else {
+	was_one = 0;
+    }
 
     first = 1;
     resolved_MMS_macro = 0;
@@ -454,12 +465,9 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 				++colp;
 				cp = apply_builtin(&functions[i], colp,
 						inend-colp, &val, &len,
-						&resolved_MMS_macro,
+						&resolved_MMS_macro, &did_one,
 						dont_resolve_unknowns);
-// FIX THIS---------------------------------+
-//	Should not do this every time...    |
-//					    V
-				free_val = did_one = 1;
+				free_val = 1;
 			    } else {
 				// what do we do here?
 				//  warning with an unknown function and
@@ -567,6 +575,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    inlen = curlen;
     	}
 
+	if (did_one && was_one != 0) *was_one = 1;
     } while (did_one);
 
     *out = tmp;
@@ -992,7 +1001,7 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 */
 static char *apply_builtin (struct FUNCTION *f, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
-			    int dont_resolve_unknowns) {
+			    int *did_one, int dont_resolve_unknowns) {
 
     char *ap, *cp, *inend;
     int argc, depth, i, status;
