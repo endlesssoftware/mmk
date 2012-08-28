@@ -78,9 +78,10 @@
 **					for builtin function support.
 **	02-JUL-2012 V2.4    Sneddon	Change to find_char arguments.
 **	25-JUL-2012 V3.0    Sneddon	Add builtin function support.
+**	28-AUG-2012 V3.0-1  Sneddon	Add ERROR, INFO, WARN, WORDLIST.
 **--
 */
-#pragma module SYMBOLS "V3.0"
+#pragma module SYMBOLS "V3.0-1"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -143,6 +144,7 @@
 	{ "ORIGIN",		0, 1, apply_origin,	},
 	{ "WARN",		1, 1, apply_warn,	},
 	{ "WORD",		0, 2, apply_word,	},
+	{ "WORDLIST",		0, 3, apply_wordlist,	},
 	{ "WORDS",		0, 1, apply_words,	}, };
 
 /*
@@ -1329,6 +1331,77 @@ static int apply_word (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_word */
+
+/*
+**++
+**  ROUTINE:	apply_wordlist
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in WORDLIST function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_wordlist (int argc, char **out, int *outlen) {
+
+    int bounds[2];
+
+    char *cp, *ep, *in, *inend;
+    int e, n, status;
+
+    *out = 0;
+    *outlen = 0;
+
+    status = ots$cvt_tu_l(&argv[0], &bounds[0]);
+    if (OK(status)) {
+	status = ots$cvt_tu_l(&argv[1], &bounds[1]);
+	if (OK(status)) {
+
+//--
+	in = cp = argv[2].dsc$a_pointer;
+	inend = in + argv[2].dsc$w_length;
+	ep = 0;
+	e = 0;
+	while (cp < inend) {
+	    if (strchr(WHITESPACE, *cp) == (char *)0) {
+		e++;
+		ep = cp;
+		while ((strchr(WHITESPACE, *++cp) == (char *)0)
+		    && (cp < inend))
+		    ;
+	    }
+	    if (e == n) break;
+	    while ((strchr(WHITESPACE, *++cp) != (char *)0)
+		&& (cp < inend))
+		;
+	    ep = 0;
+	}
+	if (ep != (char *)0) {
+	    *outlen = cp-ep;
+	    *out = malloc(*outlen);
+	    memcpy(*out, ep, *outlen);
+	}
+//--
+	}
+    }
+
+    return 0;
+} /* apply_wordlist */
 
 /*
 **++
