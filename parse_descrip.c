@@ -274,12 +274,13 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
     tpablk.tpa_l_maxlen = newmaxl;
 
     status = lib$tparse(&tpablk, &parse_state, &parse_key);
-
     free(upline);
-    if (!OK(status) && status != MMK__CONDSKIP)
-    	    lib$signal(MMK__PARSERR, 2, linelen, line,
-    	    	       MMK__ERRLOC, 3, current_line, strlen(current_file), current_file,
-    	    	       status);
+    if (!OK(status) && status != MMK__CONDSKIP) {
+	lib$signal(MMK__PARSERR, 2, linelen, line,
+    	    	   MMK__ERRLOC,  3, current_line, strlen(current_file),
+				    current_file,
+		   status);
+    }
     if (line != xline) free(line);
 
 } /* parse_descrip */
