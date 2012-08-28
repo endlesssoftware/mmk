@@ -108,8 +108,8 @@
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
-    static char *apply_builtin (struct FUNCTION *, char *, int, char **,
-				int *, int *, int *, int);
+    static char *apply_builtin (char *, char *, int, char **, int *, int *,
+				int *, int);
     static int apply_origin(int, char **, int *);
     static int apply_word(int, char **, int*);
     static int apply_words(int, char **, int *);
@@ -437,7 +437,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	cp += len;
     	    } else {
     	    	int is_special = 0;
-    	    	int pct;
+    	    	int builtin_called = 0;
     	    	dp++;
     	    	if (*dp == '(') {
     	    	    dp++;
@@ -455,24 +455,13 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 			    strncpy(var, dp, len);
 			    var[len] = '\0';
 			    upcase(var);
-			    for (i = 0; i < sizeof(functions) /
-					    sizeof(functions[0]); i++) {
-				if (strcmp(functions[i].name, var) == 0)
-				    break;
-			    }
-			    if (i < sizeof(functions) /
-				    sizeof(functions[0])) {
-				++colp;
-				cp = apply_builtin(&functions[i], colp,
+			    builtin_called = 1;
+			    ++colp;
+			    cp = apply_builtin(var, colp,
 						inend-colp, &val, &len,
 						&resolved_MMS_macro, &did_one,
 						dont_resolve_unknowns);
-				free_val = 1;
-			    } else {
-				// what do we do here?
-				//  warning with an unknown function and
-				//  replace with ''
-			    }
+			    free_val = (val != (char *)0);
 			} else {
     	    	    	    colp = find_char(dp, pp, "$");
     	    	    	    if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
@@ -503,20 +492,21 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    	is_special = 1;
     	    	    }
     	    	}
-    	    	if (pp != 0) {
-    	    	    valsym = Lookup_Symbol(var);
-    	    	    if (valsym != (struct SYMBOL *) 0) {
-    	    	    	did_one = 1;
-    	    	    	if (strcmp(valsym->name, "MMS") == 0) resolved_MMS_macro = 1;
-    	    	    	if (colp != 0) {
-    	    	    	    apply_subst_rule(valsym->value, colp+1, &val, &len);
-    	    	    	    free_val = 1;
+		if (!builtin_called) {
+    	    	    if (pp != 0) {
+    	    	    	valsym = Lookup_Symbol(var);
+    	    	    	if (valsym != (struct SYMBOL *) 0) {
+    	    	    	    did_one = 1;
+    	    	    	    if (strcmp(valsym->name, "MMS") == 0) resolved_MMS_macro = 1;
+    	    	    	    if (colp != 0) {
+    	    	    	    	apply_subst_rule(valsym->value, colp+1, &val, &len);
+    	    	    	    	free_val = 1;
+    	    	    	    } else {
+    	    	    	    	val = valsym->value;
+    	    	    	    	len = strlen(val);
+    	    	    	    }
+    	    	    	    cp = pp + 1;
     	    	    	} else {
-    	    	    	    val = valsym->value;
-    	    	    	    len = strlen(val);
-    	    	    	}
-    	    	    	cp = pp + 1;
-    	    	    } else {
 /*
 ** If dont_resolve_unknowns is set and we didn't find the symbol in the
 ** symbol table, just copy the symbol reference into the output string.
@@ -525,38 +515,39 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 ** When dont_resolve_unknowns is set to 2, we resolve unknowns unless they
 ** are on the special "non_resolvables" list.
 */
-    	    	    	if (dont_resolve_unknowns == 1) {
-    	    	    	    len = 1;
-    	    	    	    val = is_special ? dp-1 : dp-2;
-    	    	    	    cp = is_special ? dp : dp-1;
-    	    	    	} else {
-    	    	    	    if (dont_resolve_unknowns == 2) {
-    	    	    	    	for (i = 0; i < sizeof(non_resolvables)/
+    	    	    	    if (dont_resolve_unknowns == 1) {
+    	    	    	    	len = 1;
+    	    	    	    	val = is_special ? dp-1 : dp-2;
+    	    	    	    	cp = is_special ? dp : dp-1;
+    	    	    	    } else {
+    	    	    	    	if (dont_resolve_unknowns == 2) {
+    	    	    	    	    for (i = 0; i < sizeof(non_resolvables)/
     	    	    	    	    	    	sizeof(non_resolvables[0]); i++) {
-    	    	    	    	    if (strcmp(var, non_resolvables[i]) == 0) break;
-    	    	    	    	}
-    	    	    	    	if (i < sizeof(non_resolvables)/
+    	    	    	    	    	if (strcmp(var, non_resolvables[i]) == 0) break;
+    	    	    	    	    }
+    	    	    	    	    if (i < sizeof(non_resolvables)/
     	    	    	    	    	    	sizeof(non_resolvables[0])) {
-    	    	    	    	    len = 1;
-    	    	    	    	    val = is_special ? dp-1 : dp-2;
-    	    	    	    	    cp = is_special ? dp : dp-1;
+    	    	    	    	    	len = 1;
+    	    	    	    	    	val = is_special ? dp-1 : dp-2;
+    	    	    	    	    	cp = is_special ? dp : dp-1;
+    	    	    	    	    } else {
+    	    	    	    	    	len = 0;
+    	    	    	    	    	val = dp;
+    	    	    	    	    	cp = pp + 1;
+    	    	    	    	    }
     	    	    	    	} else {
     	    	    	    	    len = 0;
     	    	    	    	    val = dp;
     	    	    	    	    cp = pp + 1;
     	    	    	    	}
-    	    	    	    } else {
-    	    	    	    	len = 0;
-    	    	    	    	val = dp;
-    	    	    	    	cp = pp + 1;
     	    	    	    }
     	    	    	}
+    	    	    } else {
+    	    	    	len = 1;
+    	    	    	val = dp-2;
+    	    	    	cp = dp-1;
     	    	    }
-    	    	} else if (val == 0) {
-    	    	    len = 1;
-    	    	    val = dp-2;
-    	    	    cp = dp-1;
-    	    	}
+		}
     	    	if (curlen+len > tmplen) {
     	    	    tmplen = curlen+len+128;
     	    	    tmp = realloc(tmp, tmplen);
@@ -993,19 +984,46 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 } /* apply_full_subst_rule */
 
 /*
+**++
+**  ROUTINE:	apply_builtin
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	This function parses and calls all builtin functions.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
 **
 **
-**  at this point we are at the space following the function name...
+**  SIDE EFFECTS:   	None.
 **
-**
+**--
 */
-static char *apply_builtin (struct FUNCTION *f, char *in, int inlen,
+static char *apply_builtin (char *name, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
 			    int *did_one, int dont_resolve_unknowns) {
 
+    struct FUNCTION *f = 0;
     char *ap, *cp, *inend;
     int argc, depth, i, status;
 
+    for (i = 0; i < sizeof(functions)/sizeof(functions[0]); i++) {
+	if (strcmp(functions[i].name, name) == 0) {
+	    f = &functions[i];
+	    break;
+	}
+    }
+    *out = 0;
+    *outlen = 0;
     argc = 0;
     depth = 0;
     inend = in + inlen;
@@ -1046,41 +1064,45 @@ static char *apply_builtin (struct FUNCTION *f, char *in, int inlen,
 	}
     }
 
-    /*
-    ** Check the function to make sure we have enough arguments, etc.
-    ** and call the builtin handler.
-    */
-    if (argc < f->maxarg) {
-	lib$signal(MMK__INSFARGS, 1, f->name);
-    } else if (!f->vararg && argc > f->maxarg) {
-	lib$signal(MMK__TOOMANYARGS, 1, f->name);
-    } else {
-	for (i = 0; i < argc; i++) {
-	    if (0) {  // not supposed to process the argument...
-	        // copy the arguments with malloc/memcpy
-	    } else {
-	        char *rptr;
-	        int rlen;
-	        *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
+    if (f != (struct FUNCTION *)0) {
+	/*
+	** Check the function to make sure we have enough arguments, etc.
+	** and call the builtin handler.
+	*/
+	if (argc < f->maxarg) {
+	    lib$signal(MMK__INSFARGS, 1, f->name);
+	} else if (!f->vararg && argc > f->maxarg) {
+	    lib$signal(MMK__TOOMANYARGS, 1, f->name);
+   	} else {
+	    for (i = 0; i < argc; i++) {
+		if (0) {  // not supposed to process the argument...
+	            // copy the arguments with malloc/memcpy
+		} else {
+	            char *rptr;
+	            int rlen;
+	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
 						&rlen, dont_resolve_unknowns);
-		argv[i].dsc$a_pointer = rptr;
-		argv[i].dsc$w_length = (unsigned short)rlen;
+		    argv[i].dsc$a_pointer = rptr;
+		    argv[i].dsc$w_length = (unsigned short)rlen;
+	    	}
+	    }
+
+	    // if unresolved
+	    	// no call....what do we do?
+	    // else
+	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
+
+	    for (i = 0; i < argc; i++) {
+	    	if (argv[i].dsc$a_pointer != 0) {
+		    free(argv[i].dsc$a_pointer);
+		    argv[i].dsc$a_pointer = 0;
+		    argv[i].dsc$w_length = 0;
+	    	}
 	    }
 	}
-
-	// if unresolved
-	    // no call....what do we do?
-	// else
-	    *resolved_MMS_macro |= (f->handler)(argc, out, outlen);
-
-	for (i = 0; i < argc; i++) {
-	    if (argv[i].dsc$a_pointer != 0) {
-		free(argv[i].dsc$a_pointer);
-		argv[i].dsc$a_pointer = 0;
-		argv[i].dsc$w_length = 0;
-	    }
-	}
+    } else {
+	lib$signal(MMK__UNRFUN, 1, name);
     }
 
     return ++cp;

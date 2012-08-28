@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.14"
+.IDENT		"V1.15"
 !++
 !
 ! DESCRIPTION:
@@ -9,6 +9,7 @@
 !
 ! AUTHOR:   	    M. Madison
 !   	    	    COPYRIGHT © 1992-1998, MADGOAT SOFTWARE.
+!   	    	    COPYRIGHT © 2012, ENDLESS SOFTWARE SOLUTIONS.
 !   	    	    ALL RIGHTS RESERVED.
 !
 ! CREATION DATE: 20-AUG-1992
@@ -33,6 +34,7 @@
 !   10-FEB-2011 V1.12	Sneddon	    Add INFO, WARN, ERROR
 !   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
 !   03-AUG-2012 V1.14   Sneddon	    Add UTLBADMAC.
+!   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN.
 !--
 
 .SEVERITY   	FATAL
@@ -101,6 +103,7 @@ SETDEFERR   	<error changing working directory to !AD>/FAO=2
 CMDLENERR   	<command line element too long>
 
 .SEVERITY	WARNING
-UTLBADMAC	<unterminated macro named '!AZ' at line !UL>
+UTLBADMAC	<unterminated macro named '!AZ' at line !UL>/FAO=2
+UNRFUN		<unrecognized function '!AZ'>/FAO=1
 
 .END
