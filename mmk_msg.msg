@@ -34,7 +34,7 @@
 !   10-FEB-2011 V1.12	Sneddon	    Add INFO, WARN, ERROR
 !   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
 !   03-AUG-2012 V1.14   Sneddon	    Add UTLBADMAC.
-!   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN.
+!   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN. Fixup ERROR, INFO, WARN.
 !--
 
 .SEVERITY   	FATAL
@@ -55,7 +55,7 @@ MACFILSYNTAX	<syntax error at line !UL in macro definition file !AZ>/FAO=2
 ACTNODEPRULE 	<action line found with no dependency or rule preceding it>
 NYI		<built-in function '!AZ' not yet implemented>
 BADPARAM	<bad parameter value passed to '!AZ'>/FAO=1
-ERROR		<!AZ>/FAO=1
+ERROR		<!AS>/FAO=1
 
 .SEVERITY   	ERROR
 ELSENOIF    	<.ELSE directive encountered without corresponding .IF or .IFDEF>
@@ -72,7 +72,7 @@ CIRCDEP	    	<circular dependency found for target !AZ>/FAO=1
 CONNEXION   	<target !AZ found in circular dependency>/FAO=1
 INSFARGS	<insufficient function parameters for '!AZ'>/FAO=1
 TOOMANYARGS	<too many function parameters for '!AZ'>/FAO=1
-WARN		<!AZ>/FAO=1
+WARN		<!AS>/FAO=1
 
 .SEVERITY   	INFORMATION
 OPENDESC    	<reading description file !AZ>/FAO=1
@@ -90,7 +90,7 @@ ACTNOUPD    	<action did not update target !AZ>/FAO=1
 ERRLOC	    	<at line number !UL in file !AD>/FAO=3
 NEEDSUPD    	<an update is required for target !AZ>/FAO=1
 TRGCURRENT   	<no update required for target !AZ>/FAO=1
-INFO		<!AZ>/FAO=1
+INFO		<!AS>/FAO=1
 
 .SEVERITY   	SUCCESS
 NOUPDATE    	<target !AZ is up-to-date>/FAO=1

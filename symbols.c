@@ -110,7 +110,10 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
+    static int apply_error(int, char **, int*);
+    static int apply_info(int, char **, int*);
     static int apply_origin(int, char **, int *);
+    static int apply_warn(int, char **, int*);
     static int apply_word(int, char **, int*);
     static int apply_words(int, char **, int *);
 
@@ -135,7 +138,10 @@
     	"MMS$CMS_LIBRARY", "MMS$CMS_ELEMENT", "MMS$CMS_GEN",
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
+	{ "ERROR",		1, 1, apply_error,	},
+	{ "INFO",		1, 1, apply_info,	},
 	{ "ORIGIN",		0, 1, apply_origin,	},
+	{ "WARN",		1, 1, apply_warn,	},
 	{ "WORD",		0, 2, apply_word,	},
 	{ "WORDS",		0, 1, apply_words,	}, };
 
@@ -1110,6 +1116,73 @@ static char *apply_builtin (char *name, char *in, int inlen,
 
 /*
 **++
+**  ROUTINE:	apply_error
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in ERROR function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_error (int argc, char **out, int *outlen) {
+
+    lib$stop(MMK__ERROR, 1, &argv[0]);
+
+    return 0;
+} /* apply_error */
+
+/*
+**++
+**  ROUTINE:	apply_info
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in INFO function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_info (int argc, char **out, int *outlen) {
+
+    int i;
+
+    for (i = 0; i < argc; i++)
+	lib$signal(MMK__INFO, 1, &argv[i]);
+
+    return 0;
+} /* apply_info */
+
+/*
+**++
 **  ROUTINE:	apply_origin
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -1133,7 +1206,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
 **
 **--
 */
-static int apply_origin(int argc, char **out, int *outlen) {
+static int apply_origin (int argc, char **out, int *outlen) {
 
     static char *ORIGINS[] = { "UNDEFINED", "SPECIAL", "FILE",
 	"COMMAND LINE", "SPECIAL", "DEFAULT", "CLI SYMBOL", "TEMPORARY" };
@@ -1161,6 +1234,41 @@ static int apply_origin(int argc, char **out, int *outlen) {
 
 /*
 **++
+**  ROUTINE:	apply_warn
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in WARN function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_warn (int argc, char **out, int *outlen) {
+
+    int i;
+
+    for (i = 0; i < argc; i++)
+	lib$signal(MMK__WARN, 1, &argv[i]);
+
+    return 0;
+} /* apply_warn */
+
+/*
+**++
 **  ROUTINE:	apply_word
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -1184,7 +1292,7 @@ static int apply_origin(int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_word(int argc, char **out, int *outlen) {
+static int apply_word (int argc, char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend;
     int e, n, status;
@@ -1247,7 +1355,7 @@ static int apply_word(int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_words(int argc, char **out, int *outlen) {
+static int apply_words (int argc, char **out, int *outlen) {
 
     char *cp, *in, *inend;
     int e;
