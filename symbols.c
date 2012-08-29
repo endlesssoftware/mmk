@@ -81,7 +81,8 @@
 **	28-AUG-2012 V3.0-1  Sneddon	Add ERROR, INFO, WARN, WORDLIST.
 **	29-AUG-2012 V3.0-2  Sneddon	Improve WORD and WORDS range checking.
 **					 Add FIRSTWORD and LASTWORD. WARNING
-**					 alias for WARN.
+**					 alias for WARN.  All builtin file
+**					 operations.
 **--
 */
 #pragma module SYMBOLS "V3.0-2"
@@ -91,6 +92,7 @@
 #include <string.h>
 #include <ots$routines.h>
 #include <ctype.h>
+#include <rms.h>
 #define ARGMAX (sizeof(int) * 8)
 /*
 ** Builtin function descriptor
@@ -114,12 +116,20 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
+    static int apply_basename(int, char **, int*);
+    static int apply_dir(int, char **, int*);
+    static int apply_directory(int, char **, int*);
     static int apply_error(int, char **, int*);
+    static int apply_filename(int, char **, int*);
+    static int apply_filetype(int, char **, int*);
+    static int apply_fileversion(int, char **, int*);
     static int apply_firstword(int, char **, int*);
     static int apply_info(int, char **, int*);
     static int apply_lastword(int, char **, int*);
+    static int apply_notdir(int, char **, int*);
     static int apply_origin(int, char **, int *);
     static int apply_warn(int, char **, int*);
+    static int apply_wildcard(int, char **, int*);
     static int apply_word(int, char **, int*);
     static int apply_wordlist(int, char **, int*);
     static int apply_words(int, char **, int *);
@@ -145,16 +155,24 @@
     	"MMS$CMS_LIBRARY", "MMS$CMS_ELEMENT", "MMS$CMS_GEN",
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
-	{ "ERROR",		1, 1, apply_error,	},
-	{ "FIRSTWORD",		0, 1, apply_firstword,	},
-	{ "INFO",		1, 1, apply_info,	},
-	{ "LASTWORD",		0, 1, apply_lastword,	},
-	{ "ORIGIN",		0, 1, apply_origin,	},
-	{ "WARN",		1, 1, apply_warn,	},
-	{ "WARNING",		1, 1, apply_warn,	},
-	{ "WORD",		0, 2, apply_word,	},
-	{ "WORDLIST",		0, 3, apply_wordlist,	},
-	{ "WORDS",		0, 1, apply_words,	}, };
+	{ "BASENAME",		0, 1, apply_basename,	 },
+	{ "DIR",		0, 1, apply_dir,	 },
+	{ "DIRECTORY",		0, 1, apply_directory,	 },
+	{ "ERROR",		1, 1, apply_error,	 },
+	{ "FILENAME",		0, 1, apply_filename,	 },
+	{ "FILETYPE",		0, 1, apply_filetype,	 },
+	{ "FILEVERSION",	0, 1, apply_fileversion, },
+	{ "FIRSTWORD",		0, 1, apply_firstword,	 },
+	{ "INFO",		1, 1, apply_info,	 },
+	{ "LASTWORD",		0, 1, apply_lastword,	 },
+	{ "NOTDIR",		0, 1, apply_notdir,	 },
+	{ "ORIGIN",		0, 1, apply_origin,	 },
+	{ "WARN",		1, 1, apply_warn,	 },
+	{ "WARNING",		1, 1, apply_warn,	 },
+	{ "WILDCARD",		0, 1, apply_wildcard,	 },
+	{ "WORD",		0, 2, apply_word,	 },
+	{ "WORDLIST",		0, 3, apply_wordlist,	 },
+	{ "WORDS",		0, 1, apply_words,	 }, };
 
 /*
 **++
@@ -1127,6 +1145,207 @@ static char *apply_builtin (char *name, char *in, int inlen,
 
 /*
 **++
+**  ROUTINE:	apply_basename
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in BASENAME  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_basename (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_dev,
+			   nam.nam$b_dev + nam.nam$b_dir + nam.nam$b_name,
+			   " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_basename */
+
+/*
+**++
+**  ROUTINE:	apply_dir
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in DIR  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_dir (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_dev, nam.nam$b_dev + nam.nam$b_dir,
+			   " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_dir */
+
+/*
+**++
+**  ROUTINE:	apply_directory
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in DIRECTORY  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_directory (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_dir, nam.nam$b_dir, " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_directory */
+
+/*
+**++
 **  ROUTINE:	apply_error
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -1156,6 +1375,204 @@ static int apply_error (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_error */
+
+/*
+**++
+**  ROUTINE:	apply_filename
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FILENAME  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_filename (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_name, nam.nam$b_name, " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_filename */
+
+/*
+**++
+**  ROUTINE:	apply_filetype
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FILETYPE function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_filetype (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_type, nam.nam$b_type, " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_filetype */
+
+/*
+**++
+**  ROUTINE:	apply_fileversion
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FILEVERSION function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_fileversion (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_fileversion */
 
 /*
 **++
@@ -1243,6 +1660,47 @@ static int apply_info (int argc, char **out, int *outlen) {
 
 /*
 **++
+**  ROUTINE:	apply_join
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in JOIN function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_join (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    // loop until no more
+	// find first element  s1:s1len
+	// find second element s2:s2len
+
+	// cat out, s1:slen,s2:s2len
+
+    return 0;
+} /* apply_join */
+
+/*
+**++
 **  ROUTINE:	apply_lastword
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -1289,6 +1747,73 @@ static int apply_lastword (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_lastword */
+
+/*
+**++
+**  ROUTINE:	apply_notdir
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in NOTDIR  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_notdir (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+	    	*out = cat(*out, nam.nam$l_name,
+			   nam.nam$b_name + nam.nam$b_type, " ", 1);
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_notdir */
 
 /*
 **++
@@ -1375,6 +1900,77 @@ static int apply_warn (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_warn */
+
+/*
+**++
+**  ROUTINE:	apply_wildcard
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in WILDCARD  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_wildcard (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+    fab = cc$rms_fab;
+    fab.fab$l_nam = &nam;
+    nam = cc$rms_nam;
+    nam.nam$l_esa = esa;
+    nam.nam$b_ess = sizeof(esa);
+    nam.nam$l_rsa = rsa;
+    nam.nam$b_rss = sizeof(rsa);
+    nam.nam$b_nop = NAM$M_SYNCHK;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
+#endif
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) == (char *)0) {
+	    fab.fab$l_fna = cp;
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		;
+	    fab.fab$b_fns = cp - fab.fab$l_fna;
+	    if (OK(sys$parse(&fab))) {
+		while (OK(sys$search(&fab))) {
+	    	    *out = cat(*out, nam.nam$l_name,
+			       nam.nam$b_name + nam.nam$b_type, " ", 1);
+		}
+	    }
+	}
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+	    ;
+    }
+    *outlen = strlen(*out) - 1;
+    *out[*outlen] = '\0';
+
+    return 0;
+} /* apply_wildcard */
 
 /*
 **++
