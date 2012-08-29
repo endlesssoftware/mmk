@@ -79,9 +79,10 @@
 **	02-JUL-2012 V2.4    Sneddon	Change to find_char arguments.
 **	25-JUL-2012 V3.0    Sneddon	Add builtin function support.
 **	28-AUG-2012 V3.0-1  Sneddon	Add ERROR, INFO, WARN, WORDLIST.
+**	29-AUG-2012 V3.0-2  Sneddon	Improve WORD and WORDS range checking.
 **--
 */
-#pragma module SYMBOLS "V3.0-1"
+#pragma module SYMBOLS "V3.0-2"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -1313,13 +1314,13 @@ static int apply_word (int argc, char **out, int *outlen) {
 	    if (strchr(WHITESPACE, *cp) == (char *)0) {
 		e++;
 		ep = cp;
-		while ((strchr(WHITESPACE, *++cp) == (char *)0)
-		    && (cp < inend))
+	        while ((++cp < inend)
+		    && (strchr(WHITESPACE, *cp) == (char *) 0))
 		    ;
 	    }
 	    if (e == n) break;
-	    while ((strchr(WHITESPACE, *++cp) != (char *)0)
-		&& (cp < inend))
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) != (char *) 0))
 		;
 	    ep = 0;
 	}
@@ -1434,12 +1435,12 @@ static int apply_words (int argc, char **out, int *outlen) {
     while (cp < inend) {
 	if (strchr(WHITESPACE, *cp) == (char *)0) {
 	    e++;
-	    while ((strchr(WHITESPACE, *++cp) == (char *)0)
-		&& (cp < inend))
+	    while ((++cp < inend)
+		&& (strchr(WHITESPACE, *cp) == (char *) 0))
 		;
 	}
-	while ((strchr(WHITESPACE, *++cp) != (char *)0)
-	    && (cp < inend))
+	while ((++cp < inend)
+	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
 
