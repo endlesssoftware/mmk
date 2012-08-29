@@ -218,14 +218,21 @@ char *itoa(int i) {
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**	Concatenates null-terminated strings, dynamically.  Anything
-**  returned by this function will need to be free()'d by the caller.
+**	Concatenates strings, dynamically.  Arguments following the input
+**  string (which must be a pointer of zero or to a null-terminated, malloc'd
+**  string) must be a string, length pair.  If the length is -1, the string
+**  is assumed to be null-terminated and the length taken from the string
+**  with strlen.
+**
+**	There is a special case that if the last argument is odd (as int,
+**  no length) it is assumed that the last string is already null-terminated
+**  and the length is taken with strlen.
 **
 **  RETURNS:	pointer to char
 **
 **  PROTOTYPE:
 **
-**  	cat(char *dest, ...)
+**  	cat(char *in, [ char *, int , ... [ char *])
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -235,7 +242,8 @@ char *itoa(int i) {
 **  	    0: memory allocation error
 **  	non-0: pointer to the character
 **
-**  SIDE EFFECTS:   	None.
+**  SIDE EFFECTS:   	Uses malloc/realloc to allocate all storage, the
+**			caller needs to free this themselves using free.
 **
 **--
 */
