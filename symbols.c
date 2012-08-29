@@ -116,6 +116,7 @@
     static int apply_origin(int, char **, int *);
     static int apply_warn(int, char **, int*);
     static int apply_word(int, char **, int*);
+    static int apply_wordlist(int, char **, int*);
     static int apply_words(int, char **, int *);
 
 /*
@@ -1359,44 +1360,35 @@ static int apply_word (int argc, char **out, int *outlen) {
 */
 static int apply_wordlist (int argc, char **out, int *outlen) {
 
-    int bounds[2];
-
-    char *cp, *ep, *in, *inend;
-    int e, n, status;
+    int b, e, i, status;
+    char *cp, *in, *inend, *sp;
 
     *out = 0;
     *outlen = 0;
 
-    status = ots$cvt_tu_l(&argv[0], &bounds[0]);
+    status = ots$cvt_tu_l(&argv[0], &b);
     if (OK(status)) {
-	status = ots$cvt_tu_l(&argv[1], &bounds[1]);
+	status = ots$cvt_tu_l(&argv[1], &e);
 	if (OK(status)) {
-
-//--
-	in = cp = argv[2].dsc$a_pointer;
-	inend = in + argv[2].dsc$w_length;
-	ep = 0;
-	e = 0;
-	while (cp < inend) {
-	    if (strchr(WHITESPACE, *cp) == (char *)0) {
-		e++;
-		ep = cp;
-		while ((strchr(WHITESPACE, *++cp) == (char *)0)
-		    && (cp < inend))
+	    in = cp = argv[2].dsc$a_pointer;
+	    inend = in + argv[2].dsc$w_length;
+	    i = 0;
+	    while (cp < inend) {
+	    	if (strchr(WHITESPACE, *cp) == (char *)0) {
+		    i++;
+		    sp = cp;
+		    while ((++cp < inend)
+			&& (strchr(WHITESPACE, *cp) == (char *) 0))
+		    	;
+		    if (i >= b && i <= e)
+		    	*out = cat(*out, sp, cp-sp, " ", 1);
+		    if (i >= e) break;
+	    	}
+	        while ((++cp < inend)
+		    && (strchr(WHITESPACE, *cp) != (char *) 0))
 		    ;
 	    }
-	    if (e == n) break;
-	    while ((strchr(WHITESPACE, *++cp) != (char *)0)
-		&& (cp < inend))
-		;
-	    ep = 0;
-	}
-	if (ep != (char *)0) {
-	    *outlen = cp-ep;
-	    *out = malloc(*outlen);
-	    memcpy(*out, ep, *outlen);
-	}
-//--
+	    if (*out != 0) *outlen = strlen(*out) - 1;
 	}
     }
 

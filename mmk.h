@@ -380,7 +380,7 @@ typedef POINTER SPHANDLE;
 */
     void Build_Suffix_List(char *line, int linelen);
     char * itoa(int);
-    char * cat(char *dest, char *src, int slen);
+    char * cat(char *dest, ...);
     char * trim(char *s);
     char * find_char(char *base, char *end, char *charset);
     void upcase(char *str);
