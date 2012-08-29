@@ -80,6 +80,7 @@
 **	25-JUL-2012 V3.0    Sneddon	Add builtin function support.
 **	28-AUG-2012 V3.0-1  Sneddon	Add ERROR, INFO, WARN, WORDLIST.
 **	29-AUG-2012 V3.0-2  Sneddon	Improve WORD and WORDS range checking.
+**					 Add FIRSTWORD and LASTWORD.
 **--
 */
 #pragma module SYMBOLS "V3.0-2"
@@ -113,7 +114,9 @@
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
     static int apply_error(int, char **, int*);
+    static int apply_firstword(int, char **, int*);
     static int apply_info(int, char **, int*);
+    static int apply_lastword(int, char **, int*);
     static int apply_origin(int, char **, int *);
     static int apply_warn(int, char **, int*);
     static int apply_word(int, char **, int*);
@@ -142,7 +145,9 @@
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
 	{ "ERROR",		1, 1, apply_error,	},
+	{ "FIRSTWORD",		0, 1, apply_firstword,	},
 	{ "INFO",		1, 1, apply_info,	},
+	{ "LASTWORD",		0, 1, apply_lastword,	},
 	{ "ORIGIN",		0, 1, apply_origin,	},
 	{ "WARN",		1, 1, apply_warn,	},
 	{ "WORD",		0, 2, apply_word,	},
@@ -1152,6 +1157,55 @@ static int apply_error (int argc, char **out, int *outlen) {
 
 /*
 **++
+**  ROUTINE:	apply_firstword
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FIRSTWORD function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_firstword (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while ((cp < inend)
+	&& (strchr(WHITESPACE, *cp++) != (char *) 0))
+	;
+    if (cp < inend) {
+	sp = cp-1;
+	while ((cp < inend)
+	    && (strchr(WHITESPACE, *cp++) == (char *) 0))
+	    ;
+	*outlen = cp-sp;
+	*out = cat(0, sp, *outlen);
+    }
+
+    return 0;
+} /* apply_firstword */
+
+/*
+**++
 **  ROUTINE:	apply_info
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -1184,6 +1238,55 @@ static int apply_info (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_info */
+
+/*
+**++
+**  ROUTINE:	apply_lastword
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in LASTWORD function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_lastword (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    inend = argv[0].dsc$a_pointer;
+    in = cp = inend + argv[0].dsc$w_length;
+    while ((--cp >= inend)
+	&& (strchr(WHITESPACE, *cp) != (char *) 0))
+	;
+    if (cp >= inend) {
+	ep = cp;
+	while ((--cp >= inend)
+	    && (strchr(WHITESPACE, *cp) == (char *) 0))
+	    ;
+	*outlen = ep-cp;
+	*out = cat(0, ++cp, *outlen);
+    }
+
+    return 0;
+} /* apply_lastword */
 
 /*
 **++
