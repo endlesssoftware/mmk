@@ -1206,7 +1206,6 @@ static int apply_basename (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_basename */
@@ -1273,7 +1272,6 @@ static int apply_dir (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_dir */
@@ -1339,7 +1337,6 @@ static int apply_directory (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_directory */
@@ -1437,7 +1434,6 @@ static int apply_filename (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_filename */
@@ -1503,7 +1499,6 @@ static int apply_filetype (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_filetype */
@@ -1569,7 +1564,6 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_fileversion */
@@ -1810,7 +1804,6 @@ static int apply_notdir (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_notdir */
@@ -1967,7 +1960,6 @@ static int apply_wildcard (int argc, char **out, int *outlen) {
 	    ;
     }
     *outlen = strlen(*out) - 1;
-    *out[*outlen] = '\0';
 
     return 0;
 } /* apply_wildcard */
