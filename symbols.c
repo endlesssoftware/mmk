@@ -80,7 +80,8 @@
 **	25-JUL-2012 V3.0    Sneddon	Add builtin function support.
 **	28-AUG-2012 V3.0-1  Sneddon	Add ERROR, INFO, WARN, WORDLIST.
 **	29-AUG-2012 V3.0-2  Sneddon	Improve WORD and WORDS range checking.
-**					 Add FIRSTWORD and LASTWORD.
+**					 Add FIRSTWORD and LASTWORD. WARNING
+**					 alias for WARN.
 **--
 */
 #pragma module SYMBOLS "V3.0-2"
@@ -150,6 +151,7 @@
 	{ "LASTWORD",		0, 1, apply_lastword,	},
 	{ "ORIGIN",		0, 1, apply_origin,	},
 	{ "WARN",		1, 1, apply_warn,	},
+	{ "WARNING",		1, 1, apply_warn,	},
 	{ "WORD",		0, 2, apply_word,	},
 	{ "WORDLIST",		0, 3, apply_wordlist,	},
 	{ "WORDS",		0, 1, apply_words,	}, };
