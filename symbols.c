@@ -1074,7 +1074,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
     while (cp < inend) {
 	cp = find_char(ap, inend, ",)$");
 	if (cp == (char *)0) {
-	    lib$signal(MMK__UTLBADMAC, 2, f->name, 1); // where is line no.?
+	    lib$signal(MMK__UTLBADMAC, 1, f->name);
 	    break;
 	} else {
 	    if (*cp == '$') {

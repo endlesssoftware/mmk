@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.15"
+.IDENT		"V1.15-1"
 !++
 !
 ! DESCRIPTION:
@@ -35,6 +35,7 @@
 !   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
 !   03-AUG-2012 V1.14   Sneddon	    Add UTLBADMAC.
 !   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN. Fixup ERROR, INFO, WARN.
+!   03-SEP-2012 V1.15-1 Sneddon	    Change UTLBADMAC to remove line number.
 !--
 
 .SEVERITY   	FATAL
@@ -103,7 +104,7 @@ SETDEFERR   	<error changing working directory to !AD>/FAO=2
 CMDLENERR   	<command line element too long>
 
 .SEVERITY	WARNING
-UTLBADMAC	<unterminated macro named '!AZ' at line !UL>/FAO=2
+UTLBADMAC	<unterminated macro named '!AZ'>/FAO=1
 UNRFUN		<unrecognized function '!AZ'>/FAO=1
 
 .END
