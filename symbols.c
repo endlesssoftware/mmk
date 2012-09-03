@@ -83,9 +83,11 @@
 **					 Add FIRSTWORD and LASTWORD. WARNING
 **					 alias for WARN.  All builtin file
 **					 operations.
+**	31-AUG-2012 V3.1    Sneddon	Add support for builtins that handle
+**					 their own argument resolution.
 **--
 */
-#pragma module SYMBOLS "V3.0-2"
+#pragma module SYMBOLS "V3.1"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -99,7 +101,7 @@
 */
     struct FUNCTION {
 	char *name;
-	int vararg, maxarg;
+	int vararg, maxarg, mask;
 	int (*handler)(int, char **, int *);
     };
 
@@ -116,6 +118,7 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
+    static int apply_and(int i, char **o, int *l) { return 0; }
     static int apply_basename(int, char **, int*);
     static int apply_dir(int, char **, int*);
     static int apply_directory(int, char **, int*);
@@ -124,9 +127,11 @@
     static int apply_filetype(int, char **, int*);
     static int apply_fileversion(int, char **, int*);
     static int apply_firstword(int, char **, int*);
+    static int apply_if(int i, char **o, int *l) { return 0; }
     static int apply_info(int, char **, int*);
     static int apply_lastword(int, char **, int*);
     static int apply_notdir(int, char **, int*);
+    static int apply_or(int, char **, int *);
     static int apply_origin(int, char **, int *);
     static int apply_warn(int, char **, int*);
     static int apply_wildcard(int, char **, int*);
@@ -155,24 +160,27 @@
     	"MMS$CMS_LIBRARY", "MMS$CMS_ELEMENT", "MMS$CMS_GEN",
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
-	{ "BASENAME",		0, 1, apply_basename,	 },
-	{ "DIR",		0, 1, apply_dir,	 },
-	{ "DIRECTORY",		0, 1, apply_directory,	 },
-	{ "ERROR",		1, 1, apply_error,	 },
-	{ "FILENAME",		0, 1, apply_filename,	 },
-	{ "FILETYPE",		0, 1, apply_filetype,	 },
-	{ "FILEVERSION",	0, 1, apply_fileversion, },
-	{ "FIRSTWORD",		0, 1, apply_firstword,	 },
-	{ "INFO",		1, 1, apply_info,	 },
-	{ "LASTWORD",		0, 1, apply_lastword,	 },
-	{ "NOTDIR",		0, 1, apply_notdir,	 },
-	{ "ORIGIN",		0, 1, apply_origin,	 },
-	{ "WARN",		1, 1, apply_warn,	 },
-	{ "WARNING",		1, 1, apply_warn,	 },
-	{ "WILDCARD",		0, 1, apply_wildcard,	 },
-	{ "WORD",		0, 2, apply_word,	 },
-	{ "WORDLIST",		0, 3, apply_wordlist,	 },
-	{ "WORDS",		0, 1, apply_words,	 }, };
+	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
+	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
+	{ "DIR",		0, 1, 0x00000000, apply_dir,	     },
+	{ "DIRECTORY",		0, 1, 0x00000000, apply_directory,   },
+	{ "ERROR",		1, 1, 0x00000000, apply_error,	     },
+	{ "FILENAME",		0, 1, 0x00000000, apply_filename,    },
+	{ "FILETYPE",		0, 1, 0x00000000, apply_filetype,    },
+	{ "FILEVERSION",	0, 1, 0x00000000, apply_fileversion, },
+	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
+	{ "IF",			1, 2, 0x00000007, apply_info,	     },
+	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
+	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
+	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
+	{ "OR",			1, 1, 0xFFFFFFFF, apply_or,	     },
+	{ "ORIGIN",		0, 1, 0x00000000, apply_origin,	     },
+	{ "WARN",		1, 1, 0x00000000, apply_warn,	     },
+	{ "WARNING",		1, 1, 0x00000000, apply_warn,	     },
+	{ "WILDCARD",		0, 1, 0x00000000, apply_wildcard,    },
+	{ "WORD",		0, 2, 0x00000000, apply_word,	     },
+	{ "WORDLIST",		0, 3, 0x00000000, apply_wordlist,    },
+	{ "WORDS",		0, 1, 0x00000000, apply_words,	     }, };
 
 /*
 **++
@@ -1110,14 +1118,17 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	    lib$signal(MMK__TOOMANYARGS, 1, f->name);
    	} else {
 	    for (i = 0; i < argc; i++) {
-		if (0) {  // not supposed to process the argument...
-	            // copy the arguments with malloc/memcpy
+		if (f->mask & (1 << i)) {
+		    char *tmp;
+		    tmp = cat(0, argv[i].dsc$a_pointer, argv[i].dsc$w_length);
+		    argv[i].dsc$a_pointer = tmp;
 		} else {
 	            char *rptr;
 	            int rlen;
 	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
-						&rlen, dont_resolve_unknowns);
+						&rlen, dont_resolve_unknowns,
+						did_one);
 		    argv[i].dsc$a_pointer = rptr;
 		    argv[i].dsc$w_length = (unsigned short)rlen;
 	    	}
@@ -1125,6 +1136,8 @@ static char *apply_builtin (char *name, char *in, int inlen,
 
 	    // if unresolved
 	    	// no call....what do we do?
+		// did_one = 0
+		// how can we tell is something wasn't resolved?
 	    // else
 	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
 
@@ -1807,6 +1820,73 @@ static int apply_notdir (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_notdir */
+
+/*
+**++
+**  ROUTINE:	apply_or
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in OR function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_or (int argc, char **out, int *outlen) {
+
+    static int dont_resolve_unknowns = 1; // need to do this properly...
+
+    int i, len, resolved_MMS_macro;
+    char *ep, *sp, *outend;
+
+    for (i = 0; i < argc; i++) {
+	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
+					argv[i].dsc$w_length, out, outlen,
+					dont_resolve_unknowns);
+	if (*outlen != 0) {
+	    sp = *out;
+	    outend = *out + *outlen;
+	    while ((sp < outend)
+		&& (strchr(WHITESPACE, *sp) != (char *) 0))
+		sp++;
+	    if (sp < outend) {
+		ep = outend;
+		outend = sp;
+		while ((--ep >= outend)
+		    && (strchr(WHITESPACE, *ep) != (char *) 0))
+		    ;
+		len = (ep - sp) + 1;
+		if (len > 0) {
+		    char *tmp;
+		    tmp = cat(0, sp, len);
+		    free(*out);
+		    *out = tmp;
+		    *outlen = len;
+		    break;
+		}
+	    }
+	}
+	if (*out != (char *) 0) free(*out);
+	*out = 0;
+	*outlen = 0;
+    }
+
+    return resolved_MMS_macro;
+} /* apply_or */
 
 /*
 **++
