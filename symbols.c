@@ -85,6 +85,7 @@
 **					 operations.
 **	31-AUG-2012 V3.1    Sneddon	Add support for builtins that handle
 **					 their own argument resolution.
+**	04-SEP-2012 V3.2    Sneddon	Add OR and AND.
 **--
 */
 #pragma module SYMBOLS "V3.1"
@@ -118,7 +119,7 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
-    static int apply_and(int i, char **o, int *l) { return 0; }
+    static int apply_and(int, char **, int *);
     static int apply_basename(int, char **, int*);
     static int apply_dir(int, char **, int*);
     static int apply_directory(int, char **, int*);
@@ -1136,6 +1137,8 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	    	}
 	    }
 
+// Maybe we should test for unresolved symbols in the parse loop above...
+
 	    // if unresolved
 	    	// no call....what do we do?
 		// did_one = 0
@@ -1157,6 +1160,82 @@ static char *apply_builtin (char *name, char *in, int inlen,
 
     return cp;
 } /* apply_builtin */
+
+/*
+**++
+**  ROUTINE:	apply_and
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in AND function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_and (int argc, char **out, int *outlen) {
+
+    static int dont_resolve_unknowns = 1; // need to do this properly...
+
+    int i, len, resolved_MMS_macro;
+    char *ep, *sp, *tmp, *tmpend;
+
+    *out = 0;
+    *outlen = 0;
+
+    for (i = 0; i < argc; i++) {
+	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
+					argv[i].dsc$w_length, &tmp, &len,
+					dont_resolve_unknowns);
+	if (len != 0) {
+	    sp = tmp;
+	    tmpend = tmp + len;
+	    while ((sp < tmpend)
+		&& (strchr(WHITESPACE, *sp) != (char *) 0))
+		sp++;
+	    if (sp < tmpend) {
+		ep = tmpend;
+		tmpend = sp;
+		while ((--ep >= tmpend)
+		    && (strchr(WHITESPACE, *ep) != (char *) 0))
+		    ;
+		len = (ep - sp) + 1;
+		if (len > 0) {
+		    *out = cat(*out, sp, len, " ", 1);
+		    free(tmp);
+		} else {
+		    break;
+		}
+	    } else {
+		break;
+	    }
+	} else {
+	    break;
+	}
+    }
+
+    if (i == argc) {
+	if (*out != (char *) 0) *outlen = strlen(*out) - 1;
+    } else {
+	free(*out);
+	*out = 0;
+    }
+
+    return resolved_MMS_macro;
+} /* apply_and */
 
 /*
 **++
