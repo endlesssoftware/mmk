@@ -1087,7 +1087,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
 		} else {
 		    cp++;
 		}
-	    } else  if (*cp == ',' || *cp == ')') {
+	    } else if (*cp == ',' || *cp == ')') {
 		if (depth == 0) {
 		    if (argc >= ARGMAX) {
 			lib$signal(MMK__TOOMANYARGS);
@@ -1097,12 +1097,12 @@ static char *apply_builtin (char *name, char *in, int inlen,
 			argv[argc].dsc$b_dtype = DSC$K_DTYPE_T;
 		    	argv[argc].dsc$w_length = cp-ap;
 			argc++;
-			if (*cp == ')')
+			if (*cp++ == ')')
 			    break;
-			ap = ++cp;
+			ap = cp;
 		    }
 		} else {
-		    if (*cp == ')')
+		    if (*cp++ == ')')
 			depth--;
 		}
 	    }
@@ -1155,7 +1155,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	lib$signal(MMK__UNRFUN, 1, name);
     }
 
-    return ++cp;
+    return cp;
 } /* apply_builtin */
 
 /*
