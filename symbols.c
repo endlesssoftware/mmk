@@ -1072,7 +1072,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
     inend = in + inlen;
     ap = cp = in;
     while (cp < inend) {
-	cp = find_char(ap, inend, ",)$");
+	cp = find_char(cp, inend, ",)$");
 	if (cp == (char *)0) {
 	    lib$signal(MMK__UTLBADMAC, 1, f->name);
 	    break;
@@ -1081,9 +1081,11 @@ static char *apply_builtin (char *name, char *in, int inlen,
 		if (cp <= inend-1 && strchr(SPECIALS, *(cp+1))) {
 		    // is a special
 		    cp++; 
-		} else if (cp <= inend-3 && *(++cp) == '(') {
+		} else if (cp <= inend-3 && *(cp+1) == '(') {
 		    depth++;
-		    continue;
+		    cp += 2;
+		} else {
+		    cp++;
 		}
 	    } else  if (*cp == ',' || *cp == ')') {
 		if (depth == 0) {
