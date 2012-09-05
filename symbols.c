@@ -85,7 +85,7 @@
 **					 operations.
 **	31-AUG-2012 V3.1    Sneddon	Add support for builtins that handle
 **					 their own argument resolution.
-**	04-SEP-2012 V3.2    Sneddon	Add OR and AND.
+**	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
 **--
 */
 #pragma module SYMBOLS "V3.1"
@@ -128,7 +128,7 @@
     static int apply_filetype(int, char **, int*);
     static int apply_fileversion(int, char **, int*);
     static int apply_firstword(int, char **, int*);
-    static int apply_if(int i, char **o, int *l) { return 0; }
+    static int apply_if(int, char **, int *);
     static int apply_info(int, char **, int*);
     static int apply_lastword(int, char **, int*);
     static int apply_notdir(int, char **, int*);
@@ -170,7 +170,7 @@
 	{ "FILETYPE",		0, 1, 0x00000000, apply_filetype,    },
 	{ "FILEVERSION",	0, 1, 0x00000000, apply_fileversion, },
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
-	{ "IF",			1, 2, 0x00000007, apply_info,	     },
+	{ "IF",			1, 2, 0x00000007, apply_if,	     },
 	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
 	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
@@ -1710,6 +1710,66 @@ static int apply_firstword (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_firstword */
+
+/*
+**++
+**  ROUTINE:	apply_if
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in IF function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_if (int argc, char **out, int *outlen) {
+
+    static int dont_resolve_unknowns = 1; // need to do this properly...
+
+    int i, len, resolved_MMS_macro;
+    char *ep, *in, *inend, *sp;
+
+    *out = 0;
+    *outlen = 0;
+
+    sp = in = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while ((sp < inend)
+	&& (strchr(WHITESPACE, *sp) != (char *) 0))
+	sp++;
+
+    ep = inend;
+    inend = sp;
+    while ((--ep >= inend)
+	&& (strchr(WHITESPACE, *ep) != (char *) 0))
+	;
+
+    if ((ep - sp) + 1 > 0) {
+	resolved_MMS_macro = Resolve_Symbols(argv[1].dsc$a_pointer,
+					argv[1].dsc$w_length, out, outlen,
+					dont_resolve_unknowns);
+    } else if (argc > 2) {
+	resolved_MMS_macro = Resolve_Symbols(argv[2].dsc$a_pointer,
+					argv[2].dsc$w_length, out, outlen,
+					dont_resolve_unknowns);
+    }
+
+    return resolved_MMS_macro;
+} /* apply_if */
 
 /*
 **++
