@@ -86,9 +86,10 @@
 **	31-AUG-2012 V3.1    Sneddon	Add support for builtins that handle
 **					 their own argument resolution.
 **	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
+**	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **--
 */
-#pragma module SYMBOLS "V3.1"
+#pragma module SYMBOLS "V3.3"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -121,6 +122,7 @@
 				int *, int);
     static int apply_and(int, char **, int *);
     static int apply_basename(int, char **, int*);
+    static int apply_call(int, char **, int *);
     static int apply_dir(int, char **, int*);
     static int apply_directory(int, char **, int*);
     static int apply_error(int, char **, int*);
@@ -146,7 +148,6 @@
 
     static struct SYMTABLE dcl_symbols;
     static int dcl_symbols_inited = 0;
-    static struct SYMBOL *temporary_symbols = 0;
     static struct dsc$descriptor argv[ARGMAX];
     static char *WHITESPACE = " \r\n\t\v\f";
     static char SPECIALS[] = "@*<+?%&";
@@ -163,6 +164,7 @@
     static struct FUNCTION functions[] = {
 	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
 	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
+	{ "CALL",		1, 1, 0x00000000, apply_call,	     },
 	{ "DIR",		0, 1, 0x00000000, apply_dir,	     },
 	{ "DIRECTORY",		0, 1, 0x00000000, apply_directory,   },
 	{ "ERROR",		1, 1, 0x00000000, apply_error,	     },
@@ -219,10 +221,10 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     int i;
     static struct SYMTABLE *normal_order[] = {
     	&local_symbols, &cmdline_symbols, &global_symbols,
-    	&builtin_symbols, &dcl_symbols};
+    	&builtin_symbols, &dcl_symbols, &temporary_symbols};
     static struct SYMTABLE *override_order[] = {
-    	&local_symbols, &cmdline_symbols, &dcl_symbols,
-    	&global_symbols, &builtin_symbols};
+    	&temporary_symbols, &local_symbols, &cmdline_symbols,
+	&dcl_symbols,&global_symbols, &builtin_symbols};
 
     if (!dcl_symbols_inited) {
     	for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
@@ -310,58 +312,45 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     strcpy(upname, name);
     upcase(upname);
 
-    if (symtype == MMK_K_SYM_TEMPORARY) {
-	/*
-	** Temporary symbols are handled a bit differently.  As there can only
-	** be one named symbol at any given level of $(FOREACH ) invokation,
-	** they are actually stored as a singly linked list.
-	*/
-	if (temporary_symbols && append) {
-	    sym = temporary_symbols;
-	} else {
-	    sym = mem_get_symbol();
-	    strcpy(sym->name, upname);
-	    if (temporary_symbols) sym->flink = temporary_symbols;
-	    temporary_symbols = sym;
-        }
+    hash_value = 0;
+    for (cp = (unsigned char *) upname, i = 0; *cp != '\0' && i < 4; cp++, i++) {
+        hash_value |= *cp;
+    }
+    hash_value &= 0xff;
+
+    switch (symtype) {
+
+    case MMK_K_SYM_LOCAL:
+    	symq = &local_symbols.symlist[hash_value];
+    	break;
+    case MMK_K_SYM_DESCRIP:
+    	symq = &global_symbols.symlist[hash_value];
+    	break;
+    case MMK_K_SYM_CMDLINE:
+    	symq = &cmdline_symbols.symlist[hash_value];
+    	break;
+    case MMK_K_SYM_BUILTIN:
+    	symq = &builtin_symbols.symlist[hash_value];
+    	break;
+    case MMK_K_SYM_TEMPORARY:
+    	symq = &temporary_symbols.symlist[hash_value];
+    	break;
+    default:
+    	symq = 0;   /* this will cause an ACCVIO - should never happen */
+    	break;
+    }
+
+    for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
+    	if (strcmp(upname, sym->name) == 0) break;
+    }
+    if (sym == (struct SYMBOL *) symq) {
+    	sym = mem_get_symbol();
+    	strcpy(sym->name, upname);
+    	queue_insert(sym, symq->tail);
     } else {
-	hash_value = 0;
-	for (cp = (unsigned char *) upname, i = 0; *cp != '\0' && i < 4; cp++, i++) {
-    	    hash_value |= *cp;
-	}
-	hash_value &= 0xff;
-
-	switch (symtype) {
-
-	case MMK_K_SYM_LOCAL:
-    	    symq = &local_symbols.symlist[hash_value];
-    	    break;
-	case MMK_K_SYM_DESCRIP:
-    	    symq = &global_symbols.symlist[hash_value];
-    	    break;
-	case MMK_K_SYM_CMDLINE:
-    	    symq = &cmdline_symbols.symlist[hash_value];
-    	    break;
-	case MMK_K_SYM_BUILTIN:
-    	    symq = &builtin_symbols.symlist[hash_value];
-    	    break;
-	default:
-    	    symq = 0;   /* this will cause an ACCVIO - should never happen */
-    	    break;
-	}
-
-	for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
-    	    if (strcmp(upname, sym->name) == 0) break;
-	}
-	if (sym == (struct SYMBOL *) symq) {
-    	    sym = mem_get_symbol();
-    	    strcpy(sym->name, upname);
-    	    queue_insert(sym, symq->tail);
-	} else {
-	    if (!append) {
-    	        free(sym->value);
-		sym->value = 0;
-	    }
+	if (!append) {
+    	    free(sym->value);
+	    sym->value = 0;
 	}
     }
 
@@ -684,11 +673,12 @@ void Clear_Local_Symbols (void) {
 static void Clear_Temporary_Symbols (unsigned level) {
 
     struct SYMBOL *sym;
-    unsigned i;
+    int i;
 
-    for (i = 0, sym = temporary_symbols; i < level && sym != NULL; i++, sym = temporary_symbols) {
-	temporary_symbols = sym->flink;
-	mem_free_symbol(sym);
+    for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
+    	while (queue_remove(temporary_symbols.symlist[i].head, &sym)) {
+    	    mem_free_symbol(sym);
+    	}
     }
 
 } /* Clear_Temporary_Symbols */
@@ -1303,6 +1293,50 @@ static int apply_basename (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_basename */
+
+/*
+**++
+**  ROUTINE:	apply_call
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in CALL  function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_call (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *sp;
+    char esa[NAM$C_MAXRSS];
+    struct FAB fab;
+    struct NAM nam;
+
+    *out = 0;
+    *outlen = 0;
+
+    // lookup the function call
+    // if found
+	// define all the arguments
+	// Resolve_Symbols
+	// clean up all arguments
+
+    return 0;
+} /* apply_call */
 
 /*
 **++

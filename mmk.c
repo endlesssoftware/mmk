@@ -141,6 +141,7 @@
 **	10-OCT-2008 V4.1    Sneddon 	New MMS compat. features.
 **	01-APR-2010 V4.1-1  Sneddon 	Updated version number for minor release.  Added MMSTARGETS.
 **	04-OCT-2010 V5.0    Sneddon	New version.
+**	07-SEP-2012	    Sneddon	Add temporary_symbols.
 **--
 */
 #define MMK_VERSION 	  "V5.0"
@@ -198,6 +199,7 @@
     GLOBAL struct SYMTABLE  local_symbols;
     GLOBAL struct SYMTABLE  cmdline_symbols;
     GLOBAL struct SYMTABLE  builtin_symbols;
+    GLOBAL struct SYMTABLE  temporary_symbols;
     GLOBAL struct RULE      rules;
     GLOBAL struct RULE	    *default_rule = 0;
     GLOBAL struct DEPEND    dependencies;
@@ -292,6 +294,7 @@ unsigned int main (void) {
     	INIT_QUEUE(local_symbols.symlist[i]);
     	INIT_QUEUE(cmdline_symbols.symlist[i]);
     	INIT_QUEUE(builtin_symbols.symlist[i]);
+    	INIT_QUEUE(temporary_symbols.symlist[i]);
     }
     INIT_QUEUE(rules);
     INIT_QUEUE(dependencies);
