@@ -45,7 +45,7 @@
     EXTERN struct SYMTABLE  local_symbols;
     EXTERN struct SYMTABLE  cmdline_symbols;
     EXTERN struct SYMTABLE  builtin_symbols;
-    EXTERN struct SYMTABLE  temporary_symbols;
+    EXTERN struct SYMTABLE  *temporary_symbols;
     EXTERN struct RULE      rules;
     EXTERN struct RULE	    *default_rule;
     EXTERN struct DEPEND    dependencies, dep_internal, dep_deferred;

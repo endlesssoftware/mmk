@@ -188,6 +188,7 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 
 #define MMK_K_SYMTABLE_SIZE 	256
     struct SYMTABLE {
+	struct SYMTABLE *next;
     	struct QUE symlist[MMK_K_SYMTABLE_SIZE];
     };
 
@@ -312,6 +313,8 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
     void mem_free_objref(struct OBJREF *obj);
     struct SFX * mem_get_sfx(void);
     void mem_free_sfx(struct SFX *s);
+    struct SYMTABLE * mem_get_symtable(void);
+    void mem_free_symtable(struct SYMTABLE *symtable);
 /*
 **  FILEIO
 */

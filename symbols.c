@@ -114,7 +114,6 @@
     void Define_Symbol(SYMTYPE, char *, char *, int, ...);
     int Resolve_Symbols(char *, int, char **, int *, int, ...);
     void Clear_Local_Symbols(void);
-    static void Clear_Temporary_Symbols(unsigned);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
@@ -221,10 +220,10 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     int i;
     static struct SYMTABLE *normal_order[] = {
     	&local_symbols, &cmdline_symbols, &global_symbols,
-    	&builtin_symbols, &dcl_symbols, &temporary_symbols};
-    static struct SYMTABLE *override_order[] = {
-    	&temporary_symbols, &local_symbols, &cmdline_symbols,
-	&dcl_symbols,&global_symbols, &builtin_symbols};
+    	&builtin_symbols, &dcl_symbols};
+    struct SYMTABLE *override_order[] = {
+    	&local_symbols, &cmdline_symbols,
+	&dcl_symbols, &global_symbols, &builtin_symbols};
 
     if (!dcl_symbols_inited) {
     	for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
@@ -238,6 +237,13 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	hash_value |= *cp;
     }
     hash_value &= 0xff;
+
+    if (temporary_symbols != 0) {
+	symq = &temporary_symbols->symlist[hash_value];
+    	for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
+    	    if (strcmp(name, sym->name) == 0) return sym;
+    	}
+    }
 
     for (i = 0; i < sizeof(normal_order)/sizeof(normal_order[0]); i++) {
     	symq = symbol_override ? &override_order[i]->symlist[hash_value]
@@ -333,7 +339,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     	symq = &builtin_symbols.symlist[hash_value];
     	break;
     case MMK_K_SYM_TEMPORARY:
-    	symq = &temporary_symbols.symlist[hash_value];
+    	symq = &temporary_symbols->symlist[hash_value];
     	break;
     default:
     	symq = 0;   /* this will cause an ACCVIO - should never happen */
@@ -645,43 +651,6 @@ void Clear_Local_Symbols (void) {
     }
 
 } /* Clear_Local_Symbols */
-
-/*
-**++
-**  ROUTINE:    Clear_Temporary_Symbols
-**
-**  FUNCTIONAL DESCRIPTION:
-**
-**      Deletes all of the symbols in the temporary symbol table.
-**
-**  RETURNS:    void
-**
-**  PROTOTYPE:
-**
-**      Clear_Temporary_Symbols(int level)
-**
-**  IMPLICIT INPUTS:    None.
-**
-**  IMPLICIT OUTPUTS:   None.
-**
-**  COMPLETION CODES:   None.
-**
-**  SIDE EFFECTS:       temporary_symbols
-**
-**--
-*/
-static void Clear_Temporary_Symbols (unsigned level) {
-
-    struct SYMBOL *sym;
-    int i;
-
-    for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
-    	while (queue_remove(temporary_symbols.symlist[i].head, &sym)) {
-    	    mem_free_symbol(sym);
-    	}
-    }
-
-} /* Clear_Temporary_Symbols */
 
 /*
 **++
@@ -1321,19 +1290,35 @@ static int apply_basename (int argc, char **out, int *outlen) {
 */
 static int apply_call (int argc, char **out, int *outlen) {
 
-    char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    struct SYMBOL *sym;
+    struct SYMTABLE *symq;
+    char *var;
 
     *out = 0;
     *outlen = 0;
 
-    // lookup the function call
-    // if found
-	// define all the arguments
-	// Resolve_Symbols
-	// clean up all arguments
+    var = cat(0, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
+    sym = Lookup_Symbol(var);
+    if (sym != (struct SYMBOL *) 0) {
+	symq = mem_get_symtable();
+	symq->next = temporary_symbols;
+	temporary_symbols = symq;
+
+	Define_Symbol(MMK_K_SYM_TEMPORARY, "0", argv[0].dsc$a_pointer,
+			argv[0].dsc$w_length);
+
+	// loop
+	    // define temporary symbols
+
+//	Resolve_Symbols(var, strlen(var), out, outlen, dont_resolve_unknowns,
+//			...);
+
+	symq = temporary_symbols;
+	temporary_symbols = symq->next;
+	mem_free_symtable(symq);
+    }
+
+    free(var);
 
     return 0;
 } /* apply_call */

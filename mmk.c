@@ -199,7 +199,7 @@
     GLOBAL struct SYMTABLE  local_symbols;
     GLOBAL struct SYMTABLE  cmdline_symbols;
     GLOBAL struct SYMTABLE  builtin_symbols;
-    GLOBAL struct SYMTABLE  temporary_symbols;
+    GLOBAL struct SYMTABLE  *temporary_symbols;
     GLOBAL struct RULE      rules;
     GLOBAL struct RULE	    *default_rule = 0;
     GLOBAL struct DEPEND    dependencies;
@@ -289,12 +289,12 @@ unsigned int main (void) {
 /*
 ** Initialize the globals
 */
+    temporary_symbols = 0;
     for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
     	INIT_QUEUE(global_symbols.symlist[i]);
     	INIT_QUEUE(local_symbols.symlist[i]);
     	INIT_QUEUE(cmdline_symbols.symlist[i]);
     	INIT_QUEUE(builtin_symbols.symlist[i]);
-    	INIT_QUEUE(temporary_symbols.symlist[i]);
     }
     INIT_QUEUE(rules);
     INIT_QUEUE(dependencies);
