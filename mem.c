@@ -654,7 +654,8 @@ void mem_free_sfx (struct SFX *s) {
 */
 struct SYMTABLE *mem_get_symtable (void) {
 
-    struct SYMTABLE *c;
+    struct SYMTABLE *t;
+    int i;
     unsigned int status;
 
     if (!symtablezone) {
@@ -664,12 +665,16 @@ struct SYMTABLE *mem_get_symtable (void) {
     	    	    	&SYMTABLE_S_SYMTABLEDEF, &flags);
     	if (!OK(status)) lib$signal(MMK__NOALLOC, 1, "SYMTABLE", status);
     }
-    status = lib$get_vm(&SYMTABLE_S_SYMTABLEDEF, &c, &symtablezone);
+    status = lib$get_vm(&SYMTABLE_S_SYMTABLEDEF, &t, &symtablezone);
     if (!OK(status)) {
     	lib$signal(MMK__NOALLOC, 1, "SYMTABLE", status);
     }
 
-    return c;
+    for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
+        INIT_QUEUE(t->symlist[i]);
+    }
+
+    return t;
 }
 
 /*

@@ -1290,9 +1290,12 @@ static int apply_basename (int argc, char **out, int *outlen) {
 */
 static int apply_call (int argc, char **out, int *outlen) {
 
+    static int dont_resolve_unknowns = 1;
+
     struct SYMBOL *sym;
     struct SYMTABLE *symq;
     char *var;
+    int i;
 
     *out = 0;
     *outlen = 0;
@@ -1304,14 +1307,16 @@ static int apply_call (int argc, char **out, int *outlen) {
 	symq->next = temporary_symbols;
 	temporary_symbols = symq;
 
-	Define_Symbol(MMK_K_SYM_TEMPORARY, "0", argv[0].dsc$a_pointer,
-			argv[0].dsc$w_length);
+	for (i = 0; i < argc; i++) {
+	    char *name;
+	    name = itoa(i);
+	    Define_Symbol(MMK_K_SYM_TEMPORARY, name, argv[i].dsc$a_pointer,
+			    argv[i].dsc$w_length);
+	    free(name);
+	}
 
-	// loop
-	    // define temporary symbols
-
-//	Resolve_Symbols(var, strlen(var), out, outlen, dont_resolve_unknowns,
-//			...);
+	Resolve_Symbols(sym->value, strlen(sym->value), out, outlen,
+			dont_resolve_unknowns);
 
 	symq = temporary_symbols;
 	temporary_symbols = symq->next;
