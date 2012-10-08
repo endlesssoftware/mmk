@@ -89,7 +89,7 @@
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
 **	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT,
-**					 STRIP, COLLAPSE
+**					 STRIP, COLLAPSE.
 **--
 */
 #pragma module SYMBOLS "V3.3-3"
@@ -1392,7 +1392,7 @@ static int apply_collapse (int argc, char **out, int *outlen) {
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    *outlen = strlen(*out);
+    if (*out != (char *) 0) *outlen = strlen(*out);
 
     return 0;
 } /* apply_collapse */
@@ -1834,7 +1834,7 @@ static int apply_filter (int argc, char **out, int *outlen) {
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != (char *) 0) *outlen = strlen(*out) - 1;
 
     while (queue_remove(patque.flink, &pattern)) {
 	free(pattern);
@@ -1922,7 +1922,7 @@ static int apply_filter_out (int argc, char **out, int *outlen) {
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != (char *) 0) *outlen = strlen(*out) - 1;
 
     while (queue_remove(patque.flink, &pattern)) {
 	free(pattern);
@@ -2097,7 +2097,7 @@ static int apply_foreach (int argc, char **out, int *outlen) {
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != (char *) 0) *outlen = strlen(*out) - 1;
 
     symq = temporary_symbols;
     temporary_symbols = symq->next;
@@ -2522,7 +2522,7 @@ static int apply_strip (int argc, char **out, int *outlen) {
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != (char *) 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_strip */
