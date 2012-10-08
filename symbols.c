@@ -89,7 +89,7 @@
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
 **	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT,
-**					 STRIP.
+**					 STRIP, COLLAPSE
 **--
 */
 #pragma module SYMBOLS "V3.3-3"
@@ -127,6 +127,7 @@
     static int apply_and(int, char **, int *);
     static int apply_basename(int, char **, int*);
     static int apply_call(int, char **, int *);
+    static int apply_collapse(int, char **, int *);
     static int apply_dir(int, char **, int*);
     static int apply_directory(int, char **, int*);
     static int apply_error(int, char **, int*);
@@ -174,6 +175,7 @@
 	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
 	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
 	{ "CALL",		1, 1, 0x00000000, apply_call,	     },
+	{ "COLLAPSE",		0, 1, 0x00000000, apply_collapse,    },
 	{ "DIR",		0, 1, 0x00000000, apply_dir,	     },
 	{ "DIRECTORY",		0, 1, 0x00000000, apply_directory,   },
 	{ "ERROR",		1, 1, 0x00000000, apply_error,	     },
@@ -1343,6 +1345,57 @@ static int apply_call (int argc, char **out, int *outlen) {
 
     return resolved_MMS_macro;
 } /* apply_call */
+
+/*
+**++
+**  ROUTINE:	apply_collapse
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in COLLAPSE function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_collapse (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    ep = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    *out = cat (*out, ep, cp-ep);
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+    *outlen = strlen(*out);
+
+    return 0;
+} /* apply_collapse */
 
 /*
 **++
