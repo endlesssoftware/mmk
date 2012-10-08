@@ -87,6 +87,7 @@
 **					 their own argument resolution.
 **	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
+**	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
 **--
 */
 #pragma module SYMBOLS "V3.3"
@@ -129,6 +130,7 @@
     static int apply_filetype(int, char **, int*);
     static int apply_fileversion(int, char **, int*);
     static int apply_firstword(int, char **, int*);
+    static int apply_foreach(int, char **, int*);
     static int apply_if(int, char **, int *);
     static int apply_info(int, char **, int*);
     static int apply_lastword(int, char **, int*);
@@ -171,6 +173,7 @@
 	{ "FILETYPE",		0, 1, 0x00000000, apply_filetype,    },
 	{ "FILEVERSION",	0, 1, 0x00000000, apply_fileversion, },
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
+	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
 	{ "IF",			1, 2, 0x00000007, apply_if,	     },
 	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
 	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
@@ -1295,7 +1298,7 @@ static int apply_call (int argc, char **out, int *outlen) {
     struct SYMBOL *sym;
     struct SYMTABLE *symq;
     char *var;
-    int i;
+    int i, resolved_MMS_macro = 0;
 
     *out = 0;
     *outlen = 0;
@@ -1315,8 +1318,9 @@ static int apply_call (int argc, char **out, int *outlen) {
 	    free(name);
 	}
 
-	Resolve_Symbols(sym->value, strlen(sym->value), out, outlen,
-			dont_resolve_unknowns);
+	resolved_MMS_macro = Resolve_Symbols(sym->value, strlen(sym->value),
+					     out, outlen,
+					     dont_resolve_unknowns);
 
 	symq = temporary_symbols;
 	temporary_symbols = symq->next;
@@ -1325,7 +1329,7 @@ static int apply_call (int argc, char **out, int *outlen) {
 
     free(var);
 
-    return 0;
+    return resolved_MMS_macro;
 } /* apply_call */
 
 /*
@@ -1734,6 +1738,76 @@ static int apply_firstword (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_firstword */
+
+/*
+**++
+**  ROUTINE:	apply_foreach
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FOREACH function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_foreach (int argc, char **out, int *outlen) {
+
+    static int dont_resolve_unknowns = 1;
+
+    struct SYMTABLE *symq;
+    int resolved_MMS_macro = 0, tmplen;
+    char *cp, *ep, *in, *inend, *tmp, *var;
+
+    *out = 0;
+    *outlen = 0;
+
+    symq = mem_get_symtable();
+    symq->next = temporary_symbols;
+    temporary_symbols = symq;
+
+    var = cat(0, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    ep = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    Define_Symbol(MMK_K_SYM_TEMPORARY, var, ep, cp-ep);
+	    resolved_MMS_macro |= Resolve_Symbols(argv[2].dsc$a_pointer,
+						  argv[2].dsc$w_length, &tmp,
+						  &tmplen,
+						  dont_resolve_unknowns);
+	    *out = cat (*out, tmp, tmplen, " ");
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+    *outlen = strlen(*out) - 1;
+
+    symq = temporary_symbols;
+    temporary_symbols = symq->next;
+    mem_free_symtable(symq);
+    free(var);
+
+    return resolved_MMS_macro;
+} /* apply_foreach */
 
 /*
 **++
