@@ -88,7 +88,7 @@
 **	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
-**	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING.
+**	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER.
 **--
 */
 #pragma module SYMBOLS "V3.3-3"
@@ -96,7 +96,9 @@
 #include "globals.h"
 #include <stdarg.h>
 #include <string.h>
+#include <strdef.h>
 #include <ots$routines.h>
+#include <str$routines.h>
 #include <ctype.h>
 #include <rms.h>
 #define ARGMAX (sizeof(int) * 8)
@@ -130,6 +132,7 @@
     static int apply_filename(int, char **, int*);
     static int apply_filetype(int, char **, int*);
     static int apply_fileversion(int, char **, int*);
+    static int apply_filter(int, char **, int*);
     static int apply_findstring(int, char **, int*);
     static int apply_firstword(int, char **, int*);
     static int apply_foreach(int, char **, int*);
@@ -174,6 +177,7 @@
 	{ "FILENAME",		0, 1, 0x00000000, apply_filename,    },
 	{ "FILETYPE",		0, 1, 0x00000000, apply_filetype,    },
 	{ "FILEVERSION",	0, 1, 0x00000000, apply_fileversion, },
+	{ "FILTER",		0, 2, 0x00000000, apply_filter,      },
 	{ "FINDSTRING",		0, 2, 0x00000000, apply_findstring,  },
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
 	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
@@ -1692,6 +1696,94 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_fileversion */
+
+/*
+**++
+**  ROUTINE:	apply_filter
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FILTER function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_filter (int argc, char **out, int *outlen) {
+
+    struct PATDEF {
+	struct PATDEF *flink, *blink;
+	struct dsc$descriptor str;
+    } patque, *pattern;
+    struct dsc$descriptor text;
+    char *cp, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+    INIT_QUEUE(patque);
+    INIT_SDESC(text, 0, 0);
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+	    pattern = malloc(sizeof(struct PATDEF));
+	    memset(pattern, 0, sizeof(struct PATDEF));
+	    queue_insert(pattern, &patque);
+	    INIT_SDESC(pattern->str, 0, cp);
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    pattern->str.dsc$w_length = cp - pattern->str.dsc$a_pointer;
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    text.dsc$a_pointer = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    text.dsc$w_length = cp - text.dsc$a_pointer;
+
+	    for (pattern = patque.flink; pattern != &patque;
+			pattern = pattern->flink) {
+		if (str$match_wild(&text, &pattern->str) == STR$_MATCH) {
+		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length);
+		    break;
+		}
+	    }
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+    *outlen = strlen(*out) - 1;
+
+    while (queue_remove(patque.flink, &pattern)) {
+	free(pattern);
+    }
+
+    return 0;
+} /* apply_filter */
 
 /*
 **++
