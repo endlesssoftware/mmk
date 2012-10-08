@@ -88,7 +88,8 @@
 **	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
-**	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT.
+**	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT,
+**					 STRIP.
 **--
 */
 #pragma module SYMBOLS "V3.3-3"
@@ -143,6 +144,7 @@
     static int apply_notdir(int, char **, int*);
     static int apply_or(int, char **, int *);
     static int apply_origin(int, char **, int *);
+    static int apply_strip(int, char **, int *);
     static int apply_warn(int, char **, int*);
     static int apply_wildcard(int, char **, int*);
     static int apply_word(int, char **, int*);
@@ -189,6 +191,7 @@
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
 	{ "OR",			1, 1, 0xFFFFFFFF, apply_or,	     },
 	{ "ORIGIN",		0, 1, 0x00000000, apply_origin,	     },
+	{ "STRIP",		0, 1, 0x00000000, apply_strip,	     },
 	{ "WARN",		1, 1, 0x00000000, apply_warn,	     },
 	{ "WARNING",		1, 1, 0x00000000, apply_warn,	     },
 	{ "WILDCARD",		0, 1, 0x00000000, apply_wildcard,    },
@@ -2419,6 +2422,57 @@ static int apply_origin (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_origin */
+
+/*
+**++
+**  ROUTINE:	apply_strip
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in STRIP function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_strip (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    ep = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    *out = cat (*out, ep, cp-ep, " ");
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+    *outlen = strlen(*out) - 1;
+
+    return 0;
+} /* apply_strip */
 
 /*
 **++
