@@ -88,9 +88,10 @@
 **	04-SEP-2012 V3.2    Sneddon	Add OR, AND and IF.
 **	07-SEP-2012 V3.3    Sneddon	Add CALL, reorganise temporary symbols.
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
+**	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING.
 **--
 */
-#pragma module SYMBOLS "V3.3"
+#pragma module SYMBOLS "V3.3-3"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -129,6 +130,7 @@
     static int apply_filename(int, char **, int*);
     static int apply_filetype(int, char **, int*);
     static int apply_fileversion(int, char **, int*);
+    static int apply_findstring(int, char **, int*);
     static int apply_firstword(int, char **, int*);
     static int apply_foreach(int, char **, int*);
     static int apply_if(int, char **, int *);
@@ -172,6 +174,7 @@
 	{ "FILENAME",		0, 1, 0x00000000, apply_filename,    },
 	{ "FILETYPE",		0, 1, 0x00000000, apply_filetype,    },
 	{ "FILEVERSION",	0, 1, 0x00000000, apply_fileversion, },
+	{ "FINDSTRING",		0, 2, 0x00000000, apply_findstring,  },
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
 	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
 	{ "IF",			1, 2, 0x00000007, apply_if,	     },
@@ -1689,6 +1692,63 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_fileversion */
+
+/*
+**++
+**  ROUTINE:	apply_findstring
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in FINDSTRING function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_findstring (int argc, char **out, int *outlen) {
+
+    struct dsc$descriptor substr;
+    char *cp, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    INIT_SDESC(substr, 0, 0);
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    substr.dsc$a_pointer = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    substr.dsc$w_length = cp - substr.dsc$a_pointer;
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+
+    if ((substr.dsc$w_length > 0) && (str$position(&argv[1], &substr) != 0)) {
+	*out = cat(0, substr.dsc$a_pointer, substr.dsc$w_length);
+	*outlen = substr.dsc$w_length;
+    }
+
+    return 0;
+} /* apply_findstring */
 
 /*
 **++
