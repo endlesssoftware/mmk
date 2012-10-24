@@ -128,28 +128,29 @@
     static int apply_basename(int, char **, int*);
     static int apply_call(int, char **, int *);
     static int apply_collapse(int, char **, int *);
-    static int apply_dir(int, char **, int*);
-    static int apply_directory(int, char **, int*);
-    static int apply_error(int, char **, int*);
-    static int apply_filename(int, char **, int*);
-    static int apply_filetype(int, char **, int*);
-    static int apply_fileversion(int, char **, int*);
-    static int apply_filter(int, char **, int*);
-    static int apply_filter_out(int, char **, int*);
-    static int apply_findstring(int, char **, int*);
-    static int apply_firstword(int, char **, int*);
-    static int apply_foreach(int, char **, int*);
+    static int apply_dir(int, char **, int *);
+    static int apply_directory(int, char **, int *);
+    static int apply_error(int, char **, int *);
+    static int apply_filename(int, char **, int *);
+    static int apply_filetype(int, char **, int *);
+    static int apply_fileversion(int, char **, int *);
+    static int apply_filter(int, char **, int *);
+    static int apply_filter_out(int, char **, int *);
+    static int apply_findstring(int, char **, int *);
+    static int apply_firstword(int, char **, int *);
+    static int apply_foreach(int, char **, int *);
     static int apply_if(int, char **, int *);
-    static int apply_info(int, char **, int*);
-    static int apply_lastword(int, char **, int*);
-    static int apply_notdir(int, char **, int*);
+    static int apply_info(int, char **, int *);
+    static int apply_join(int, char **, int *);
+    static int apply_lastword(int, char **, int *);
+    static int apply_notdir(int, char **, int *);
     static int apply_or(int, char **, int *);
     static int apply_origin(int, char **, int *);
     static int apply_strip(int, char **, int *);
-    static int apply_warn(int, char **, int*);
-    static int apply_wildcard(int, char **, int*);
-    static int apply_word(int, char **, int*);
-    static int apply_wordlist(int, char **, int*);
+    static int apply_warn(int, char **, int *);
+    static int apply_wildcard(int, char **, int *);
+    static int apply_word(int, char **, int *);
+    static int apply_wordlist(int, char **, int *);
     static int apply_words(int, char **, int *);
 
 /*
@@ -172,6 +173,17 @@
     	"MMS$CMS_LIBRARY", "MMS$CMS_ELEMENT", "MMS$CMS_GEN",
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
+/*
+
+    Unimplemented builtins...
+
+	ADDPREFIX
+	ADDSUFFIX
+	PATSUBST
+	SORT
+	SUBST
+
+*/
 	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
 	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
 	{ "CALL",		1, 1, 0x00000000, apply_call,	     },
@@ -187,6 +199,7 @@
 	{ "FINDSTRING",		0, 2, 0x00000000, apply_findstring,  },
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
 	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
+	{ "JOIN",		0, 2, 0x00000000, apply_join,	     },
 	{ "IF",			1, 2, 0x00000007, apply_if,	     },
 	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
 	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
@@ -2229,16 +2242,46 @@ static int apply_info (int argc, char **out, int *outlen) {
 */
 static int apply_join (int argc, char **out, int *outlen) {
 
-    char *cp, *ep, *in, *inend;
+    char *cp1, *cp2, *ep1, *ep2, *in1, *in2, *inend1, *inend2;
 
     *out = 0;
     *outlen = 0;
 
-    // loop until no more
-	// find first element  s1:s1len
-	// find second element s2:s2len
+    in1 = cp1 = argv[0].dsc$a_pointer;
+    inend1 = in1 + argv[0].dsc$w_length;
+    in2 = cp2 = argv[1].dsc$a_pointer;
+    inend2 = in2 + argv[1].dsc$w_length;
 
-	// cat out, s1:slen,s2:s2len
+    while ((cp1 < inend1) || (cp2 < inend2)) {
+	if (cp1 < inend1) {
+    	    while ((cp1 < inend1)
+	    	&& (strchr(WHITESPACE, *cp1) != (char *) 0))
+    	    	cp1++;
+	    if (cp1 < inend1) {
+	    	ep1 = cp1;
+    	    	while ((++cp1 < inend1)
+    	    	    && (strchr(WHITESPACE, *cp1) == (char *) 0))
+    	    	    ;
+	    	*out = cat(*out, ep1, cp1 - ep1);
+	    }
+	}
+
+	if (cp2 < inend2) {
+    	    while ((cp2 < inend2)
+	    	&& (strchr(WHITESPACE, *cp2) != (char *) 0))
+    	    	cp2++;
+	    if (cp2 < inend2) {
+	    	ep2 = cp2;
+    	    	while ((++cp2 < inend2)
+    	    	    && (strchr(WHITESPACE, *cp2) == (char *) 0))
+    	    	    ;
+	    	*out = cat(*out, ep2, cp2 - ep2);
+	    }
+	}
+
+	if (*out != 0) *out = cat(*out, " ");
+    }
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_join */
