@@ -2242,7 +2242,7 @@ static int apply_info (int argc, char **out, int *outlen) {
 */
 static int apply_join (int argc, char **out, int *outlen) {
 
-    char *cp1, *cp2, *ep1, *ep2, *in1, *in2, *inend1, *inend2;
+    char *cp1, *cp2, *in1, *in2, *inend1, *inend2;
 
     *out = 0;
     *outlen = 0;
@@ -2251,8 +2251,10 @@ static int apply_join (int argc, char **out, int *outlen) {
     inend1 = in1 + argv[0].dsc$w_length;
     in2 = cp2 = argv[1].dsc$a_pointer;
     inend2 = in2 + argv[1].dsc$w_length;
-
     while ((cp1 < inend1) || (cp2 < inend2)) {
+	char *ep1 = 0, *ep2 = 0;
+	int elen1 = 0, elen2 = 0;
+
 	if (cp1 < inend1) {
     	    while ((cp1 < inend1)
 	    	&& (strchr(WHITESPACE, *cp1) != (char *) 0))
@@ -2262,7 +2264,7 @@ static int apply_join (int argc, char **out, int *outlen) {
     	    	while ((++cp1 < inend1)
     	    	    && (strchr(WHITESPACE, *cp1) == (char *) 0))
     	    	    ;
-	    	*out = cat(*out, ep1, cp1 - ep1);
+		elen1 = cp1 - ep1;
 	    }
 	}
 
@@ -2275,11 +2277,13 @@ static int apply_join (int argc, char **out, int *outlen) {
     	    	while ((++cp2 < inend2)
     	    	    && (strchr(WHITESPACE, *cp2) == (char *) 0))
     	    	    ;
-	    	*out = cat(*out, ep2, cp2 - ep2);
+		elen2 = cp2 - ep2;
 	    }
 	}
 
-	if (*out != 0) *out = cat(*out, " ");
+	if ((elen1 != 0) || (elen2 != 0)) {
+	    *out = cat(*out, ep1, elen1, ep2, elen2, " ");
+	}
     }
     if (*out != 0) *outlen = strlen(*out) - 1;
 
