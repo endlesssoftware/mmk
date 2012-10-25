@@ -90,9 +90,10 @@
 **	27-SEP-2012 V3.3-2  Sneddon	Add FOREACH.
 **	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT,
 **					 STRIP, COLLAPSE.
+**	24-OCT-2012 V3.3-4  Sneddon	Add JOIN.
 **--
 */
-#pragma module SYMBOLS "V3.3-3"
+#pragma module SYMBOLS "V3.3-4"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
