@@ -91,9 +91,10 @@
 **	08-OCT-2012 V3.3-3  Sneddon	Add FINDSTRING, FILTER, FILTER-OUT,
 **					 STRIP, COLLAPSE.
 **	24-OCT-2012 V3.3-4  Sneddon	Add JOIN.
+**	25-OCT-2012 V3.3-5  Sneddon	Add ADDPREFIX, ADDSUFFIX.
 **--
 */
-#pragma module SYMBOLS "V3.3-4"
+#pragma module SYMBOLS "V3.3-5"
 #include "mmk.h"
 #include "globals.h"
 #include <stdarg.h>
@@ -125,6 +126,8 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int *, int);
+    static int apply_addsuffix(int, char **, int *);
+    static int apply_addprefix(int, char **, int *);
     static int apply_and(int, char **, int *);
     static int apply_basename(int, char **, int*);
     static int apply_call(int, char **, int *);
@@ -178,13 +181,13 @@
 
     Unimplemented builtins...
 
-	ADDPREFIX
-	ADDSUFFIX
 	PATSUBST
 	SORT
 	SUBST
 
 */
+	{ "ADDPREFIX",		0, 2, 0x00000000, apply_addprefix,   },
+	{ "ADDSUFFIX",		0, 2, 0x00000000, apply_addsuffix,   },
 	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
 	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
 	{ "CALL",		1, 1, 0x00000000, apply_call,	     },
@@ -1150,6 +1153,130 @@ static char *apply_builtin (char *name, char *in, int inlen,
 
     return cp;
 } /* apply_builtin */
+
+/*
+**++
+**  ROUTINE:	apply_addprefix
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in ADDPREFIX function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_addprefix (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend, *prefix = 0;
+    int prefixlen = 0;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while ((cp < inend)
+    	&& (strchr(WHITESPACE, *cp) != (char *) 0))
+    	cp++;
+    if (cp < inend) {
+    	prefix = cp;
+	prefixlen = inend - prefix;
+    }
+
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    while (cp < inend) {
+    	while ((cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    cp++;
+	if (cp < inend) {
+    	    ep = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+    	    *out = cat(*out, prefix, prefixlen, ep, cp-ep, " ");
+	}
+    }
+    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    return 0;
+} /* apply_addprefix */
+
+/*
+**++
+**  ROUTINE:	apply_addsuffix
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in ADDSUFFIX function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_addsuffix (int argc, char **out, int *outlen) {
+
+    char *cp, *ep, *in, *inend, *suffix = 0;
+    int suffixlen = 0;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while ((cp < inend)
+    	&& (strchr(WHITESPACE, *cp) != (char *) 0))
+    	cp++;
+    if (cp < inend) {
+    	suffix = cp;
+	suffixlen = inend - suffix;
+    }
+
+    in = cp = argv[1].dsc$a_pointer;
+    inend = in + argv[1].dsc$w_length;
+    while (cp < inend) {
+    	while ((cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    cp++;
+	if (cp < inend) {
+    	    ep = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+    	    *out = cat(*out, ep, cp-ep, suffix, suffixlen, " ");
+	}
+    }
+    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    return 0;
+} /* apply_addsuffix */
 
 /*
 **++
