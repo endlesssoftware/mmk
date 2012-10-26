@@ -92,11 +92,13 @@
 **					 STRIP, COLLAPSE.
 **	24-OCT-2012 V3.3-4  Sneddon	Add JOIN.
 **	25-OCT-2012 V3.3-5  Sneddon	Add ADDPREFIX, ADDSUFFIX.
+**	26-OCT-2012 V3.3-6  Sneddon	Add SORT
 **--
 */
-#pragma module SYMBOLS "V3.3-5"
+#pragma module SYMBOLS "V3.3-6"
 #include "mmk.h"
 #include "globals.h"
+#include <libvmdef.h>
 #include <stdarg.h>
 #include <string.h>
 #include <strdef.h>
@@ -115,8 +117,19 @@
     };
 
 /*
+** Tree node for LIB$xxx_TREE
+*/
+    struct LEAF {
+	void *left, *right;
+	int reserved;
+	struct dsc$descriptor str;
+    };
+    const static int LEAF_S_LEAFDEF = sizeof(struct LEAF);
+
+/*
 ** Forward declarations
 */
+
     struct SYMBOL *Lookup_Symbol(char *);
     void Define_Symbol(SYMTYPE, char *, char *, int, ...);
     int Resolve_Symbols(char *, int, char **, int *, int, ...);
@@ -150,6 +163,10 @@
     static int apply_notdir(int, char **, int *);
     static int apply_or(int, char **, int *);
     static int apply_origin(int, char **, int *);
+    static int apply_sort(int, char **, int *);
+    static int apply_sort_cmp(struct dsc$descriptor *, struct LEAF *, void *);
+    static int apply_sort_malloc(struct dsc$descriptor *, struct LEAF **, int);
+    static int apply_sort_cat(struct LEAF *, char **);
     static int apply_strip(int, char **, int *);
     static int apply_warn(int, char **, int *);
     static int apply_wildcard(int, char **, int *);
@@ -182,7 +199,6 @@
     Unimplemented builtins...
 
 	PATSUBST
-	SORT
 	SUBST
 
 */
@@ -210,6 +226,7 @@
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
 	{ "OR",			1, 1, 0xFFFFFFFF, apply_or,	     },
 	{ "ORIGIN",		0, 1, 0x00000000, apply_origin,	     },
+	{ "SORT",		0, 1, 0x00000000, apply_sort,	     },
 	{ "STRIP",		0, 1, 0x00000000, apply_strip,	     },
 	{ "WARN",		1, 1, 0x00000000, apply_warn,	     },
 	{ "WARNING",		1, 1, 0x00000000, apply_warn,	     },
@@ -2650,6 +2667,183 @@ static int apply_origin (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_origin */
+
+/*
+**++
+**  ROUTINE:	apply_sort
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in SORT function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_sort (int argc, char **out, int *outlen) {
+
+    struct dsc$descriptor symbol;
+    static int zone = 0;
+    char *cp, *ep, *in, *inend;
+    int count, duplicates = 0, status;
+    void *tree = 0;
+
+    *out = 0;
+    *outlen = 0;
+
+    if (zone == 0) {
+    	unsigned int algorithm = LIB$K_VM_FIXED;
+    	unsigned int flags = LIB$M_VM_GET_FILL0 | LIB$M_VM_EXTEND_AREA;
+    	status = lib$create_vm_zone(&zone, &algorithm, &LEAF_S_LEAFDEF,
+				    &flags);
+    	if (!OK(status)) lib$signal(MMK__NOALLOC, 1, "SORT", status);
+    }
+
+    symbol.dsc$b_dtype = DSC$K_DTYPE_T;
+    symbol.dsc$b_class = DSC$K_CLASS_S;
+
+    count = 0;
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+	    struct LEAF *node;
+
+	    symbol.dsc$a_pointer = cp;
+    	    while ((++cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
+    	    	;
+	    symbol.dsc$w_length = cp - symbol.dsc$a_pointer;
+	    status = lib$insert_tree(&tree, &symbol, &duplicates,
+				     apply_sort_cmp, apply_sort_malloc,
+				     &node, zone);
+	    if (!OK(status)) lib$signal(status);
+	    count++;
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+
+    lib$traverse_tree(&tree, apply_sort_cat, out);
+    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    lib$reset_vm_zone(&zone);
+
+    return 0;
+} /* apply_sort */
+
+/*
+**++
+**  ROUTINE:	apply_sort_cmp
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Compare routine used by apply_sort to call lib$insert_tree.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_sort_cmp(struct dsc$descriptor *symbol,
+			  struct LEAF *node,
+			  void *unused) {
+    return str$compare(symbol, &node->str);
+} /* apply_sort_cmp */
+
+/*
+**++
+**  ROUTINE:	apply_sort_malloc
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Allocation routine used by apply_sort to call lib$insert_tree.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_sort_malloc(struct dsc$descriptor *symbol,
+			     struct LEAF **node,
+			     int zone) {
+    int status;
+
+    status = lib$get_vm(&LEAF_S_LEAFDEF, node, &zone);
+    if (OK(status)) (*node)->str = *symbol;
+    return status;
+} /* apply_sort_malloc */
+
+/*
+**++
+**  ROUTINE:	apply_sort_cat
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Routine that traverses a balanced binary tree.  Called by apply_sort
+**  for use with lib$traverse_tree.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_sort_cat(struct LEAF *node,
+			  char **out) {
+
+    *out = cat(*out, node->str.dsc$a_pointer, node->str.dsc$w_length, " ", 1);
+    return 1;
+} /* apply_sort_cat */
 
 /*
 **++
