@@ -547,7 +547,7 @@ Invokes the MMK utility to build a software system.
 <qpair>(/[NO]OVERRIDE\/NOOVERRIDE)
 <qpair>(/[NO]RULES_FILE=file-spec...\)
 <qpair>(/[NO]SKIP_INTERMEDIATES\/NOSKIP_INTERMEDIATES)
-<qpair>(/[NO]VERIFY\/VERIFY)
+<qpair>(/[NO]VERIFY\/VERIFY[=ALL])
 <qpair>(/WORKING_DIRECTORY=dir-spec\)
 <endqual_list>
 
@@ -713,6 +713,10 @@ file.
 <qualitem>(/[NO]VERIFY)
 <qualdef>
 Controls whether MMK echoes action lines to SYS$OUTPUT.  Enabled by default.
+
+For debugging purposes it is possible to specify the keyword ALL which will
+cause MMK to verify all action lines, even those prefixed with @ (silent)
+action line prefix.  This also overrides the .SILENT directive.
 
 <qualitem>(/WORKING_DIRECTORY=dir-spec)
 <qualdef>
