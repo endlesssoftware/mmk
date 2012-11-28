@@ -102,7 +102,6 @@ borrowed from BSD and GNU make:
 <HEAD1>(New Else-If Directive)
 <P>MMK now supports the .ELSIF directive, also available in DEC/MMS.
 
-
 * Introduction of .IF .ELSIF and comparison operators to
   bring MMK more inline with current MMS features.
     -- LIST THEM ALL HERE...
@@ -121,6 +120,11 @@ borrowed from BSD and GNU make:
   unique to MMK.
     -- MENTION ASSIGNMENT, POINTER TO BIT IN MANUAL
        HOWEVER, NO $(shell)
+
+<HEAD1>(Description File Debugging Feature)
+<P>MMK now supports using the ALL keyword with the /VERIFY qualifier.  This
+new keyword forces all action lines to be verified, even those prefixed
+with @.  This qualifier also overrides the .SILENT directive.
 
 <CHAPTER>(New Features and Changes in MMX V4.0)
 <P>
