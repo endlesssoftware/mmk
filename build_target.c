@@ -92,9 +92,10 @@
 **  	14-JUL-2012 V2.7    Sneddon 	github issue #1: add support for
 **					  extended DCL command line. Thanks to
 **					  Craig A. Berry.
+**	28-NOV-2012 V2.8    Sneddon	Support /VERIFY=ALL.
 **--
 */
-#pragma module BUILD_TARGET "V2.7"
+#pragma module BUILD_TARGET "V2.8"
 #include "mmk.h"
 #include "globals.h"
 #include <rmsdef.h>
@@ -869,7 +870,7 @@ void close_subprocess (void) {
     	lbr_flush();
     	for (cmd = do_last.flink; cmd != &do_last; cmd = cmd->flink) {
     	    Resolve_Symbols(cmd->cmd, strlen(cmd->cmd), &tmp, &tmplen, 0);
-    	    if (verify && (noaction || !(cmd->flags & CMD_M_NOECHO))) {
+    	    if (verify == 2 || verify && (noaction || !(cmd->flags & CMD_M_NOECHO))) {
     	    	INIT_SDESC(tmpdsc, tmplen, tmp);
     	    	put_command(&tmpdsc);
     	    }
@@ -1069,7 +1070,7 @@ static void execute_command (SPHANDLE *spctxP, struct CMD *cmd, char *target_nam
     struct dsc$descriptor tmpdsc;
 
     is_MMS_command = Resolve_Symbols(cmd->cmd, strlen(cmd->cmd), &tmp, &tmplen, 0);
-    if (verify && (noaction || !(cmd->flags & CMD_M_NOECHO))) {
+    if (verify == 2 || verify && (noaction || !(cmd->flags & CMD_M_NOECHO))) {
     	INIT_SDESC(tmpdsc, tmplen, tmp);
     	put_command(&tmpdsc);
     }
