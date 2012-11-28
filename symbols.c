@@ -93,9 +93,10 @@
 **	24-OCT-2012 V3.3-4  Sneddon	Add JOIN.
 **	25-OCT-2012 V3.3-5  Sneddon	Add ADDPREFIX, ADDSUFFIX.
 **	26-OCT-2012 V3.3-6  Sneddon	Add SORT
+**	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **--
 */
-#pragma module SYMBOLS "V3.3-6"
+#pragma module SYMBOLS "V3.3-7"
 #include "mmk.h"
 #include "globals.h"
 #include <libvmdef.h>
@@ -163,6 +164,7 @@
     static int apply_notdir(int, char **, int *);
     static int apply_or(int, char **, int *);
     static int apply_origin(int, char **, int *);
+    static int apply_patsubst(int, char **, int *);
     static int apply_sort(int, char **, int *);
     static int apply_sort_cmp(struct dsc$descriptor *, struct LEAF *, void *);
     static int apply_sort_malloc(struct dsc$descriptor *, struct LEAF **, int);
@@ -198,7 +200,6 @@
 
     Unimplemented builtins...
 
-	PATSUBST
 	SUBST
 
 */
@@ -226,6 +227,7 @@
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
 	{ "OR",			1, 1, 0xFFFFFFFF, apply_or,	     },
 	{ "ORIGIN",		0, 1, 0x00000000, apply_origin,	     },
+	{ "PATSUBST",		0, 3, 0x00000000, apply_patsubst,    },
 	{ "SORT",		0, 1, 0x00000000, apply_sort,	     },
 	{ "STRIP",		0, 1, 0x00000000, apply_strip,	     },
 	{ "WARN",		1, 1, 0x00000000, apply_warn,	     },
@@ -1256,6 +1258,7 @@ static int apply_addprefix (int argc, char **out, int *outlen) {
 **
 **  SIDE EFFECTS:   	None.
 **
+
 **--
 */
 static int apply_addsuffix (int argc, char **out, int *outlen) {
@@ -2667,6 +2670,91 @@ static int apply_origin (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_origin */
+
+/*
+**++
+**  ROUTINE:	apply_patsubst
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in PATSUBST function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_patsubst (int argc, char **out, int *outlen) {
+
+    char *cp, *in, *inend, *pat, *patend, *pp, *to, *toend, *tp;
+
+    *out = 0;
+    *outlen = 0;
+
+    pat = argv[0].dsc$a_pointer;
+    patend = pat + argv[0].dsc$w_length;
+
+    to = argv[1].dsc$a_pointer;
+    toend = to + argv[1].dsc$w_length;
+
+    in = cp = argv[2].dsc$a_pointer;
+    inend = in + argv[2].dsc$w_length;
+    while (cp < inend) {
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+	    char *match = cp, star = 0;
+	    pp = pat;
+	    while (cp < inend) {
+		if (star) {
+		    if (toupper(*cp) == star) {
+			star = 0;
+			pp++;
+		    }
+		} else if (*pp == '*') {
+		    if (++pp < patend)
+			star = toupper(*pp);
+		    else
+			break;
+		} else if (*pp = '%') {
+		    pp++;
+		} else if (toupper(*cp) == toupper(*pp)) {
+		    pp++;
+		} else {
+		    break;
+		}
+		if (strchr(WHITESPACE, *(++cp)) != 0) break;
+	    }
+
+	    if ((pp == patend)
+		&& ((cp == inend) || (strchr(WHITESPACE, *(cp)) != 0))) {
+
+		printf("matched!\n");
+		// loop over 'to'
+		// as we hit each * or %
+		// match it to the equivalent part from the 'pattern'
+		//  using 'cat' build it into the output from the input
+		// then pop that entry out of the queue so next one is
+		//  wherewe are at...
+	    }
+    	}
+    	while ((++cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
+    	    ;
+    }
+
+    return 0;
+} /* apply_patsubst */
 
 /*
 **++
