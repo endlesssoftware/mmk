@@ -141,6 +141,7 @@
 **	10-OCT-2008 V4.1    Sneddon 	New MMS compat. features.
 **	01-APR-2010 V4.1-1  Sneddon 	Updated version number for minor release.  Added MMSTARGETS.
 **	04-OCT-2010 V5.0    Sneddon	New version. Add /VERIFY=ALL.
+**	10-DEC-2012 V5.0    Sneddon	Fix to /VERIFY=ALL code.
 **--
 */
 #define MMK_VERSION 	  "V5.0"
@@ -301,7 +302,7 @@ unsigned int main (void) {
     INIT_QUEUE(do_first);
     INIT_QUEUE(do_last);
     exit_status = SS$_NORMAL;
-    verify = ignore = override_silent = override_ignore = symbol_override;
+    ignore = override_silent = override_ignore = symbol_override;
     skip_intermediates = 0;
     builtins = override_builtins = 0;
     case_sensitive = override_case = 0;
@@ -385,6 +386,8 @@ unsigned int main (void) {
     } else if (status == CLI$_NEGATED) {
 	override_silent = 1;
 	add_to_mmsqual("/NOVERIFY");
+    } else {
+    	verify = 1;
     }
     symbol_override = (cli_present("OVERRIDE") == CLI$_PRESENT);
     if (symbol_override) add_to_mmsqual("/OVERRIDE");
