@@ -93,9 +93,12 @@
 **					  extended DCL command line. Thanks to
 **					  Craig A. Berry.
 **	28-NOV-2012 V2.8    Sneddon	Support /VERIFY=ALL.
+**	08-DEC-2012 V2.9-1  Craig Berry Unconditionally update double colon
+**					  targets with no sources, but not all
+**					  generic targets.
 **--
 */
-#pragma module BUILD_TARGET "V2.8"
+#pragma module BUILD_TARGET "V2.8-1"
 #include "mmk.h"
 #include "globals.h"
 #include <rmsdef.h>
@@ -415,10 +418,12 @@ static int needs_updating (struct DEPEND *dep, struct RULE **rule,
     }
 
 /*
-** Generic targets are always updated
+** Double colon targets with no sources are always updated.
 */
-    if (!doit) doit = (dep->target->type == MMK_K_OBJ_GENERIC);
-
+    if (!doit) doit = (dep->double_colon
+		       && dep->sources.flink == dep->sources.blink
+		       && dep->sources.flink == &dep->sources);
+ 
 /*
 ** Special handling for library modules; the file name we use is
 ** the library's filename.
