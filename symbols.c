@@ -2698,7 +2698,12 @@ static int apply_origin (int argc, char **out, int *outlen) {
 */
 static int apply_patsubst (int argc, char **out, int *outlen) {
 
-    char *cp, *in, *inend, *pat, *patend, *pp, *to, *toend, *tp;
+    struct FROM {
+	struct FROM *flink, *blink;
+	char *ptr;
+	int len;
+    } *froment, fromque = { &fromque, &fromque, 0, 0 };
+    char *cp, *in, *inend, *pat, *patend, *pp, *to, *toend, *tp, *tp2;
 
     *out = 0;
     *outlen = 0;
@@ -2718,16 +2723,23 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
 	    while (cp < inend) {
 		if (star) {
 		    if (toupper(*cp) == star) {
+			froment = 0;
 			star = 0;
 			pp++;
+		    } else {
+			froment->len++;
 		    }
-		} else if (*pp == '*') {
-		    if (++pp < patend)
-			star = toupper(*pp);
-		    else
-			break;
-		} else if (*pp = '%') {
-		    pp++;
+		} else if ((*pp == '*') || (*pp == '%')) {
+		    froment = malloc(sizeof(struct FROM));
+		    froment->ptr = cp;
+		    froment->len = 1;
+		    queue_insert(fromque.blink, froment);
+		    if (*pp++ == '*') {
+			if (pp < patend)
+			    star = toupper(*pp);
+			else
+			    break;
+		    }
 		} else if (toupper(*cp) == toupper(*pp)) {
 		    pp++;
 		} else {
@@ -2738,20 +2750,31 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
 
 	    if ((pp == patend)
 		&& ((cp == inend) || (strchr(WHITESPACE, *(cp)) != 0))) {
-
-		printf("matched!\n");
-		// loop over 'to'
-		// as we hit each * or %
-		// match it to the equivalent part from the 'pattern'
-		//  using 'cat' build it into the output from the input
-		// then pop that entry out of the queue so next one is
-		//  wherewe are at...
+		for (tp = tp2 = to; tp < toend; tp++) {
+		    if ((*tp == '%') || (*tp == '*')) {
+			if (queue_remove(fromque.flink, &froment)) {
+			    if (*tp == '%') froment->len = 1;
+			    *out = cat(*out, tp2, tp-tp2, froment->ptr,
+				       froment->len);
+			    free(froment);
+			} else {
+			    *out = cat(*out, tp2, tp-tp2);
+			}
+			tp2 = tp+1;
+		    }
+		}
+		if (tp2 != toend) {
+		    *out = cat(*out, tp2, tp-tp2, " ", 1);
+		}
 	    }
+	    while (queue_remove(fromque.flink, &froment)) free(froment);
     	}
     	while ((++cp < inend)
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
+
+    if (*out) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_patsubst */
