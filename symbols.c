@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2013, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -94,9 +94,10 @@
 **	25-OCT-2012 V3.3-5  Sneddon	Add ADDPREFIX, ADDSUFFIX.
 **	26-OCT-2012 V3.3-6  Sneddon	Add SORT
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
+**	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **--
 */
-#pragma module SYMBOLS "V3.3-7"
+#pragma module SYMBOLS "V3.3-8"
 #include "mmk.h"
 #include "globals.h"
 #include <libvmdef.h>
@@ -170,6 +171,7 @@
     static int apply_sort_malloc(struct dsc$descriptor *, struct LEAF **, int);
     static int apply_sort_cat(struct LEAF *, char **);
     static int apply_strip(int, char **, int *);
+    static int apply_subst(int, char **, int *);
     static int apply_warn(int, char **, int *);
     static int apply_wildcard(int, char **, int *);
     static int apply_word(int, char **, int *);
@@ -196,13 +198,6 @@
     	"MMS$CMS_LIBRARY", "MMS$CMS_ELEMENT", "MMS$CMS_GEN",
     	"MMS$TARGET_FNAME","MMS$SOURCE_FNAME"};
     static struct FUNCTION functions[] = {
-/*
-
-    Unimplemented builtins...
-
-	SUBST
-
-*/
 	{ "ADDPREFIX",		0, 2, 0x00000000, apply_addprefix,   },
 	{ "ADDSUFFIX",		0, 2, 0x00000000, apply_addsuffix,   },
 	{ "AND",		1, 1, 0xFFFFFFFF, apply_and,	     },
@@ -230,6 +225,7 @@
 	{ "PATSUBST",		0, 3, 0x00000000, apply_patsubst,    },
 	{ "SORT",		0, 1, 0x00000000, apply_sort,	     },
 	{ "STRIP",		0, 1, 0x00000000, apply_strip,	     },
+	{ "SUBST",		0, 3, 0x00000000, apply_subst,	     },
 	{ "WARN",		1, 1, 0x00000000, apply_warn,	     },
 	{ "WARNING",		1, 1, 0x00000000, apply_warn,	     },
 	{ "WILDCARD",		0, 1, 0x00000000, apply_wildcard,    },
@@ -3012,6 +3008,56 @@ static int apply_strip (int argc, char **out, int *outlen) {
 
     return 0;
 } /* apply_strip */
+
+/*
+**++
+**  ROUTINE:	apply_subst
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in SUBST function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_subst (int argc, char **out, int *outlen) {
+
+    struct dsc$descriptor *from, *in, *to;
+    int pos, start = 1;
+
+    *out = 0;
+    *outlen = 0;
+
+    from = &argv[0];
+    to = &argv[1];
+    in = &argv[2];
+
+    while ((pos = str$position(in, from, &start)) != 0) {
+	*out = cat(*out, in->dsc$a_pointer+start-1, pos-start,
+		   to->dsc$a_pointer, to->dsc$w_length);
+	start = pos + from->dsc$w_length;
+    }
+    if ((pos == 0) && (start <= in->dsc$w_length))
+	*out = cat(*out, in->dsc$a_pointer+start-1, in->dsc$w_length-start+1);
+
+    if (*out) *outlen = strlen(*out);
+
+    return 0;
+} /* apply_subst */
 
 /*
 **++
