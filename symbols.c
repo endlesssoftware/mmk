@@ -2718,11 +2718,12 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
     inend = in + argv[2].dsc$w_length;
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
-	    char *match = cp, star = 0;
+	    char star = 0;
+	    in = cp;
 	    pp = pat;
 	    while (cp < inend) {
 		if (star) {
-		    if (toupper(*cp) == star) {
+		    if (*cp == star) {
 			froment = 0;
 			star = 0;
 			pp++;
@@ -2733,14 +2734,14 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
 		    froment = malloc(sizeof(struct FROM));
 		    froment->ptr = cp;
 		    froment->len = 1;
-		    queue_insert(fromque.blink, froment);
+		    queue_insert(froment, fromque.blink);
 		    if (*pp++ == '*') {
 			if (pp < patend)
-			    star = toupper(*pp);
+			    star = *pp;
 			else
 			    break;
 		    }
-		} else if (toupper(*cp) == toupper(*pp)) {
+		} else if (*cp == *pp) {
 		    pp++;
 		} else {
 		    break;
@@ -2766,8 +2767,13 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
 		if (tp2 != toend) {
 		    *out = cat(*out, tp2, tp-tp2, " ", 1);
 		}
+	    } else {
+		*out = cat(*out, in, cp-in, " ", 1);
 	    }
-	    while (queue_remove(fromque.flink, &froment)) free(froment);
+
+	    while (queue_remove(fromque.flink, &froment)) {
+		free(froment);
+	    }
     	}
     	while ((++cp < inend)
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
