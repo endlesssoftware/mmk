@@ -142,7 +142,7 @@
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
-				int *, int, int *);
+				int *, int);
     static int apply_addsuffix(int, char **, int *);
     static int apply_addprefix(int, char **, int *);
     static int apply_and(int, char **, int *);
@@ -465,21 +465,14 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     struct SYMBOL *valsym;
     char var[MMK_S_SYMBOL+1];
     int len, curlen, tmplen, first, *did_one = 0, free_val, i;
-    int actualcount, resolved_MMS_macro, *unresolved_symbols = 0;
+    int actualcount, resolved_MMS_macro;
 
     va_count(actualcount);
     va_start(ap, dont_resolve_unknowns);
     if (actualcount >= 6) {
 	did_one = va_arg(ap, int *);
-	if (actualcount >= 7) {
-	    unresolved_symbols = va_arg(ap, int *);
-	}
     }
-	if (!unresolved_symbols) {
-	    unresolved_symbols = __ALLOCA(sizeof(int));
-	    *unresolved_symbols = 0;
-	}
-	if (!did_one) did_one = __ALLOCA(sizeof(int));
+    if (did_one == 0) did_one = __ALLOCA(sizeof(int));
     va_end(ap);
     first = 1;
     resolved_MMS_macro = 0;
@@ -558,8 +551,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 			    cp = apply_builtin(var, colp,
 						inend-colp, &val, &len,
 						&resolved_MMS_macro, did_one,
-						dont_resolve_unknowns,
-						unresolved_symbols);
+						dont_resolve_unknowns);
 			    free_val = (val != (char *)0);
 			} else {
     	    	    	    colp = find_char(dp, pp, "$");
@@ -615,7 +607,6 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 ** are on the special "non_resolvables" list.
 */
     	    	    	    if (dont_resolve_unknowns == 1) {
-				*unresolved_symbols = 1;
     	    	    	    	len = 1;
     	    	    	    	val = is_special ? dp-1 : dp-2;
     	    	    	    	cp = is_special ? dp : dp-1;
@@ -628,7 +619,6 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    	    	    }
     	    	    	    	    if (i < sizeof(non_resolvables)/
     	    	    	    	    	    sizeof(non_resolvables[0])) {
-				        *unresolved_symbols = 1;
     	    	    	    	        len = 1;
     	    	    	    	    	val = is_special ? dp-1 : dp-2;
     	    	    	    	    	cp = is_special ? dp : dp-1;
@@ -1073,8 +1063,7 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 */
 static char *apply_builtin (char *name, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
-			    int *did_one, int dont_resolve_unknowns,
-			    int *unresolved_symbols) {
+			    int *did_one, int dont_resolve_unknowns) {
 
     struct FUNCTION *f = 0;
     char *ap, *cp, *inend;
@@ -1155,13 +1144,13 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
 						&rlen, dont_resolve_unknowns,
-						did_one, unresolved_symbols);
+						did_one);
 		    argv[i].dsc$a_pointer = rptr;
 		    argv[i].dsc$w_length = (unsigned short)rlen;
 	    	}
 	    }
 
-	    if (*unresolved_symbols == 0) {
+	    if (dont_resolve_unknowns == 0) {
 	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
 	    } else {
 		*out = cat(*out, "$(", 2, f->name, -1, " ", 1);
