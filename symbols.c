@@ -101,6 +101,7 @@
 #pragma module SYMBOLS "V3.3-9"
 #include "mmk.h"
 #include "globals.h"
+#include <builtins.h>
 #include <libvmdef.h>
 #include <stdarg.h>
 #include <string.h>
@@ -141,7 +142,7 @@
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
-				int *, int);
+				int *, int, int *);
     static int apply_addsuffix(int, char **, int *);
     static int apply_addprefix(int, char **, int *);
     static int apply_and(int, char **, int *);
@@ -463,28 +464,29 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     char *cp, *inend, *dp, *pp, *tmp, *val, *colp;
     struct SYMBOL *valsym;
     char var[MMK_S_SYMBOL+1];
-    int len, curlen, tmplen, first, did_one, free_val, i;
-    int actualcount, resolved_MMS_macro;
-    int *was_one = 0, *unresolved_special = 0;
+    int len, curlen, tmplen, first, *did_one = 0, free_val, i;
+    int actualcount, resolved_MMS_macro, *unresolved_symbols = 0;
 
     va_count(actualcount);
     va_start(ap, dont_resolve_unknowns);
-    switch (actualcount) {
-    case 7:
-	unresolved_special = va_arg(ap, int *);
-	if (unresolved_special) *unresolved_special = 0;
-    case 6:
-	was_one = va_arg(ap, int *);
-	if (was_one) *was_one = 0;
+    if (actualcount >= 6) {
+	did_one = va_arg(ap, int *);
+	if (actualcount >= 7) {
+	    unresolved_symbols = va_arg(ap, int *);
+	}
     }
+	if (!unresolved_symbols) {
+	    unresolved_symbols = __ALLOCA(sizeof(int));
+	    *unresolved_symbols = 0;
+	}
+	if (!did_one) did_one = __ALLOCA(sizeof(int));
     va_end(ap);
-
     first = 1;
     resolved_MMS_macro = 0;
 
     do {
 
-    	did_one = 0;
+    	*did_one = 0;
     	tmp = malloc(tmplen = inlen);
     	cp = in;
     	inend = in+inlen;
@@ -555,9 +557,10 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 			    ++colp;
 			    cp = apply_builtin(var, colp,
 						inend-colp, &val, &len,
-						&resolved_MMS_macro, &did_one,
-						dont_resolve_unknowns);
-			    free_val = 1;
+						&resolved_MMS_macro, did_one,
+						dont_resolve_unknowns,
+						unresolved_symbols);
+			    free_val = (val != (char *)0);
 			} else {
     	    	    	    colp = find_char(dp, pp, "$");
     	    	    	    if (colp != 0) if (colp < pp-1 && (*(colp+1) == '('
@@ -592,7 +595,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    if (pp != 0) {
     	    	    	valsym = Lookup_Symbol(var);
     	    	    	if (valsym != (struct SYMBOL *) 0) {
-    	    	    	    did_one = 1;
+    	    	    	    *did_one = 1;
     	    	    	    if (strcmp(valsym->name, "MMS") == 0) resolved_MMS_macro = 1;
     	    	    	    if (colp != 0) {
     	    	    	    	apply_subst_rule(valsym->value, colp+1, &val, &len);
@@ -612,35 +615,33 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 ** are on the special "non_resolvables" list.
 */
     	    	    	    if (dont_resolve_unknowns == 1) {
+				*unresolved_symbols = 1;
     	    	    	    	len = 1;
     	    	    	    	val = is_special ? dp-1 : dp-2;
     	    	    	    	cp = is_special ? dp : dp-1;
     	    	    	    } else {
-    	    	    	    	if (dont_resolve_unknowns == 2) {
+				if (dont_resolve_unknowns == 2) {
     	    	    	    	    for (i = 0; i < sizeof(non_resolvables)/
     	    	    	    	    	    	sizeof(non_resolvables[0]); i++) {
-    	    	    	    	    	if (strcmp(var, non_resolvables[i]) == 0) break;
+    	    	    	    	        if (strcmp(var, non_resolvables[i]) == 0)
+					    break;
     	    	    	    	    }
-printf("unresolvable i = %d\n", i);
     	    	    	    	    if (i < sizeof(non_resolvables)/
-    	    	    	    	    	    	sizeof(non_resolvables[0])) {
-					if (unresolved_special) {
-
-printf("unresolvable...\n");					    *unresolved_special = 1;
-					}
-    	    	    	    	    	len = 1;
+    	    	    	    	    	    sizeof(non_resolvables[0])) {
+				        *unresolved_symbols = 1;
+    	    	    	    	        len = 1;
     	    	    	    	    	val = is_special ? dp-1 : dp-2;
     	    	    	    	    	cp = is_special ? dp : dp-1;
     	    	    	    	    } else {
     	    	    	    	    	len = 0;
     	    	    	    	    	val = dp;
     	    	    	    	    	cp = pp + 1;
-    	    	    	    	    }
+				    }
     	    	    	    	} else {
     	    	    	    	    len = 0;
     	    	    	    	    val = dp;
     	    	    	    	    cp = pp + 1;
-    	    	    	    	}
+				}
     	    	    	    }
     	    	    	}
     	    	    } else {
@@ -662,17 +663,14 @@ printf("unresolvable...\n");					    *unresolved_special = 1;
     	if (!first) free(in);
     	first = 0;
 
-    	if (did_one) {
+    	if (*did_one) {
     	    in = tmp;
     	    inlen = curlen;
     	}
-
-	if (did_one && was_one != 0) *was_one = 1;
-    } while (did_one);
+    } while (*did_one);
 
     *out = tmp;
     *outlen = curlen;
-
     return resolved_MMS_macro;
 
 } /* Resolve_Symbols */
@@ -1075,11 +1073,12 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 */
 static char *apply_builtin (char *name, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
-			    int *did_one, int dont_resolve_unknowns) {
+			    int *did_one, int dont_resolve_unknowns,
+			    int *unresolved_symbols) {
 
     struct FUNCTION *f = 0;
     char *ap, *cp, *inend;
-    int argc, depth, i, status, unresolved_special = 0;
+    int argc, depth, i, status;
 
     *out = 0;
     *outlen = 0;
@@ -1156,19 +1155,23 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
 						&rlen, dont_resolve_unknowns,
-						did_one, &unresolved_special);
-		    if (unresolved_special) {
-printf("Found an unresolvable symbol!\n");
-			argc = i;
-			break;
-		    }
+						did_one, unresolved_symbols);
 		    argv[i].dsc$a_pointer = rptr;
 		    argv[i].dsc$w_length = (unsigned short)rlen;
 	    	}
 	    }
 
-	    if (!unresolved_special)
+	    if (*unresolved_symbols == 0) {
 	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
+	    } else {
+		*out = cat(*out, "$(", 2, f->name, -1, " ", 1);
+		for (i = 0; i < argc; i++) {
+		    *out = cat(*out, argv[i].dsc$a_pointer,
+			       argv[i].dsc$w_length,
+			       (i+1 == argc) ? ")" : ",", 1);
+		}
+		*outlen = strlen(*out);
+	    }
 
 	    for (i = 0; i < argc; i++) {
 	    	if (argv[i].dsc$a_pointer != 0) {
@@ -3059,10 +3062,6 @@ static int apply_subst (int argc, char **out, int *outlen) {
     from = &argv[0];
     to = &argv[1];
     in = &argv[2];
-
-    printf("in = %-*.*s\n", in->dsc$w_length, in->dsc$w_length, in->dsc$a_pointer);
-    printf("to = %-*.*s\n", to->dsc$w_length, to->dsc$w_length, to->dsc$a_pointer);
-    printf("from = %-*.*s\n", from->dsc$w_length, from->dsc$w_length, from->dsc$a_pointer);
 
     while ((pos = str$position(in, from, &start)) != 0) {
 	*out = cat(*out, in->dsc$a_pointer+start-1, pos-start,
