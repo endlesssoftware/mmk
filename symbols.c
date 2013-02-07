@@ -136,13 +136,13 @@
 
     struct SYMBOL *Lookup_Symbol(char *);
     void Define_Symbol(SYMTYPE, char *, char *, int, ...);
-    int Resolve_Symbols(char *, int, char **, int *, int, ...);
+    int Resolve_Symbols(char *, int, char **, int *, int);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
-				int *, int);
+				int);
     static int apply_addsuffix(int, char **, int *);
     static int apply_addprefix(int, char **, int *);
     static int apply_and(int, char **, int *);
@@ -458,28 +458,20 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 **--
 */
 int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
-    	    	    	int dont_resolve_unknowns, ...) {
+    	    	    	int dont_resolve_unknowns) {
 
-    va_list ap;
     char *cp, *inend, *dp, *pp, *tmp, *val, *colp;
     struct SYMBOL *valsym;
     char var[MMK_S_SYMBOL+1];
-    int len, curlen, tmplen, first, *did_one = 0, free_val, i;
+    int len, curlen, tmplen, first, did_one = 0, free_val, i;
     int actualcount, resolved_MMS_macro;
 
-    va_count(actualcount);
-    va_start(ap, dont_resolve_unknowns);
-    if (actualcount >= 6) {
-	did_one = va_arg(ap, int *);
-    }
-    if (did_one == 0) did_one = __ALLOCA(sizeof(int));
-    va_end(ap);
     first = 1;
     resolved_MMS_macro = 0;
 
     do {
 
-    	*did_one = 0;
+    	did_one = 0;
     	tmp = malloc(tmplen = inlen);
     	cp = in;
     	inend = in+inlen;
@@ -549,9 +541,10 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 			    builtin_called = 1;
 			    ++colp;
 			    cp = apply_builtin(var, colp,
-						inend-colp, &val, &len,
-						&resolved_MMS_macro, did_one,
-						dont_resolve_unknowns);
+					       inend-colp, &val, &len,
+					       &resolved_MMS_macro,
+					       dont_resolve_unknowns);
+			    did_one = (dont_resolve_unknowns == 0);
 			    free_val = (val != (char *)0);
 			} else {
     	    	    	    colp = find_char(dp, pp, "$");
@@ -587,7 +580,7 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	    	    if (pp != 0) {
     	    	    	valsym = Lookup_Symbol(var);
     	    	    	if (valsym != (struct SYMBOL *) 0) {
-    	    	    	    *did_one = 1;
+    	    	    	    did_one = 1;
     	    	    	    if (strcmp(valsym->name, "MMS") == 0) resolved_MMS_macro = 1;
     	    	    	    if (colp != 0) {
     	    	    	    	apply_subst_rule(valsym->value, colp+1, &val, &len);
@@ -653,11 +646,11 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
     	if (!first) free(in);
     	first = 0;
 
-    	if (*did_one) {
+    	if (did_one) {
     	    in = tmp;
     	    inlen = curlen;
     	}
-    } while (*did_one);
+    } while (did_one);
 
     *out = tmp;
     *outlen = curlen;
@@ -1063,7 +1056,7 @@ static void apply_full_subst_rule (char *orig, char *rule, char **xval, int *xle
 */
 static char *apply_builtin (char *name, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
-			    int *did_one, int dont_resolve_unknowns) {
+			    int dont_resolve_unknowns) {
 
     struct FUNCTION *f = 0;
     char *ap, *cp, *inend;
@@ -1143,8 +1136,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
 	            int rlen;
 	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
-						&rlen, dont_resolve_unknowns,
-						did_one);
+						&rlen, dont_resolve_unknowns);
 		    argv[i].dsc$a_pointer = rptr;
 		    argv[i].dsc$w_length = (unsigned short)rlen;
 	    	}
