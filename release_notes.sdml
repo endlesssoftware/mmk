@@ -108,8 +108,8 @@ This is nolonger the case with the following comparison tests been added to
 MMK.
 <TABLE>
 <TABLE_ATTRIBUTES>(SINGLE_SPACED)
+<TABLE_SETUP>(2\30)
 <TABLE_HEADS>(MMS Operator\MMK Operator)
-<TABLE_SETUP>(2\20)
 <TABLE_ROW>(.AND\AND)
 <TABLE_ROW>(.EQ\EQL)
 <TABLE_ROW>(.GE\GEQ)
@@ -138,7 +138,7 @@ functions currently supported.  Please see the User Guide for further details
 on their use.
 <TABLE>
 <TABLE_ATTRIBUTES>(SINGLE_SPACED)
-<TABLE_SETUP>(4\20\20)
+<TABLE_SETUP>(4\20\20\20)
 <TABLE_ROW>(ADDPREFIX\ADDSUFFIX\AND\BASENAME)
 <TABLE_ROW>(CALL\COLLAPSE\DIR\DIRECTORY)
 <TABLE_ROW>(ERROR\FILENAME\FILETYPE\FILEVERSION)
