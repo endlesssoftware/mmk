@@ -35,7 +35,7 @@ first appeared).
 existing MMK description files.  To assign the output of a command it is
 necessary to use the '!=' operator.  However, the '!' character is already
 a comment delimiter in MMK.  To resolve this, the MMK description file parser
-now tests for an '=' character immediately following a '!'.  Usually when
+now tests for a '=' character immediately following a '!'.  Usually when
 detecting a '!' character the remainder of the line (including the comment
 delimiter) will be stripped from the output.  However, in this special case
 the delimiter and the following characters will not be stripped and instead
@@ -59,7 +59,7 @@ community.
 return MMK to feature parity with MMS.
 <LIST>(UNNUMBERED)
 <LE>MMSTARGETS
-<LE>MMSESCRIPTION_FILE
+<LE>MMSDESCRIPTION_FILE
 <ENDLIST>
 
 <HEAD1>(Development and Support)
@@ -80,7 +80,7 @@ business might like to consider a support contract with Endless Software
 Solutions.  For further information regarding support and how to obtain
 a quote, please follow your browser to:
 
-   http://www.endlesssoftwaresolutions.com.au/main/MMK
+   http://www.endlesssoftwares.com.au
 
 For all other queries, please consider joining the MMK mailing list be
 sending a mail containg only the word SUBSCRIBE to:
@@ -94,32 +94,61 @@ Issues tracking system for this project.
 <P>This release includes support for the following macro assignment operators,
 borrowed from BSD and GNU make:
 <LIST>(UNNUMBERED)
-<LE>+= - concatenate to existing macro definition
-<LE>?= - assign only if macro is undefined
+<LE>+= - concatenate to existing macro definition;
+<LE>?= - assign only if macro is undefined; and
 <LE>!= - assign output from a command line
 <ENDLIST>
 
 <HEAD1>(New Else-If Directive)
 <P>MMK now supports the .ELSIF directive, also available in DEC/MMS.
 
-* Introduction of .IF .ELSIF and comparison operators to
-  bring MMK more inline with current MMS features.
-    -- LIST THEM ALL HERE...
+<HEAD1>(New Comparison Operators)
+<P>For a long time the MMK .IFDEF and .IF directives were quite restricted.
+This is nolonger the case with the following comparison tests been added to
+MMK.
+<TABLE>
+<TABLE_ATTRIBUTES>(SINGLE_SPACED)
+<TABLE_HEADS>(MMS Operator\MMK Operator)
+<TABLE_SETUP>(2\20)
+<TABLE_ROW>(.AND\AND)
+<TABLE_ROW>(.EQ\EQL)
+<TABLE_ROW>(.GE\GEQ)
+<TABLE_ROW>(.GT\GTR)
+<TABLE_ROW>(.LE\LEQ)
+<TABLE_ROW>(.LT\LSS)
+<TABLE_ROW>(.NE\NEQ)
+<TABLE_ROW>(.NOT\NOT)
+<TABLE_ROW>(.OR\OR)
+<TABLE_ROW>(CALL\COLLAPSE\DIR\DIRECTORY)
+<ENDTABLE>
+<P>Although there is MMK-specific syntax, the MMK software supports both
+MMK and MMS forms.
 
 <HEAD1>(GNU Conditionals)
-<P>MMK Now supports the use of GNU make-style conditionals.  A full
-* Introduction of support for GNU make conditionals.
-    -- LIST THEM ALL HERE...
+<P>MMK Now supports the use of GNU Make-style conditionals.
 
-* This release also includes Kris G.G. Clippeleyr's case
-  sensitivity extensions from his MMK fork, MMKcs.
-    -- CASE_SENSITIVE DIRECTIVE
+<HEAD1>(Case Sensitive Output)
+<P>A patch by Kris G.G. Clippeleyr has been included that allows output
+file names to be mixed-case.
 
-* Inclusion of all MMS and GNU make built-in functions,
-  including $(SHELL), as well as several functions
-  unique to MMK.
-    -- MENTION ASSIGNMENT, POINTER TO BIT IN MANUAL
-       HOWEVER, NO $(shell)
+<HEAD1>(New Builtin Function Support)
+<P>This release of MMK now includes support for builtin functions, a feature
+that has been missing for some time.  The following tables list all the
+functions currently supported.  Please see the User Guide for further details
+on their use.
+<TABLE>
+<TABLE_ATTRIBUTES>(SINGLE_SPACED)
+<TABLE_SETUP>(4\20\20)
+<TABLE_ROW>(ADDPREFIX\ADDSUFFIX\AND\BASENAME)
+<TABLE_ROW>(CALL\COLLAPSE\DIR\DIRECTORY)
+<TABLE_ROW>(ERROR\FILENAME\FILETYPE\FILEVERSION)
+<TABLE_ROW>(FILTER\FILTER-OUT\FINDSTRING\FIRSTWORD)
+<TABLE_ROW>(FOREACH\JOIN\IF\INFO)
+<TABLE_ROW>(LASTWORD\NOTDIR\OR\ORIGIN)
+<TABLE_ROW>(PATSUBST\SORT\STRIP\SUBST)
+<TABLE_ROW>(WARN\WARNING\WILDCARD\WORD)
+<TABLE_ROW>(WORDLIST\WORDS\\)
+<ENDTABLE>
 
 <HEAD1>(Description File Debugging Feature)
 <P>MMK now supports using the ALL keyword with the /VERIFY qualifier.  This
