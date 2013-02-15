@@ -119,7 +119,6 @@ MMK.
 <TABLE_ROW>(.NE\NEQ)
 <TABLE_ROW>(.NOT\NOT)
 <TABLE_ROW>(.OR\OR)
-<TABLE_ROW>(CALL\COLLAPSE\DIR\DIRECTORY)
 <ENDTABLE>
 <P>Although there is MMK-specific syntax, the MMK software supports both
 MMK and MMS forms.
