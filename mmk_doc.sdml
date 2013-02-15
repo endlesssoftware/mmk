@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         03-Aug-2012     Sneddon         Initial commenting (plus other
 					 rearrangments.
+	15-Feb-2013	Sneddon		Updated for V5.0.
 
 <ENDCOMMENT>
 <INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
@@ -335,23 +336,98 @@ want inference rules to be enabled.
 <head1>(Using Conditionals\using_cond)
 <p>
 MMK provides several directives that can be used to modify the build sequence
-based on conditions.  These directives are .IF, .IFDEF, .IFNDEF, .ELSE, and .ENDIF.
-The .IFDEF, .ELSE, and .ENDIF directives work the same as for MMS; the .IF and
-.IFNDEF directives are MMK extensions.  The .IFNDEF directive provides the logical
-inverse to .IFDEF; the check succeeds if the specified macro is <emphasis>(not)
-defined.  The .IF directive supports more general comparisons.  Its syntax is
-<interactive>
-.IF "<emphasis>(expression1)" <emphasis>(comparison) "<emphasis>(expression2)"
-<endinteractive>
-<cp>
-where <emphasis>(expression1) and <emphasis>(expression2) can be any string
-that does not contain quotation marks.  Macro references may be used in
-the expressions as long as the macro values do not contain quotation marks.
-The <emphasis>(comparison) operator is either <keyword>(EQL) (equals) or
-<keyword>(NEQ) (not equals).  The quotation marks around the two expressions
-are required.  Comparisons are performed without regard to upper/lower case.
+based on conditions.  These directives are .IF, .IFDEF, .IFNDEF, .ELSE,
+.ELSIF and .ENDIF.  The .IFDEF directive checks if the specified macro is
+defined and .IFNDEF is the logical inverse, the syntax of which is:
 
-...this part needs to include the syntax changes to support MMS and GNU make
+<interactive>
+.IFDEF VEGETABLE
+...
+.ENDIF
+<endinteractive>
+
+<p>or,
+
+<interactive>
+.IFNDEF VEGETABLE
+...
+.ENDIF
+<endinteractive>
+
+<p>The .IF directive supports more general comparison (and thus greater
+power) by allowing the specification of a boolean expression, like so:
+
+<interactive>
+.IF expression
+...
+[.ELSEIF expression]
+[...]
+[.ELSE]
+[...]
+.ENDIF
+<endinteractive>
+
+<p>In the example above, <emphasis>(expression) can be replaced by any
+operations consisting of the operators (both MMS and MMK operators are
+listed) listed in <reference>(boolop).
+
+<table>(Conditional Expression Operators\boolop)
+<table_setup>(3\10\10)
+<table_heads>(MMS Syntax\MMK Syntax\Example)
+<table_unit>
+<table_unit_heads>(<span>(3)Boolean Operators)
+<table_row>(.AND\AND\expression .AND expression)
+<table_row>(.NOT\NOT\.NOT expression)
+<table_row>(.OR\OR\expression .OR expression)
+<endtable_unit>
+<table_unit>
+<table_unit_heads>(<span>(3)Comparison Operators)
+<table_row>(.EQ\EQL\expression .EQ expression)
+<table_row>(.GE\GEQ\expression .GE expression)
+<table_row>(.GT\GTR\expression .GT expression)
+<table_row>(.LE\LEQ\expression .LE expression)
+<table_row>(.LT\LSS\expression .LT expression)
+<table_row>(.NE\NEQ\expression .NE expression)
+<endtable_unit>
+<endtable>
+
+<p>All expressions evaluate to a boolean result.  After all macro substitution
+is performed and the the operand is not an empty string it is the equivalent
+of a boolean TRUE.  All comparisons are performed without regard to
+upper/lower case.
+
+<head2>(GNU Make Conditionals\gnucond)
+<p>
+Supplemental to the MMS/MMK conditionals, MMK also supports the specification
+of the GNU Make-style conditionals <emphasis>(ifeq), <emphasis>(ifneq),
+<emphasis>(ifdef), <emphasis>(ifndef), <emphasis>(else) and <emphasis>(endif).
+The ifdef and ifndef conditionals behave exactly as their MMS/MMK
+counter-parts.  However, ifeq and ifneq have a slightly different syntax:
+
+<interactive>
+ifeq (arg1, arg2)
+ifeq 'arg1' 'arg2'
+ifeq "arg1" "arg2"
+ifeq "arg1" 'arg2'
+ifeq 'arg1' "arg2"
+<endinteractive>
+
+<p>Although the example lists ifeq, it can be replaced with its logical
+inverse, ifneq.  These two directives simply compare their arguments
+(ignoring case) and test for equality.  The following is an example adapted
+from the GNU Make manual:
+
+<interactive>
+ifeq ($(strip $(foo)),)
+# Come in here if foo is an empty string
+...
+endif
+<endinteractive>
+
+<p>In order to use the conditionals it is necessary to first enable them.
+This can be done from the command line with the specification of the
+/EXTENDED_SYNTAX=GNU_SYNTAX qualifier or with the .GNU_SYNTAX directive in
+the description file.
 
 <head1>(Deferring Macro Substitution\deferring)
 <p>
