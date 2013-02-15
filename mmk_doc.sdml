@@ -513,9 +513,49 @@ specification.
 
 <head1>(Macro Definitions]macrodef)
 <p>
-...describe '+=', '?=', and '!='...
-...also describe that different macros have types...
-...pointer to $(ORIGIN <emphasis>(name)) below to find out where from...
+MMK supports a range of operators for assigning values to macros.  To simplyfy
+description files it is possible to concatenate and test before assignment.
+<reference(macops) defines the available assignment operators
+
+<table>(Macro Assignment Operator\macops)
+<table_setup>(3\10\30)
+<table_heads>(Operator\Description\Example)
+<table_row>(<emphasis>(=\bold)\Assign value\FOO = BAR)
+<table_row>(<emphasis>(+=\bold)\Concatenate to existing value\FOR += ,NEXT)
+<table_row>(<emphasis>(?=\bold)\Assign if macro is undefined\FOO ?= FIRST)
+<table_row>(<emphasis>(!=\bold)\Assign command results\FOO != DIRECTORY)
+<endtable>
+
+<p>The special case is the <emphasis>(!=\bold) operator.  The assigned
+value is taken as a command and executed, with the results being assigned
+to the macro.  Using this mechanism it would be possible to determine
+some details of the running system, like so:
+
+<interactive>
+FOO != SHOW SYSTEM/NOPROCESS
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO)"
+<endinteractive>
+
+<p>the results of which might look something like:
+
+<interactive>
+OpenVMS V7.3  on node BENDER  15-FEB-2013 16:05:10.03  Uptime  37 15:54:40
+<endinteractive>
+
+<note>
+<p>
+The '!' character is already a comment delimiter in MMK.  To resolve this,
+the MMK description file parser now tests for a '=' character immediately
+following a '!'.  Usually when detecting a '!' character the remainder of the
+line (including the comment delimiter) will be stripped from the output.
+However, in this special case the delimiter and the following characters will 
+not be stripped and instead parsed as an assignment.  This may create issues
+for existing procedures that contain comments that match this pattern.
+<P>
+However, it is worth noting that this restriction only applies to the
+'!' comment delimiter.  It is still possible to use '#' in any place
+<endnote>
 
 <head1>(Special Macros\specialmacros)
 <p>
