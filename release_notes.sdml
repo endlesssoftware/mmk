@@ -67,9 +67,11 @@ return MMK to feature parity with MMS.
 open source license.  In support of this MMK has been moved to the
 github repository:
 
-    http://github.com/endlesssoftware/mmk
+<INTERACTIVE>
+http://github.com/endlesssoftware/mmk
+<ENDINTERACTIVE>
 
-Now that MadGoat has ceased operation Endless Software Solutions has
+<P>Now that MadGoat has ceased operation Endless Software Solutions has
 taken over stweardship of this software and contained to provide
 updated releases and maintain a user community.
 
@@ -80,14 +82,18 @@ business might like to consider a support contract with Endless Software
 Solutions.  For further information regarding support and how to obtain
 a quote, please follow your browser to:
 
-   http://www.endlesssoftwares.com.au
+<INTERACTIVE>
+http://www.endlesssoftwares.com.au
+<ENDINTERACTIVE>
 
-For all other queries, please consider joining the MMK mailing list be
+<P>For all other queries, please consider joining the MMK mailing list be
 sending a mail containg only the word SUBSCRIBE to:
 
-    MMK-List-request@endlesssoftware.com.au
+<INTERACTIVE>
+MMK-List-request@endlesssoftware.com.au
+<ENDINTERACTIVE>
 
-Alternatively, you can submit bug/enchancement/etc. reports to the github
+<P>Alternatively, you can submit bug/enchancement/etc. reports to the github
 Issues tracking system for this project.
 
 <HEAD1>(Macro Assignment)
