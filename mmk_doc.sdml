@@ -587,7 +587,7 @@ $(SUBST from, to, str)
 <ROUTINE_SECTION>(\\NONEWPAGE)
 <ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
 <SYNTAX>
-$(FIRSTWORD text...)
+$(FIRSTWORD text ...)
 <ENDSYNTAX>
 <DESCRIPTION>
 <P>
@@ -608,7 +608,7 @@ BAR = $(WORD 1,$(LIST))
 ALL :
     @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
 <EXTEXT>
-Description file to demonstrate the <reference>(func_first) function.
+Description file to demonstrate the <reference>(func_firstword) function.
 <EXI>
 kermit = kermit
 <EXTEXT>
@@ -617,7 +617,7 @@ The output the above description file would generate.
 
 <ROUTINE>(LASTWORD\Get Last Word\\func_lastword)
 <SYNTAX>
-$(LASTWORD text...)
+$(LASTWORD text ...)
 <ENDSYNTAX>
 <DESCRIPTION>
 <P>
@@ -640,7 +640,7 @@ ALL :
 <EXTEXT>
 Description file to demonstrate the <reference>(func_lastword) function.
 <EXI>
-kermit = kermit
+frog = frog
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
@@ -716,6 +716,40 @@ ALL :
 Description file to demonstrate the <reference>(func_strip) function.
 <EXI>
 FOO = This has lots of space
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WILDCARD\File Search\\func_wildcard)
+<SYNTAX>
+$(WILDCARD text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WILDCARD searches for the files matching the specification in
+<argument>(text) and returns the name and type portions as a space delimited
+list.  It is also possible to list multiple specifications in
+<argument>(text), each must be separated by whitespace.  The wildcard
+characters '%' and '*' can also be used.
+<P>
+It is possible to specify multiple search specifications by separating them
+with space.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_wildcard) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WILDCARD BLISS32_BLD:LEX*.BLI)
+BAR = $(WILDCARD BLISS32_BLD:K*.BLI BLISS32_BLD:LEX*.BLI)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_wildcard) function.
+<EXI>
+FOO = LEXAN.BLI LEXFUN.BLI
+BAR = KFOLD.BLI KOST.BLI LEXAN.BLI LEXFUN.BLI
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
