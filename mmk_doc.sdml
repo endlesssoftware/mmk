@@ -575,6 +575,8 @@ definitions.  The following reference describes what the functions do as
 well as provide exampls
 <comment>
 
+...mention that all functions are limited to 32 arguments...
+
 $(CALL macro [, ...])
     ...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
     ...explain $(0)...
@@ -585,6 +587,46 @@ $(SUBST from, to, str)
 <endcomment>
 
 <ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(AND\Logical And\\func_and)
+<SYNTAX>
+$(AND condition[,condition[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The AND function provides a logical and operation.  Each of the
+<argument>(condition) arguments are expanded until one evaluates to the
+empty string.  The arguments are evaluated individually and consecutively,
+so if one should fail (evaluate to an empty string) then the remaining
+conditions will <emphasis>(not\bold) be evaluated.
+
+<P>
+If all conditions evaluate to a non-empty string, then the result of this
+function is the expansion of the final condition.  Otherwise this function
+will return the empty string.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_and)
+builtin function and demonstrate the expected output.
+<EXC>
+A = A
+B = B
+C = C
+D =
+FOO = $(AND $(A),$(B),$(C))
+BAR = $(AND $(A),$(B),$(C),$(D))
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_and) function.
+<EXI>
+FOO = C
+BAR = 
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
 <SYNTAX>
 $(FIRSTWORD text ...)
@@ -615,6 +657,45 @@ kermit = kermit
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(IF\Conditional Evaluation\\func_if)
+<SYNTAX>
+$(IF condition,then[,else]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The IF function evaluates <argument>(condition).  If it evaluates to a
+non-empty string, then the <argument>(then) argument is evaluated and
+returned as the result.  Otherwise, if <argument>(condition) evaluates
+to an empty string (false) and the <argument>(else) argument is present,
+it is evaluated and returned as the result.
+
+<P>
+The <argument>(then) and <argument>(else) arguments are not evaluated until
+<argument>(condition) has been evaluated.  Then only the appropriate argument
+is evaluated.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_if)
+builtin function and demonstrate the expected output.
+<EXC>
+TRUE = TRUE
+FALSE = 
+
+FOO = $(IF $(TRUE),TRUE)
+BAR = $(IF $(FALSE),,FALSE)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_if) function.
+<EXI>
+FOO = TRUE
+BAR = FALSE
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(LASTWORD\Get Last Word\\func_lastword)
 <SYNTAX>
 $(LASTWORD text ...)
@@ -641,6 +722,46 @@ ALL :
 Description file to demonstrate the <reference>(func_lastword) function.
 <EXI>
 frog = frog
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(OR\Logical Or\\func_or)
+<SYNTAX>
+$(OR condition[,condition[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The OR function provides a logical or operation.  Each of the
+<argument>(condition) arguments are expanded until one evaluates to a
+non-empty string.  The arguments are evaluated individually and consecutively,
+so if one should succeed (evaluate to a non-empty string) then the remaining
+conditions will <emphasis>(not\bold) be evaluated.
+
+<P>
+If all conditions evaluate to an empty string, then the result of this
+function is the empty string.  Otherwise this function will return the
+result of the last condition evaluated.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_or)
+builtin function and demonstrate the expected output.
+<EXC>
+A = 
+B = 
+C = 
+D = D
+FOO = $(OR $(A),$(B),$(C))
+BAR = $(OR $(A),$(B),$(C),$(D))
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_or) function.
+<EXI>
+FOO =
+BAR = D 
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
