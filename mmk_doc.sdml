@@ -5,7 +5,7 @@
    Authors:     Matt Madison
 
 Copyright (c) 2008, Matthew Madison.
-Copyright (c) 2012, Endless Software Solutions.
+Copyright (c) 2013, Endless Software Solutions.
 
 All rights reserved.
 
@@ -458,6 +458,7 @@ ALL :
 <p>the results of which might look something like:
 
 <interactive>
+$ MMK
 OpenVMS V7.3  on node BENDER  15-FEB-2013 16:05:10.03  Uptime  37 15:54:40
 <endinteractive>
 
@@ -568,10 +569,51 @@ MMK with __MMK__ (and other macros) instead.
 
 <head1>(Builtin Functions\builtins)
 <p>
+As well as symbol substituion it is also possible to call a number of
+builtin functions the can process text to automate and simplify build
+definitions.  The following reference describes what the functions do as
+well as provide exampls
+<comment>
+-- What DECdocument tags will do this?  Do we need to define routines or
+   something?  Look at the MX documentation for that sort of thing.  We do
+   want them to list in the contents...
 
-<head1>(User Defined Functions\userfunc)
-<p>
-...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
+$(CALL macro [, ...])
+    ...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
+    ...explain $(0)...
+    ...explain defining the function and deferred substitution...
+
+$(FOREACH ...)
+
+$(ORIGIN sym)
+
+$(PATSUBST from, to, str)
+  -- case-sensitive 
+  -- explain the wildcard list
+
+$(SUBST from, to, str)
+  -- case-sensitive
+
+$(TRIM str)
+<endcomment>
+<ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(STRIP\Compress Whitespace)
+<FORMAT>
+<FRTN>(STRIP) <FARGS>(text)
+<ENDFORMAT>
+<DESCRIPTION>
+<P>
+STRIP replaces all whitespace characters with a single space as well as
+removing the leading and trailing whitespace from <argument>(text).
+<INTERACTIVE>
+FOO = $(STRIP    This   has        lots of   space   )
+<ENDINTERACTIVE>
+<INTERACTIVE>
+This has lots of space
+<ENDINTERACTIVE>
+<ENDDESCRIPTION>
+
+<ENDROUTINE_SECTION>
 
 <chapter>(Using DEC/CMS with MMK\cms_chapter)
 <p>
@@ -694,7 +736,7 @@ Invokes the MMK utility to build a software system.
 <qpair>(/[NO]OVERRIDE\/NOOVERRIDE)
 <qpair>(/[NO]RULES_FILE=file-spec...\)
 <qpair>(/[NO]SKIP_INTERMEDIATES\/NOSKIP_INTERMEDIATES)
-<qpair>(/[NO]VERIFY\/VERIFY)
+<qpair>(/[NO]VERIFY\/VERIFY[=ALL])
 <qpair>(/WORKING_DIRECTORY=dir-spec\)
 <endqual_list>
 
@@ -861,9 +903,12 @@ the .OBJ file if it is missing, and then in turn build the .EXE.  If
 a build; the build will only occur if the .C file is newer than the .EXE
 file.
 
-<qualitem>(/[NO]VERIFY)
+<qualitem>(/[NO]VERIFY[=ALL])
 <qualdef>
 Controls whether MMK echoes action lines to SYS$OUTPUT.  Enabled by default.
+By specifying the keyword <argument>(ALL) it is possible to force MMK to
+echo all command output, including that which is prefixed with
+<emphasis>(@\bold).
 
 <qualitem>(/WORKING_DIRECTORY=dir-spec)
 <qualdef>
