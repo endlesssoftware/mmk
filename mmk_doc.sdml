@@ -574,18 +574,11 @@ builtin functions the can process text to automate and simplify build
 definitions.  The following reference describes what the functions do as
 well as provide exampls
 <comment>
--- What DECdocument tags will do this?  Do we need to define routines or
-   something?  Look at the MX documentation for that sort of thing.  We do
-   want them to list in the contents...
 
 $(CALL macro [, ...])
     ...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
     ...explain $(0)...
     ...explain defining the function and deferred substitution...
-
-$(FOREACH ...)
-
-$(ORIGIN sym)
 
 $(PATSUBST from, to, str)
   -- case-sensitive 
@@ -598,6 +591,56 @@ $(TRIM str)
 <endcomment>
 
 <ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(PATSUBST\Pattern Substitution\\func_patsubst)
+<SYNTAX>
+$(PATSUBST pattern, to, text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+PATSUBST replaces all instances of <argument>(pattern) with <argument>(to) in
+<argument>(text).  However, unlike the function <reference>(func_subst) this
+builtin allows the specification of a pattern.  <reference>(patops) details
+the pattern operators.
+
+<TABLE>(PATSUBST Pattern Operators\patops)
+<TABLE_SETUP>(3\8\20)
+<TABLE_HEADS>(Operator\Match\Replace)
+<TABLE_ROW>(<S>(*)\Match any sequence of any length.\Insert the entire matched sequence.)
+<TABLE_ROW>(<S>(%)\Match any single character.\Insert the first character of the matched sequence.)
+<ENDTABLE>
+
+<P>
+When matching the words in <argument>(text) if a match is found, the
+wild-carded portions of the match are placed in a queue.  Therefore, when
+specifying <argument>(to) it is also possible to include pattern operators
+which will insert the wildcarded portions back into the output.
+<NOTE>
+Unlike the substitution mentioned in <reference>(macrosubst) the comparisson
+done by <reference>(func_patsubst) is case-sensitive.
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_patsubst) builtin
+function and demonstrate the expected output.
+<EXC>
+LIST = FIRST.C SECOND.C THIRD.C
+
+FOO = $(PATSUBST *.C,*.OBJ,$(LIST))
+BAR = $(PATSUBST *.*,*.%,$(FOO)) 
+
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_patsubst) function.
+<EXI>
+FOO = FIRST.OBJ SECOND.OBJ THIRD.OBJ
+BAR = FIRST.O SECOND.O THIRD.O
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(STRIP\Compress Whitespace\\func_strip)
 <SYNTAX>
 $(STRIP text)
