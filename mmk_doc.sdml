@@ -594,7 +594,7 @@ $(FIRSTWORD text...)
 FIRSTWORD fetches the first word in the whitespace separated list in
 <argument>(text).  This is equivalent to:
 <CODE_EXAMPLE>
-$(word 1, <argument>(text)).
+$(word 1, <argument>(text))
 <ENDCODE_EXAMPLE>
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
@@ -624,7 +624,7 @@ $(LASTWORD text...)
 LASTWORD fetches the last word in the whitespace separated list in
 <argument>(text).  This is equivalent to:
 <CODE_EXAMPLE>
-$(word $(words <argument>(text)), <argument>(text)).
+$(word $(words <argument>(text)), <argument>(text))
 <ENDCODE_EXAMPLE>
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
