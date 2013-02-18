@@ -580,17 +580,71 @@ $(CALL macro [, ...])
     ...explain $(0)...
     ...explain defining the function and deferred substitution...
 
-$(PATSUBST from, to, str)
-  -- case-sensitive 
-  -- explain the wildcard list
-
 $(SUBST from, to, str)
   -- case-sensitive
-
-$(TRIM str)
 <endcomment>
 
 <ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
+<SYNTAX>
+$(FIRSTWORD text...)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FIRSTWORD fetches the first word in the whitespace separated list in
+<argument>(text).  This is equivalent to:
+<CODE_EXAMPLE>
+$(word 1, <argument>(text)).
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_firstword)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = kermit the frog
+FOO = $(FIRSTWORD $(LIST))
+BAR = $(WORD 1,$(LIST))
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_first) function.
+<EXI>
+kermit = kermit
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(LASTWORD\Get Last Word\\func_lastword)
+<SYNTAX>
+$(LASTWORD text...)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+LASTWORD fetches the last word in the whitespace separated list in
+<argument>(text).  This is equivalent to:
+<CODE_EXAMPLE>
+$(word $(words <argument>(text)), <argument>(text)).
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_lastword)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = kermit the frog
+FOO = $(LASTWORD $(LIST))
+BAR = $(WORD $(WORDS $(LIST)),$(LIST))
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_lastword) function.
+<EXI>
+kermit = kermit
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(PATSUBST\Pattern Substitution\\func_patsubst)
 <SYNTAX>
 $(PATSUBST pattern, to, text)
