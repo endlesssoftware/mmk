@@ -596,22 +596,97 @@ $(SUBST from, to, str)
 
 $(TRIM str)
 <endcomment>
+
 <ROUTINE_SECTION>(\\NONEWPAGE)
-<ROUTINE>(STRIP\Compress Whitespace)
-<FORMAT>
-<FRTN>(STRIP) <FARGS>(text)
-<ENDFORMAT>
+<ROUTINE>(STRIP\Compress Whitespace\\func_strip)
+<SYNTAX>
+$(STRIP text)
+<ENDSYNTAX>
 <DESCRIPTION>
 <P>
 STRIP replaces all whitespace characters with a single space as well as
 removing the leading and trailing whitespace from <argument>(text).
-<INTERACTIVE>
-FOO = $(STRIP    This   has        lots of   space   )
-<ENDINTERACTIVE>
-<INTERACTIVE>
-This has lots of space
-<ENDINTERACTIVE>
 <ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_strip) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(STRIP    This   has        lots of   space   )
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_strip) function.
+<EXI>
+FOO = This has lots of space
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WORD\Return the n'th Word\\func_word)
+<SYNTAX>
+$(WORD n, text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WORD treats <argument>(text) as a space delimited (multiple
+consecutive whitespace characters are treated as one) array of words.  The
+parameter <argument>(n) is an index into this array, specifying which word
+to return.
+
+<P>
+If you specify a value of <argument>(n) that is less than 1 or greater than
+the number of elements in <argument>(text), then the result will be an empty
+string, "".  The builtin function <reference>(func_words) can be used to
+determine the upper limit of the array in <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_words) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WORD 2, first second third)
+BAR = $(WORD 5, kermit the frog)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_word) function.
+<EXI>
+FOO = second
+BAR =
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WORDS\Count Words\\func_words)
+<SYNTAX>
+$(WORDS text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WORDS counts the number of words in <argument>(text).  The contents of
+<argument>(text) is treated as a space delimited (multiple consecutive
+whitespace characters are treated as one) array of words.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_words) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WORDS first second third)
+BAR = $(WORDS )
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_words) function.
+<EXI>
+FOO = 3
+BAR = 0
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
 
 <ENDROUTINE_SECTION>
 
