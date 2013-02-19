@@ -76,7 +76,19 @@ either DEC/MMS documentation or books on the UNIX <emphasis>(make)
 utility.
 <ENDNOTE>
 <head1>(Document Structure\MMK_DOC_4)
-<p>tbs
+<p>
+The following documents might also be helpful when using MMK:
+<list>(unnumbered)
+<le>The <emphasis>(MMK Release Notes) contain further information related to\
+new and deprecated features of MMK.
+<le>The <emphasis>(Guide to the Module Management System)
+(order number: AA-P119J-TE)contains further information related to DEC/MMS
+and can be found at
+<keep>(<emphasis>(http://h71000.www7.hp.com/doc/decset.html)).
+<le>The <emphasis>(GNU Make Manual) contains information related to
+<emphasis>(make) and can be found at
+<keep>(<emphasis>(http://www.gnu.org/software/make/manual/)).
+<endlist>
 <head1>(Related Documents\MMK_DOC_5)
 <p>tbs
 <head1>(Conventions\MMK_DOC_6)
@@ -436,7 +448,7 @@ description files it is possible to concatenate and test before assignment.
 <reference>(macops) defines the available assignment operators.
 
 <table>(Macro Assignment Operator\macops)
-<table_setup>(3\10\30)
+<table_setup>(3\8\20)
 <table_heads>(Operator\Description\Example)
 <table_row>(<emphasis>(=\bold)\Assign value.\<interactive>(FOO = BAR))
 <table_row>(<emphasis>(+=\bold)\Concatenate to existing value.\<interactive>(FOR += ,NEXT))
