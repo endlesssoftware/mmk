@@ -81,10 +81,10 @@ utility.
 <p>
 The following documents might also be helpful when using MMK:
 <list>(unnumbered)
-<le>The <emphasis>(MMK Release Notes) contain further information related to\
+<le>The <emphasis>(MMK Release Notes) contain further information related to
 new and deprecated features of MMK.
 <le>The <emphasis>(Guide to the Module Management System)
-(order number: AA-P119J-TE)contains further information related to DEC/MMS
+(order number: <keep(AA-P119J-TE)) contains further information related to DEC/MMS
 and can be found at
 <keep>(<emphasis>(http://h71000.www7.hp.com/doc/decset.html)).
 <le>The <emphasis>(GNU Make Manual) contains information related to
