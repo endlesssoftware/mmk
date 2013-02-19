@@ -16,6 +16,7 @@
 .!
 .! AUTHOR:   	    M. Madison
 .! Copyright (c) 2008, Matthew Madison.
+.! Copyright (c) 2013, Endless Software Solutions.
 .! 
 .! All rights reserved.
 .! 
@@ -58,6 +59,7 @@
 .!  22-AUG-1996	V1.6	Madison	    Add /CMS_LIBRARY.
 .!  06-JUN-1998	V1.7	Madison	    Add /WORKING_DIRECTORY
 .!  28-DEC-1998	V1.7-1	Madison	    /CMS_LIBRARY takes a list now.
+.!  19-FEB-2013	V1.8	Sneddon	    /VERIFY now supports ALL keyword.
 .!--
 .P0
 .AP
@@ -235,9 +237,13 @@ file.
 .I-1
 /VERIFY
  /VERIFY (default)
+ /VERIFY=ALL
  /NOVERIFY
  Controls whether MMK echoes the action lines it is executing to SYS$OUTPUT.
 By default, it does; /NOVERIFY can be used to suppress this output.
+ As an added feature to make debugging large description files easier, it
+is possible to specify the keyword ALL and force all action commands to
+verify, even those prefixed with '@'.
 .I-1
 /WORKING__DIRECTORY=dir-spec
  /WORKING__DIRECTORY=dir-spec
