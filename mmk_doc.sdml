@@ -76,6 +76,8 @@ either DEC/MMS documentation or books on the UNIX <emphasis>(make)
 utility.
 <ENDNOTE>
 <head1>(Document Structure\MMK_DOC_4)
+<p>tbs
+<head1>(Related Documents\MMK_DOC_5)
 <p>
 The following documents might also be helpful when using MMK:
 <list>(unnumbered)
@@ -89,8 +91,6 @@ and can be found at
 <emphasis>(make) and can be found at
 <keep>(<emphasis>(http://www.gnu.org/software/make/manual/)).
 <endlist>
-<head1>(Related Documents\MMK_DOC_5)
-<p>tbs
 <head1>(Conventions\MMK_DOC_6)
 <p>In this document, the following convention will be used for the names
 of the three similar utilities:
