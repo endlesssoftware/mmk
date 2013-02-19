@@ -690,7 +690,7 @@ ALL :
 <EXTEXT>
 Description file to demonstrate the <reference>(func_dir) function.
 <EXI>
-FOO = USER$:[BUELLER]
+FOO = USER$:[FLYNN]
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
@@ -721,7 +721,63 @@ ALL :
 <EXTEXT>
 Description file to demonstrate the <reference>(func_directory) function.
 <EXI>
-FOO = [BUELLER]
+FOO = [FLYNN]
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILENAME\Get Filename\\func_filename)
+<SYNTAX>
+$(FILENAME text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILENAME returns only the file name portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filename)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILENAME SYS$LOGIN:LOGIN.COM)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filename) function.
+<EXI>
+FOO = LOGIN
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILETYPE\Get File Type\\func_filetype)
+<SYNTAX>
+$(FILETYPE text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILETYPE returns only the file type portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filetype)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILENAME SYS$LOGIN:LOGIN.COM)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filetype) function.
+<EXI>
+FOO = .COM
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
@@ -850,6 +906,43 @@ ALL :
 Description file to demonstrate the <reference>(func_lastword) function.
 <EXI>
 frog = frog
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(NOTDIR\Get Filename\\func_notdir)
+<SYNTAX>
+$(NOTDIR text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+NOTDIR is the opposite of <reference>(func_dir).  NOTDIR returns the
+file name and type portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<P>
+To retrieve only filename, type or version, consider using
+<reference>(func_filename), <reference>(func_filetype) or
+<reference>(func_fileversion) respectively.
+<NOTE>
+NOTDIR performs a "syntax only" parse.  It does not test for the existance
+of the file specified before parsing.
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_notdir)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(NOTDIR SYS$LOGIN:A.A)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_notdir) function.
+<EXI>
+FOO = A.A
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
