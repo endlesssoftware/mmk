@@ -708,7 +708,7 @@ BAR = FALSE
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
-<ROUTINE>(JOIN\Merge Lists\\func_lastword)
+<ROUTINE>(JOIN\Merge Lists\\func_join)
 <SYNTAX>
 $(JOIN list,text)
 <ENDSYNTAX>
@@ -717,22 +717,22 @@ $(JOIN list,text)
 JOIN merges the whitespace delimited lists in <argument>(list) and
 <argument>(text).  If the length of the two lists are not the same, then
 the remainder of the longer list is concatenated to the result.
-<ENDCODE_EXAMPLE>
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
 <EXAMPLES_INTRO>
-The following examples show how to call the <reference>(func_lastword)
+The following examples show how to call the <reference>(func_join)
 builtin function and demonstrate the expected output.
 <EXC>
-LIST = kermit the frog
-FOO = $(LASTWORD $(LIST))
-BAR = $(WORD $(WORDS $(LIST)),$(LIST))
+FOO = $(JOIN A B C D, 1 2 3 4)
+BAR = $(JOIN A      , 1 2 3 4)
 ALL :
-    @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
 <EXTEXT>
-Description file to demonstrate the <reference>(func_lastword) function.
+Description file to demonstrate the <reference>(func_join) function.
 <EXI>
-frog = frog
+FOO = A1 B2 C3 D4
+BAR = A1 2 3 4
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
