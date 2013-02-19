@@ -639,9 +639,96 @@ BAR =
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(COLLAPSE\Collapse Whitespace\\func_collapse)
+<SYNTAX>
+$(COLLAPSE text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The COLLAPSE function removes all whitespace fomr <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_collapse)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(COLLAPSE 1   2  3      4       5       6 7) 8 9 10
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_collapse) function.
+<EXI>
+FOO = 1234567 8 9 10
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(DIR\Get Device and Directory\\func_dir)
+<SYNTAX>
+$(DIR text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+DIR returns the device and directory portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<P>
+To retrieve only the directory, please see <reference>(func_directory).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_dir)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(DIR SYS$LOGIN)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_dir) function.
+<EXI>
+FOO = USER$:[BUELLER]
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(DIRECTORY\Get Directory\\func_directory)
+<SYNTAX>
+$(DIRECTORY text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+DIRECTORY returns only the directory portion of the specifications found in
+<argument>(text).  This is different to <reference>(func_dir) which returns
+both the device and directory.
+<P>
+If multiple specifications are supplied, they will each be evaluated and
+returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_directory)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(DIRECTORY SYS$LOGIN)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_directory) function.
+<EXI>
+FOO = [BUELLER]
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
 <SYNTAX>
-$(FIRSTWORD text ...)
+$(FIRSTWORD text[ ...])
 <ENDSYNTAX>
 <DESCRIPTION>
 <P>
