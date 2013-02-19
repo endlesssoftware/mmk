@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.13"
+.IDENT		"V1.15-1"
 !++
 !
 ! DESCRIPTION:
@@ -9,6 +9,7 @@
 !
 ! AUTHOR:   	    M. Madison
 !   	    	    COPYRIGHT © 1992-1998, MADGOAT SOFTWARE.
+!   	    	    COPYRIGHT © 2012, ENDLESS SOFTWARE SOLUTIONS.
 !   	    	    ALL RIGHTS RESERVED.
 !
 ! CREATION DATE: 20-AUG-1992
@@ -32,6 +33,9 @@
 !   09-FEB-2011 V1.11	Sneddon	    Add NYI, BADPARAM.
 !   10-FEB-2011 V1.12	Sneddon	    Add INFO, WARN, ERROR
 !   17-MAY-2011 V1.13   Sneddon	    Change IDENT message.
+!   03-AUG-2012 V1.14   Sneddon	    Add UTLBADMAC.
+!   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN. Fixup ERROR, INFO, WARN.
+!   03-SEP-2012 V1.15-1 Sneddon	    Change UTLBADMAC to remove line number.
 !--
 
 .SEVERITY   	FATAL
@@ -52,7 +56,7 @@ MACFILSYNTAX	<syntax error at line !UL in macro definition file !AZ>/FAO=2
 ACTNODEPRULE 	<action line found with no dependency or rule preceding it>
 NYI		<built-in function '!AZ' not yet implemented>
 BADPARAM	<bad parameter value passed to '!AZ'>/FAO=1
-ERROR		<!AZ>/FAO=1
+ERROR		<!AS>/FAO=1
 
 .SEVERITY   	ERROR
 ELSENOIF    	<.ELSE directive encountered without corresponding .IF or .IFDEF>
@@ -69,7 +73,7 @@ CIRCDEP	    	<circular dependency found for target !AZ>/FAO=1
 CONNEXION   	<target !AZ found in circular dependency>/FAO=1
 INSFARGS	<insufficient function parameters for '!AZ'>/FAO=1
 TOOMANYARGS	<too many function parameters for '!AZ'>/FAO=1
-WARN		<!AZ>/FAO=1
+WARN		<!AS>/FAO=1
 
 .SEVERITY   	INFORMATION
 OPENDESC    	<reading description file !AZ>/FAO=1
@@ -87,7 +91,7 @@ ACTNOUPD    	<action did not update target !AZ>/FAO=1
 ERRLOC	    	<at line number !UL in file !AD>/FAO=3
 NEEDSUPD    	<an update is required for target !AZ>/FAO=1
 TRGCURRENT   	<no update required for target !AZ>/FAO=1
-INFO		<!AZ>/FAO=1
+INFO		<!AS>/FAO=1
 
 .SEVERITY   	SUCCESS
 NOUPDATE    	<target !AZ is up-to-date>/FAO=1
@@ -98,5 +102,9 @@ SETDEF	    	<changed working directory to !AD>/FAO=2
 .SEVERITY   	ERROR
 SETDEFERR   	<error changing working directory to !AD>/FAO=2
 CMDLENERR   	<command line element too long>
+
+.SEVERITY	WARNING
+UTLBADMAC	<unterminated macro named '!AZ'>/FAO=1
+UNRFUN		<unrecognized function '!AZ'>/FAO=1
 
 .END

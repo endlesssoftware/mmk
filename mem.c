@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -51,9 +52,10 @@
 **  	27-AUG-1992 V1.1    Madison 	Use VM zones.
 **  	09-APR-1993 V1.1-1  Madison 	Comments.
 **  	27-DEC-1998 V1.2    Madison 	General cleanup.
+**  	15-SEP-2012 V1.3    Sneddon 	Add symbol table allocation.
 **--
 */
-#pragma module MEM "V1.2"
+#pragma module MEM "V1.3"
 #include "mmk.h"
 #include <libvmdef.h>
 
@@ -88,13 +90,17 @@
     void mem_free_sfx(struct SFX *);
     static unsigned int SFX_S_SFXDEF = sizeof(struct SFX);
 
+    struct SYMTABLE *mem_get_symtable(void);
+    void mem_free_symtable(struct SYMTABLE *);
+    static unsigned int SYMTABLE_S_SYMTABLEDEF = sizeof(struct SYMTABLE);
+
 /*
 ** The VM zones we're using
 */
 
     static unsigned int cmdzone=0, dependzone=0, symbolzone=0,
     	    	    	rulezone=0, objectzone=0, objrefzone=0,
-    	    	    	sfxzone=0;
+    	    	    	sfxzone=0, symtablezone=0;
 
 
 /*
@@ -619,5 +625,93 @@ struct SFX *mem_get_sfx (void) {
 void mem_free_sfx (struct SFX *s) {
 
     lib$free_vm(&SFX_S_SFXDEF, &s, &sfxzone);
+
+}
+
+/*
+**++
+**  ROUTINE:	mem_get_symtable
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Allocates a SYMTABLE block.
+**
+**  RETURNS:	struct SYMTABLE *
+**
+**  PROTOTYPE:
+**
+**  	mem_get_symtable()
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.	(errors signalled)
+**
+**  SIDE EFFECTS:   	symtablezone created.
+**
+**--
+*/
+struct SYMTABLE *mem_get_symtable (void) {
+
+    struct SYMTABLE *t;
+    int i;
+    unsigned int status;
+
+    if (!symtablezone) {
+    	unsigned int algorithm=LIB$K_VM_FIXED;
+    	unsigned int flags=(LIB$M_VM_GET_FILL0|LIB$M_VM_EXTEND_AREA);
+    	status = lib$create_vm_zone(&symtablezone, &algorithm,
+    	    	    	&SYMTABLE_S_SYMTABLEDEF, &flags);
+    	if (!OK(status)) lib$signal(MMK__NOALLOC, 1, "SYMTABLE", status);
+    }
+    status = lib$get_vm(&SYMTABLE_S_SYMTABLEDEF, &t, &symtablezone);
+    if (!OK(status)) {
+    	lib$signal(MMK__NOALLOC, 1, "SYMTABLE", status);
+    }
+
+    for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
+        INIT_QUEUE(t->symlist[i]);
+    }
+
+    return t;
+}
+
+/*
+**++
+**  ROUTINE:	mem_free_symtable
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Frees a SYMTABLE block.
+**
+**  RETURNS:	void
+**
+**  PROTOTYPE:
+**
+**  	mem_free_symtable(struct SYMTABLE *c)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+void mem_free_symtable (struct SYMTABLE *symtable) {
+
+    struct SYMBOL *sym;
+    int i;
+
+    for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
+	while (queue_remove(symtable->symlist[i].head, &sym)) {
+	    mem_free_symbol(sym);
+	}
+    }
+
+    lib$free_vm(&SYMTABLE_S_SYMTABLEDEF, &symtable, &symtablezone);
 
 }

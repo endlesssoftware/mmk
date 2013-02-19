@@ -60,6 +60,7 @@
 **  14-JUL-2012	    Sneddon	Adjust testing for MMK_S_DCL depending on VMS
 **				 version.  Is based on WRK_C_INPBUFSIZ in
 **				 [DCL]DCLDEF.SDL (VMS source).
+**  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -188,6 +189,7 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 
 #define MMK_K_SYMTABLE_SIZE 	256
     struct SYMTABLE {
+	struct SYMTABLE *next;
     	struct QUE symlist[MMK_K_SYMTABLE_SIZE];
     };
 
@@ -312,6 +314,8 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
     void mem_free_objref(struct OBJREF *obj);
     struct SFX * mem_get_sfx(void);
     void mem_free_sfx(struct SFX *s);
+    struct SYMTABLE * mem_get_symtable(void);
+    void mem_free_symtable(struct SYMTABLE *symtable);
 /*
 **  FILEIO
 */
@@ -380,7 +384,7 @@ typedef POINTER SPHANDLE;
 */
     void Build_Suffix_List(char *line, int linelen);
     char * itoa(int);
-    char * cat(char *dest, char *src, int slen);
+    char * cat(char *dest, ...);
     char * trim(char *s);
     char * find_char(char *base, char *end, char *charset);
     void upcase(char *str);

@@ -70,11 +70,12 @@
 **	11-APR-2011 V1.10-1 Sneddon     Minor change to help cat cope with
 **					null source strings.
 **	12-APR-2011 V1.11   Sneddon	Add trim.
-**	02-jul-2012 v1.12   Sneddon	Change find_char to find first out of
+**	02-JUL-2012 V1.12   Sneddon	Change find_char to find first out of
 **					a list of characters.
+**	29-AUG-2012 V1.13   Sneddon	Improve cat.
 **--
 */
-#pragma module MISC "V1.12"
+#pragma module MISC "V1.13"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -82,6 +83,7 @@
 #include <dvidef.h>
 #include <fscndef.h>
 #include <builtins.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 /*
@@ -89,7 +91,7 @@
 */
     void Build_Suffix_List(char *, int);
     char *itoa(int);
-    char *cat(char *, char *, int);
+    char *cat(char *, ...);
     char *trim(char *);
     char *find_char(char *, char *, char *);
     void upcase(char *);
@@ -216,14 +218,21 @@ char *itoa(int i) {
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**	Concatenates null-terminated strings, dynamically.  Anything
-**  returned by this function will need to be free()'d by the caller.
+**	Concatenates strings, dynamically.  Arguments following the input
+**  string (which must be a pointer of zero or to a null-terminated, malloc'd
+**  string) must be a string, length pair.  If the length is -1, the string
+**  is assumed to be null-terminated and the length taken from the string
+**  with strlen.
+**
+**	There is a special case that if the last argument is odd (as int,
+**  no length) it is assumed that the last string is already null-terminated
+**  and the length is taken with strlen.
 **
 **  RETURNS:	pointer to char
 **
 **  PROTOTYPE:
 **
-**  	cat(char *dest, char *src, int len)
+**  	cat(char *in, [ char *, int , ... [ char *])
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -233,35 +242,53 @@ char *itoa(int i) {
 **  	    0: memory allocation error
 **  	non-0: pointer to the character
 **
-**  SIDE EFFECTS:   	None.
+**  SIDE EFFECTS:   	Uses malloc/realloc to allocate all storage, the
+**			caller needs to free this themselves using free.
 **
 **--
 */
-char *cat(char *dest, char *src, int len) {
+char *cat(char *in, ...) {
 
-    int dlen, slen;
-    char *r = (char *) 0;
+    int actualcount;
+    va_list ap;
+    char *str, *out, *outp;
+    int i, inlen, len, outlen;
 
-    if (!src)
-	return dest;
-
-    slen = (len < 0) ? strlen(src) : len;
-    if (slen == 0)
-	return dest;
-
-    if (!dest) {
-        if (r = malloc(slen+1)) {
-            strncpy(r, src, slen);
-            r[slen] = '\0';
-        }
-    } else {
-        dlen = slen + strlen(dest);
-        if (r = realloc(dest, dlen+1)) {
-            strncat(r, src, slen);
-        }
+    outlen = inlen = (in == (char *)0) ? 0 : strlen(in);
+    va_count(actualcount);
+    va_start(ap, in);
+    i = 1;
+    while (i < actualcount) {
+	str = va_arg(ap, char *);
+	if (++i < actualcount) {
+	    i++;
+	    len = va_arg(ap, int);
+	    outlen += (len != -1) ? len : strlen(str);
+	} else {
+	    outlen += strlen(str);
+	}
     }
+    va_end(ap);
+    out = (in == 0) ? malloc(outlen+1) : realloc(in, outlen+1);
+    va_start(ap, in);
+    i = 1;
+    outp = out + inlen;
+    while (i < actualcount) {
+	str = va_arg(ap, char *);
+	if (++i < actualcount) {
+	    i++;
+	    len = va_arg(ap, int);
+	    if (len == -1) len = strlen(str);
+	} else {
+	    len = strlen(str);
+	}
+	memcpy(outp, str, len);
+	outp += len;
+    }
+    va_end(ap);
+    *outp = '\0';
 
-    return r;
+    return out;
 }
 
 /*

@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.3'
+	.IDENT	'V2.3-1'
 ;++
 ;
 ; FACILITY: 	    MMK
@@ -81,6 +81,7 @@
 ;   10-OCT-2008 V2.1	Sneddon     Added support for more recent MMS directives.
 ;   17-MAY-2011 V2.2    Sneddon	    Add support for '?=' and '+='.
 ;   07-JUL-2012 V2.3	Sneddon	    Add support for '!='.
+;   28-AUG-2012 V2.3-1	Sneddon	    Allow description file lines to be empty.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -189,6 +190,7 @@ TILDE		= 126
 	$INIT_STATE PARSE_STATE, PARSE_KEY
 
 	$STATE	COLUMN1
+	$TRAN	TPA$_EOS,TPA$_EXIT
 	$TRAN	!INCLUDE,TPA$_EXIT,PRS_STORE,,,PRS_K_DIR_INCLUDE
 	$TRAN	'.',DIRECTIVE
 	$TRAN	!CHECK_GNU,GNU_DIR

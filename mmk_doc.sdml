@@ -1278,6 +1278,10 @@ By specifying the keyword <argument>(ALL) it is possible to force MMK to
 echo all command output, including that which is prefixed with
 <emphasis>(@\bold).
 
+For debugging purposes it is possible to specify the keyword ALL which will
+cause MMK to verify all action lines, even those prefixed with @ (silent)
+action line prefix.  This also overrides the .SILENT directive.
+
 <qualitem>(/WORKING_DIRECTORY=dir-spec)
 <qualdef>
 Causes MMK to SET DEFAULT to the specified directory before processing

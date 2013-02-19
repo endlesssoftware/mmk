@@ -12,6 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -57,11 +58,12 @@
 **  	27-DEC-1998 V1.5    Madison 	General cleanup.
 **      03-MAY-2004 V1.6    Madison     Integrate IA64 changes.
 **	16-OCT-2008 V1.7    Sneddon	Added new globals.
+**	07-SEP-2012 V1.7-1  Sneddon	Added temporary_symbols.
 **--
 */
-#define MMKC_VERSION 	"V1.7"
+#define MMKC_VERSION 	"V1.7-1"
 #define MMKC_COPYRIGHT  "Copyright (c) 2008, Matthew Madison.\n" \
-                        "Copyright (c) 2011, Endless Software Solutions.\n" \
+                        "  Copyright (c) 2012, Endless Software Solutions.\n" \
                         "  See LICENSE.TXT in distribution kit for license information."
 
 #pragma module MMK_COMPILE_RULES MMKC_VERSION
@@ -90,6 +92,7 @@
     GLOBAL struct SYMTABLE  local_symbols;
     GLOBAL struct SYMTABLE  cmdline_symbols;
     GLOBAL struct SYMTABLE  builtin_symbols;
+    GLOBAL struct SYMTABLE  *temporary_symbols;
     GLOBAL struct RULE      rules;
     GLOBAL struct RULE	    *default_rule = 0;
     GLOBAL struct DEPEND    dependencies;
@@ -157,6 +160,7 @@ unsigned int main (void) {
 /*
 ** Initialize the globals
 */
+    temporary_symbols = 0;
     for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
     	INIT_QUEUE(global_symbols.symlist[i]);
     	INIT_QUEUE(local_symbols.symlist[i]);

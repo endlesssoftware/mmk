@@ -140,7 +140,9 @@
 **      02-MAR-2008 V4.0    Madison     Cleanup for open-source release.
 **	10-OCT-2008 V4.1    Sneddon 	New MMS compat. features.
 **	01-APR-2010 V4.1-1  Sneddon 	Updated version number for minor release.  Added MMSTARGETS.
-**	04-OCT-2010 V5.0    Sneddon	New version.
+**	04-OCT-2010 V5.0    Sneddon	New version. Add /VERIFY=ALL.
+**	07-SEP-2012	    Sneddon	Add temporary_symbols.
+**	10-DEC-2012 V5.0    Sneddon	Fix to /VERIFY=ALL code.
 **--
 */
 #define MMK_VERSION 	  "V5.0"
@@ -198,6 +200,7 @@
     GLOBAL struct SYMTABLE  local_symbols;
     GLOBAL struct SYMTABLE  cmdline_symbols;
     GLOBAL struct SYMTABLE  builtin_symbols;
+    GLOBAL struct SYMTABLE  *temporary_symbols;
     GLOBAL struct RULE      rules;
     GLOBAL struct RULE	    *default_rule = 0;
     GLOBAL struct DEPEND    dependencies;
@@ -287,6 +290,7 @@ unsigned int main (void) {
 /*
 ** Initialize the globals
 */
+    temporary_symbols = 0;
     for (i = 0; i < MMK_K_SYMTABLE_SIZE; i++) {
     	INIT_QUEUE(global_symbols.symlist[i]);
     	INIT_QUEUE(local_symbols.symlist[i]);
@@ -372,10 +376,22 @@ unsigned int main (void) {
     	}
     }
     status = cli_present("VERIFY");
-    verify = (status != CLI$_NEGATED);
-    if (!verify) add_to_mmsqual("/NOVERIFY");
-    override_silent = (status != CLI$_ABSENT);
-    if (override_silent && verify) add_to_mmsqual("/VERIFY");
+    if (status == CLI$_PRESENT) {
+	override_silent = 1;
+        if (OK(cli_get_value("VERIFY", tmp, sizeof(tmp)))) {
+	    verify = *tmp == 'A' ? 2 : '1';
+            add_to_mmsqual("/VERIFY=");
+            add_to_mmsqual(tmp);
+        } else {
+            verify = 1;
+            add_to_mmsqual("/VERIFY");
+        }
+    } else if (status == CLI$_NEGATED) {
+	override_silent = 1;
+	add_to_mmsqual("/NOVERIFY");
+    } else {
+    	verify = 1;
+    }
     symbol_override = (cli_present("OVERRIDE") == CLI$_PRESENT);
     if (symbol_override) add_to_mmsqual("/OVERRIDE");
     skip_intermediates = (cli_present("SKIP_INTERMEDIATES") == CLI$_PRESENT);
@@ -397,23 +413,18 @@ unsigned int main (void) {
 
     if (cli_present("EXTENDED_SYNTAX") == CLI$_PRESENT) {
 	add_to_mmsqual("/EXTENDED_SYNTAX=(");
-
 	mms_syntax = OK(cli_present("EXTENDED_SYNTAX.MMS_SYNTAX"));
 	if (mms_syntax) add_to_mmsqual("MMS_SYNTAX");
-
 	gnu_syntax = (cli_present("EXTENDED_SYNTAX.GNU_SYNTAX") == CLI$_PRESENT);
 	if (gnu_syntax) {
 	    if (mms_syntax) add_to_mmsqual(",");
 	    add_to_mmsqual("GNU_SYNTAX");
 	}
-
 	case_sensitive = (cli_present("EXTENDED_SYNTAX.CASE_SENSITIVE") == CLI$_PRESENT);
 	if (case_sensitive) {
 	    if (mms_syntax || gnu_syntax) add_to_mmsqual(",");
-
 	    add_to_mmsqual("CASE_SENSITIVE");
 	}
-
 	add_to_mmsqual(")");
     }
 

@@ -1,5 +1,5 @@
 MODULE MMK_CLD
-IDENT "V1.12"
+IDENT "V1.13"
 !++
 !
 ! DESCRIPTION:
@@ -8,8 +8,39 @@ IDENT "V1.12"
 !   MMK command.
 !
 ! AUTHOR:   	    M. Madison
-!   	    	    COPYRIGHT © 1992-1998, MADGOAT SOFTWARE.
-!   	    	    ALL RIGHTS RESERVED.
+!
+! Copyright (c) 2008, Matthew Madison.
+! Copyright (c) 2012, Endless Software Solutions.
+!
+! All rights reserved.
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions
+! are met:
+!
+!     * Redistributions of source code must retain the above
+!       copyright notice, this list of conditions and the following
+!       disclaimer.
+!     * Redistributions in binary form must reproduce the above
+!       copyright notice, this list of conditions and the following
+!       disclaimer in the documentation and/or other materials provided
+!       with the distribution.
+!     * Neither the name of the copyright owner nor the names of any
+!       other contributors may be used to endorse or promote products
+!       derived from this software without specific prior written
+!       permission.
+!
+! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+! "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+! LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+! A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+! OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+! SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+! LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+! DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+! THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 ! CREATION DATE:    20-AUG-1992
 !
@@ -32,12 +63,13 @@ IDENT "V1.12"
 !   06-JUN-1998	V1.10	Madison	    Add /WORKING_DIRECTORY.
 !   27-DEC-1998	V1.11	Madison	    Allow /CMS_LIBRARY to take list.
 !   07-APR-2010 V1.12   Sneddon     Add /EXTENDED_SYNTAX
+!   28-NOV-2012 V1.13	Sneddon	    Add /VERIFY=ALL
 !--
 
 DEFINE VERB MMK
     PARAMETER P1,LABEL=TARGET, VALUE(LIST)
     QUALIFIER DESCRIPTION,VALUE(TYPE=$FILE,REQUIRED),NONNEGATABLE
-    QUALIFIER VERIFY,NEGATABLE
+    QUALIFIER VERIFY,VALUE(LIST,TYPE=VERIFY_TYPES)NEGATABLE
     QUALIFIER LOG,NEGATABLE
     QUALIFIER MACRO,VALUE(REQUIRED,LIST),NONNEGATABLE
     QUALIFIER RULES_FILE,VALUE(TYPE=$FILE,DEFAULT="MMS$RULES",LIST),NEGATABLE
@@ -67,3 +99,6 @@ DEFINE TYPE IGNORE_TYPES
     KEYWORD WARNING
     KEYWORD ERROR
     KEYWORD FATAL
+
+DEFINE TYPE VERIFY_TYPES
+    KEYWORD ALL
