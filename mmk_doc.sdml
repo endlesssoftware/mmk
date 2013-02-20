@@ -627,6 +627,38 @@ Prefixed   = TOP CAT, TOP DOG, TOP SECRET, TOP HEAVY
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(ADDSUFFIX\Suffix List Elements\\func_addsuffix)
+<SYNTAX>
+$(ADDSUFFIX suffix,text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ADDSUFFIX treats <argument>(text) as a whitespace delimited list of words.
+Each word is suffixed with <argument>(suffix) and returned in a space
+delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_addsuffix)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = OX VAX
+SUFFIX = EN,
+ALL :
+    @ WRITE SYS$OUTPUT "Unsuffixed = $(LIST)"
+    @ WRITE SYS$OUTPUT "Suffixed   = $(ADDSUFFIX $(SUFFIX),$(LIST))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_addsuffix) function.
+Notice that the suffix to be appended to each word is a symbol.  This is
+so that the text <interactive>(EN,) will recognize the '<s>(,)' character
+as part of the suffix and not an argument delimiter in the builtin function.
+<EXI>
+Unsuffixed = OX VAX QUICK LENGTH STRENGTH
+Suffixed   = OXEN, VAXEN, QUICKEN, LENGTHEN, STRENGTHEN,
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(AND\Logical And\\func_and)
 <SYNTAX>
 $(AND condition[,condition[,...]])
