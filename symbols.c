@@ -96,9 +96,10 @@
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
+**      20-FEB-2014 V3.8-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **--
 */
-#pragma module SYMBOLS "V3.3-9"
+#pragma module SYMBOLS "V3.3-10"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -1873,7 +1874,7 @@ static int apply_filetype (int argc, char **out, int *outlen) {
 static int apply_fileversion (int argc, char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
+    char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
     struct FAB fab;
     struct NAM nam;
 
@@ -1884,7 +1885,8 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
     nam = cc$rms_nam;
     nam.nam$l_esa = esa;
     nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
+    nam.nam$l_rsa = rsa;
+    nam.nam$b_rss = sizeof(rsa);
 #ifdef NAM$M_NO_SHORT_UPCASE
     nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
 #endif
@@ -1898,14 +1900,18 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 		;
 	    fab.fab$b_fns = cp - fab.fab$l_fna;
 	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		if (OK(sys$search(&fab))) {
+	    	    *out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		} else {
+		    *out = cat(*out, ";", 1, " ", 1);
+		}
 	    }
 	}
 	while ((++cp < inend)
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_fileversion */
