@@ -1874,7 +1874,7 @@ static int apply_filetype (int argc, char **out, int *outlen) {
 static int apply_fileversion (int argc, char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
+    char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
     struct FAB fab;
     struct NAM nam;
 
@@ -1885,7 +1885,8 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
     nam = cc$rms_nam;
     nam.nam$l_esa = esa;
     nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
+    nam.nam$l_rsa = rsa;
+    nam.nam$b_rss = sizeof(rsa);
 #ifdef NAM$M_NO_SHORT_UPCASE
     nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
 #endif
@@ -1899,7 +1900,11 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 		;
 	    fab.fab$b_fns = cp - fab.fab$l_fna;
 	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		if (OK(sys$search(&fab))) {
+	    	    *out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		} else {
+		    *out = cat(*out, ";", 1, " ", 1);
+		}
 	    }
 	}
 	while ((++cp < inend)
