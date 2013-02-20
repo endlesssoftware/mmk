@@ -96,9 +96,10 @@
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
+**      20-FEB-2014 V3.8-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **--
 */
-#pragma module SYMBOLS "V3.3-9"
+#pragma module SYMBOLS "V3.3-10"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -1905,7 +1906,7 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_fileversion */
