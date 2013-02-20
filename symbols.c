@@ -97,6 +97,8 @@
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
 **      20-FEB-2014 V3.8-10 Sneddon     Fix issue #25 related to FILEVERSION.
+**					 Fix issue #27 related to built in
+**					 functions.
 **--
 */
 #pragma module SYMBOLS "V3.3-10"
@@ -1118,48 +1120,45 @@ static char *apply_builtin (char *name, char *in, int inlen,
     }
 
     if (f != (struct FUNCTION *)0) {
-	/*
-	** Check the function to make sure we have enough arguments, etc.
-	** and call the builtin handler.
-	*/
-	if (argc < f->maxarg) {
-	    lib$signal(MMK__INSFARGS, 1, f->name);
-	} else if (!f->vararg && argc > f->maxarg) {
-	    lib$signal(MMK__TOOMANYARGS, 1, f->name);
-   	} else {
-	    for (i = 0; i < argc; i++) {
-		if (f->mask & (1 << i)) {
-		    char *tmp;
-		    tmp = cat(0, argv[i].dsc$a_pointer, argv[i].dsc$w_length);
-		    argv[i].dsc$a_pointer = tmp;
-		} else {
-	            char *rptr;
-	            int rlen;
-	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
+    	if (dont_resolve_unknowns != 0) {
+	    *out = cat(*out, "$(", 2, f->name, -1, " ", 1, in, cp-in);
+	    *outlen = strlen(*out);
+    	} else {
+	    /*
+	    ** Check the function to make sure we have enough arguments, etc.
+	    ** and call the builtin handler.
+	    */
+	    if (argc < f->maxarg) {
+	    	lib$signal(MMK__INSFARGS, 1, f->name);
+	    } else if (!f->vararg && argc > f->maxarg) {
+	    	lib$signal(MMK__TOOMANYARGS, 1, f->name);
+   	    } else {
+	    	for (i = 0; i < argc; i++) {
+		    if (f->mask & (1 << i)) {
+		    	char *tmp;
+		    	tmp = cat(0, argv[i].dsc$a_pointer,
+				  argv[i].dsc$w_length);
+		    	argv[i].dsc$a_pointer = tmp;
+		    } else {
+	            	char *rptr;
+	            	int rlen;
+	            	*resolved_MMS_macro |= Resolve_Symbols(
+						argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
 						&rlen, dont_resolve_unknowns);
-		    argv[i].dsc$a_pointer = rptr;
-		    argv[i].dsc$w_length = (unsigned short)rlen;
+		    	argv[i].dsc$a_pointer = rptr;
+		    	argv[i].dsc$w_length = (unsigned short)rlen;
+	    	    }
 	    	}
-	    }
 
-	    if (dont_resolve_unknowns == 0) {
 	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
-	    } else {
-		*out = cat(*out, "$(", 2, f->name, -1, " ", 1);
-		for (i = 0; i < argc; i++) {
-		    *out = cat(*out, argv[i].dsc$a_pointer,
-			       argv[i].dsc$w_length,
-			       (i+1 == argc) ? ")" : ",", 1);
-		}
-		*outlen = strlen(*out);
-	    }
 
-	    for (i = 0; i < argc; i++) {
-	    	if (argv[i].dsc$a_pointer != 0) {
-		    free(argv[i].dsc$a_pointer);
-		    argv[i].dsc$a_pointer = 0;
-		    argv[i].dsc$w_length = 0;
+	        for (i = 0; i < argc; i++) {
+	    	    if (argv[i].dsc$a_pointer != 0) {
+		    	free(argv[i].dsc$a_pointer);
+		    	argv[i].dsc$a_pointer = 0;
+		   	argv[i].dsc$w_length = 0;
+		    }
 	    	}
 	    }
 	}
