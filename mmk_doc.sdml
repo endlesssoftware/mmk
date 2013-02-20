@@ -917,20 +917,22 @@ the result is an empty string.
 The following examples show how to call the <reference>(func_findstring)
 builtin function and demonstrate the expected output.
 <EXC>
+ISPRESENT = ${IF $(FINDSTRING $(1),$(2)),YES,NO}
 
-# ISPRESENT find,text
-ISPRESENT = ${IF ${FINDSTRING ${1},${2}},"YES","NO"}
-
-
-TEXT = KERMIT PIGGY FOZZIE 
+TEXT = KERMIT PIGGY FOZZIE
 ALL :
+    @ WRITE SYS$OUTPUT "LIST = $(LIST)"
     @ WRITE SYS$OUTPUT "1. KERMIT? $(CALL ISPRESENT,KERMIT,$(TEXT))
     @ WRITE SYS$OUTPUT "2. GONZO? $(CALL ISPRESENT,GONZO,$(TEXT))"
 <EXTEXT>
 Description file to demonstrate the <reference>(func_findstring) function.
+In this example FINDSTRING is being called indirectly via a macro call.
+For further information on this, please see the documentation for
+the <reference>(fun_call) builtin function.
 <EXI>
-1. KERMIT? FROG
-2. GONZO? FROG
+LIST = KERMIT PIGGY FOZZIE
+1. KERMIT? YES
+2. GONZO? NO
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
