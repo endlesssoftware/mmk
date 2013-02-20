@@ -818,20 +818,26 @@ $(FILEVERSION text[ ...])
 FILEVERSION returns only the file version portion of the specifications found
 in <argument>(text).  If multiple specifications are supplied, they will each
 be evaluated and returned in a space delimited list.
+
+<P>
+FILEVERSION retrieves the version information calling the $PARSE and then
+the $SEARCH system services.  In the event that the file does not exist,
+the version number is returned as ";" so that a missing element does not
+disrupt the list.
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
 <EXAMPLES_INTRO>
 The following examples show how to call the <reference>(func_fileversion)
 builtin function and demonstrate the expected output.
 <EXC>
-FOO = $(FILEVERSION SYS$LOGIN:LOGIN.COM)
+FOO = $(FILEVERSION SYS$LOGIN:LOGIN.COM SYS$LOGIN:DOESNOTEXIST.TXT)
 
 ALL :
     @ $(ECHO) "FOO = $(FOO)"
 <EXTEXT>
 Description file to demonstrate the <reference>(func_fileversion) function.
 <EXI>
-FOO = ;17
+FOO = ;17 ;
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
