@@ -599,6 +599,34 @@ $(SUBST from, to, str)
 <endcomment>
 
 <ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(ADDPREFIX\Prefix List Elements\\func_addprefix)
+<SYNTAX>
+$(ADDPREFIX prefix,text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ADDPREFIX treats <argument>(text) as a whitespace delimited list of words.
+Each word is prefixed with <argument>(prefix) and returned in a space
+delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_addprefix)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = CAT, DOG, SECRET, HEAVY 
+ALL :
+    @ WRITE SYS$OUTPUT "Unprefixed = $(LIST)"
+    @ WRITE SYS$OUTPUT "Prefixed   = $(ADDPREFIX TOP ,$(LIST))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_addprefix) function.
+<EXI>
+Unprefixed = CAT, DOG, SECRET, HEAVY
+Prefixed   = TOP CAT, TOP DOG, TOP SECRET, TOP HEAVY
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(AND\Logical And\\func_and)
 <SYNTAX>
 $(AND condition[,condition[,...]])
