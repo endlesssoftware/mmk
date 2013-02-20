@@ -98,7 +98,8 @@
 **	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
 **      20-FEB-2014 V3.8-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **					 Fix issue #27 related to built in
-**					 functions.
+**					 functions. Fix issue #29, FINDSTRING.
+**					 Fixed IF argument mask.
 **--
 */
 #pragma module SYMBOLS "V3.3-10"
@@ -221,7 +222,7 @@
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
 	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
 	{ "JOIN",		0, 2, 0x00000000, apply_join,	     },
-	{ "IF",			1, 2, 0x00000007, apply_if,	     },
+	{ "IF",			1, 2, 0x00000006, apply_if,	     },
 	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
 	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
