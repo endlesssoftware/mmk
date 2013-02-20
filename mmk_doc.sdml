@@ -84,7 +84,7 @@ The following documents might also be helpful when using MMK:
 <le>The <emphasis>(MMK Release Notes) contain further information related to
 new and deprecated features of MMK.
 <le>The <emphasis>(Guide to the Module Management System)
-(order number: <keep(AA-P119J-TE)) contains further information related to DEC/MMS
+(order number: <keep>(AA-P119J-TE)) contains further information related to DEC/MMS
 and can be found at
 <keep>(<emphasis>(http://h71000.www7.hp.com/doc/decset.html)).
 <le>The <emphasis>(GNU Make Manual) contains information related to
@@ -639,6 +639,33 @@ BAR =
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(BASENAME\Get File Specification Without Type\\func_basename)
+<SYNTAX>
+$(BASENAME text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+BASENAME returns the device, directory and file name portions of the
+specifications found in <argument>(text).  The result does not include
+the file type.  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_basename)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(BASENAME SYS$LOGIN:LOGIN.COM)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_basename) function.
+<EXI>
+FOO = USER$:[FLYNN]LOGIN
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(COLLAPSE\Collapse Whitespace\\func_collapse)
 <SYNTAX>
 $(COLLAPSE text)
@@ -778,6 +805,33 @@ ALL :
 Description file to demonstrate the <reference>(func_filetype) function.
 <EXI>
 FOO = .COM
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILEVERSION\Get File Version\\func_fileversion)
+<SYNTAX>
+$(FILEVERSION text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILEVERSION returns only the file version portion of the specifications found
+in <argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_fileversion)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILEVERSION SYS$LOGIN:LOGIN.COM)
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_fileversion) function.
+<EXI>
+FOO = ;17
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
