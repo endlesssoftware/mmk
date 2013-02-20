@@ -95,14 +95,16 @@
 **	26-OCT-2012 V3.3-6  Sneddon	Add SORT
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
-**	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
-**      20-FEB-2014 V3.8-10 Sneddon     Fix issue #25 related to FILEVERSION.
+**	05-FEB-2013 V3.3-9  Sneddon	Final touches to builtin support.
+**      20-FEB-2014 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **					 Fix issue #27 related to built in
 **					 functions. Fix issue #29, FINDSTRING.
-**					 Fixed IF argument mask.
+**                                       Fixed IF argument mask.
+**	21-FEB-2014 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
+**					 builtin handlers.
 **--
 */
-#pragma module SYMBOLS "V3.3-10"
+#pragma module SYMBOLS "V3.3-11"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -1320,8 +1322,6 @@ static int apply_addsuffix (int argc, char **out, int *outlen) {
 */
 static int apply_and (int argc, char **out, int *outlen) {
 
-    static int dont_resolve_unknowns = 1; // need to do this properly...
-
     int i, len, resolved_MMS_macro;
     char *ep, *sp, *tmp, *tmpend;
 
@@ -1330,8 +1330,8 @@ static int apply_and (int argc, char **out, int *outlen) {
 
     for (i = 0; i < argc; i++) {
 	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
-					argv[i].dsc$w_length, &tmp, &len,
-					dont_resolve_unknowns);
+					     argv[i].dsc$w_length, &tmp,
+					     &len, 0);
 	if (len != 0) {
 	    sp = tmp;
 	    tmpend = tmp + len;
@@ -1463,8 +1463,6 @@ static int apply_basename (int argc, char **out, int *outlen) {
 */
 static int apply_call (int argc, char **out, int *outlen) {
 
-    static int dont_resolve_unknowns = 1;
-
     struct SYMBOL *sym;
     struct SYMTABLE *symq;
     char *var;
@@ -1489,8 +1487,7 @@ static int apply_call (int argc, char **out, int *outlen) {
 	}
 
 	resolved_MMS_macro = Resolve_Symbols(sym->value, strlen(sym->value),
-					     out, outlen,
-					     dont_resolve_unknowns);
+					     out, outlen, 0);
 
 	symq = temporary_symbols;
 	temporary_symbols = symq->next;
@@ -2225,8 +2222,6 @@ static int apply_firstword (int argc, char **out, int *outlen) {
 */
 static int apply_foreach (int argc, char **out, int *outlen) {
 
-    static int dont_resolve_unknowns = 1;
-
     struct SYMTABLE *symq;
     int resolved_MMS_macro = 0, tmplen;
     char *cp, *ep, *in, *inend, *tmp, *var;
@@ -2250,8 +2245,7 @@ static int apply_foreach (int argc, char **out, int *outlen) {
 	    Define_Symbol(MMK_K_SYM_TEMPORARY, var, ep, cp-ep);
 	    resolved_MMS_macro |= Resolve_Symbols(argv[2].dsc$a_pointer,
 						  argv[2].dsc$w_length, &tmp,
-						  &tmplen,
-						  dont_resolve_unknowns);
+						  &tmplen, 0);
 	    *out = cat (*out, tmp, tmplen, " ");
     	}
     	while ((++cp < inend)
@@ -2295,8 +2289,6 @@ static int apply_foreach (int argc, char **out, int *outlen) {
 */
 static int apply_if (int argc, char **out, int *outlen) {
 
-    static int dont_resolve_unknowns = 1; // need to do this properly...
-
     int i, len, resolved_MMS_macro;
     char *ep, *in, *inend, *sp;
 
@@ -2317,12 +2309,10 @@ static int apply_if (int argc, char **out, int *outlen) {
 
     if ((ep - sp) + 1 > 0) {
 	resolved_MMS_macro = Resolve_Symbols(argv[1].dsc$a_pointer,
-					argv[1].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					argv[1].dsc$w_length, out, outlen, 0);
     } else if (argc > 2) {
 	resolved_MMS_macro = Resolve_Symbols(argv[2].dsc$a_pointer,
-					argv[2].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					argv[2].dsc$w_length, out, outlen, 0);
     }
 
     return resolved_MMS_macro;
@@ -2580,15 +2570,13 @@ static int apply_notdir (int argc, char **out, int *outlen) {
 */
 static int apply_or (int argc, char **out, int *outlen) {
 
-    static int dont_resolve_unknowns = 1; // need to do this properly...
-
     int i, len, resolved_MMS_macro;
     char *ep, *sp, *outend;
 
     for (i = 0; i < argc; i++) {
 	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
-					argv[i].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					     argv[i].dsc$w_length, out,
+					     outlen, 0);
 	if (*outlen != 0) {
 	    sp = *out;
 	    outend = *out + *outlen;
