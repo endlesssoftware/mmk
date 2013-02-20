@@ -902,6 +902,39 @@ FOO = ;17 ;
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(FINDSTRING\String Search\\func_findstring)
+<SYNTAX>
+$(FINDSTRING find,text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FINDSTRING searchs <argument>(text) for any occurrence of <argument>(find).
+If <argument>(find) is found then the result is <argument>(find).  Otherwise
+the result is an empty string.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_findstring)
+builtin function and demonstrate the expected output.
+<EXC>
+
+# ISPRESENT find,text
+ISPRESENT = ${IF ${FINDSTRING ${1},${2}},"YES","NO"}
+
+
+TEXT = KERMIT PIGGY FOZZIE 
+ALL :
+    @ WRITE SYS$OUTPUT "1. KERMIT? $(CALL ISPRESENT,KERMIT,$(TEXT))
+    @ WRITE SYS$OUTPUT "2. GONZO? $(CALL ISPRESENT,GONZO,$(TEXT))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_findstring) function.
+<EXI>
+1. KERMIT? FROG
+2. GONZO? FROG
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
 <SYNTAX>
 $(FIRSTWORD text[ ...])
