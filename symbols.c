@@ -2125,8 +2125,8 @@ static int apply_findstring (int argc, char **out, int *outlen) {
     *outlen = 0;
 
     INIT_SDESC(substr, 0, 0);
-    in = cp = argv[1].dsc$a_pointer;
-    inend = in + argv[1].dsc$w_length;
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
     	    substr.dsc$a_pointer = cp;
