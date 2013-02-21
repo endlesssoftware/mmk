@@ -103,7 +103,8 @@
 **	21-FEB-2014 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
 **					 builtin handlers.  Builtin handlers
 **					 now receive call-specific argument
-**					 stack.  Fixes issue #31.
+**					 stack.  Fixes issue #31.  Fix symbol
+**					 types, issue #33.
 **--
 */
 #pragma module SYMBOLS "V3.3-11"
@@ -317,6 +318,7 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	    if (OK(status)) {
     	    	sym = mem_get_symbol();
     	    	strcpy(sym->name, name);
+		sym->type = MMK_K_SYM_CLI;
     	    	sym->value = malloc(valdsc.dsc$w_length+1);
     	    	memcpy(sym->value, valdsc.dsc$a_pointer, valdsc.dsc$w_length);
     	    	sym->value[valdsc.dsc$w_length] = '\0';
@@ -417,6 +419,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 	    sym->value = 0;
 	}
     }
+    sym->type = symtype;
 
     if (vallen < 0) vallen = strlen(val);
     if (sym->value) {
@@ -2669,7 +2672,6 @@ static int apply_origin (int argc, struct dsc$descriptor *argv,
 
     struct SYMBOL *sym;
     char *var;
-    int type;
 
     var = malloc(argv[0].dsc$w_length+1);
     memcpy(var, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
@@ -2679,8 +2681,7 @@ static int apply_origin (int argc, struct dsc$descriptor *argv,
     if (sym == (struct SYMBOL *)0) {
 	*out = strdup(ORIGINS[0]);
     } else {
-	type = (sym->type & ~0x7) + 1;
-	*out = strdup(ORIGINS[type]);
+	*out = strdup(ORIGINS[sym->type+1]);
     }
     *outlen = strlen(*out);
     free(var);
