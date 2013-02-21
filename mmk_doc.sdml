@@ -902,6 +902,39 @@ FOO = ;17 ;
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(FILTER\Filter Words\\func_filter)
+<SYNTAX>
+$(FILTER pattern[ ...],text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILTER treats <argument>(text) as a whitespace delimited list for words.  It
+compares each word against <argument>(pattern), which itself is a whitespace
+delimited list of petterns, to determine if it should be included in the
+result.  If the pattern matches the word, the word is included in the space
+delimited result list. The pattern wildcard characters are
+<S>('%') and <S>('*').
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filter)
+builtin function and demonstrate the expected output.
+<EXC>
+SOURCES = FOO.C BAR.C BAZ.S UGH.H
+ALL :
+    @ WRITE SYS$OUTPUT "$(FILTER *.C *.S,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER *.H,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER *.T,$(SOURCES))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filter) function.
+<EXI>
+FOO.C BAR.C BAZ.S
+UGH.H
+
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(FINDSTRING\String Search\\func_findstring)
 <SYNTAX>
 $(FINDSTRING find,text)
