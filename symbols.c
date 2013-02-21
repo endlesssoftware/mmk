@@ -318,6 +318,7 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	    if (OK(status)) {
     	    	sym = mem_get_symbol();
     	    	strcpy(sym->name, name);
+		sym->type = MMK_K_SYM_CLI;
     	    	sym->value = malloc(valdsc.dsc$w_length+1);
     	    	memcpy(sym->value, valdsc.dsc$a_pointer, valdsc.dsc$w_length);
     	    	sym->value[valdsc.dsc$w_length] = '\0';
