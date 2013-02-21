@@ -1142,6 +1142,55 @@ BAR = D
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(ORIGIN\Symbol Origin\\func_origin)
+<SYNTAX>
+$(ORIGIN macro)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ORIGIN returns a string describing in which context <argument>(macro) was
+defined.  <reference>(origins) lists the possible results and what they mean.
+
+<TABLE>(Macro Definition Origins\origins)
+<TABLE_SETUP>(2\8)
+<TABLE_HEADS>(Type\Description)
+<TABLE_ROW>(UNDEFINED\The symbol is not yet defined.)
+<TABLE_ROW>(FILE\These symbols have been defined within the description file.)
+<TABLE_ROW>(COMMAND LINE\These symbols have been defined through use of
+		  	 the /MACRO= command line qualifier.)
+<TABLE_ROW>(SPECIAL\Special symbols are defined per target, these include
+		    $(MMS$TARGET) and $(MMS$SOURCE).)
+<TABLE_ROW>(DEFAULT\This includes all symbols defined by the default
+		    rules.)
+<TABLE_ROW>(CLI SYMBOL\This macro takes its definition from a DCL symbol.)
+<TABLE_ROW>(TEMPORARY\These symbols are defined through the use of
+		      <reference>(func_call), like $(0) amd $(1), or
+		      <reference>(func_foreach) and the definition of the
+		      loop symbol.)
+<ENDTABLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_origin)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = BAR
+
+ALL :
+    @ WRITE SYS$OUTPUT "MMSVAX              = $(ORIGIN MMSVAX)"
+    @ WRITE SYS$OUTPUT "MMSALPHA            = $(ORIGIN MMSALPHA)"
+    @ WRITE SYS$OUTPUT "MMSDESCRIPTION_FILE = $(ORIGIN MMSDESCRIPTION_FILE)"
+    @ WRITE SYS$OUTPUT "MMS$TARGET          = $(ORIGIN MMS$TARGET)"
+    @ WRITE SYS$OUTPUT "FOO                 = $(ORIGIN FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_origin) function.
+<EXI>
+FOO =
+BAR = D 
+<EXTEXT>
+The output the above description file would generate if run on a VAX system.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(PATSUBST\Pattern Substitution\\func_patsubst)
 <SYNTAX>
 $(PATSUBST pattern, to, text)
