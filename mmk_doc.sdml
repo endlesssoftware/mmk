@@ -1253,6 +1253,36 @@ BAR = FIRST.O SECOND.O THIRD.O
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(SORT\Sort Words\\func_sort)
+<SYNTAX>
+$(SORT text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+SORT treats <argument>(text) as a whitespace delimited list of words.  These
+words are then sorted into into lexical order, removing duplicates and
+returned to the caller.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_sort) builtin
+function and demonstrate the expected output.
+<EXC>
+ECHO = WRITE SYS$OUTPUT
+MUPPETS = PIGGY FOZZIE KERMIT GONZO BEAKER ROWLF
+DILBERT = DILBERT ALICE WALLY ASOK DOGBERT RATBERT
+ALL :
+    @ $(ECHO) "$(SORT $(DILBERT))
+    @ $(ECHO) "$(SORT $(MUPPETS))
+<EXTEXT>
+Description file to demonstrate the <reference>(func_sort) function.
+<EXI>
+ALICE ASOK DILBERT DOGBERT RATBERT WALLY
+BEAKER FOZZIE GONZO KERMIT PIGGY ROWLF
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(STRIP\Compress Whitespace\\func_strip)
 <SYNTAX>
 $(STRIP text)
