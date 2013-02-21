@@ -1998,7 +1998,8 @@ static int apply_filter (int argc, struct dsc$descriptor *argv,
 	    for (pattern = patque.flink; pattern != &patque;
 			pattern = pattern->flink) {
 		if (str$match_wild(&text, &pattern->str) == STR$_MATCH) {
-		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length);
+		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length,
+			       " ", 1);
 		    break;
 		}
 	    }
@@ -2087,7 +2088,8 @@ static int apply_filter_out (int argc, struct dsc$descriptor *argv,
 	    for (pattern = patque.flink; pattern != &patque;
 			pattern = pattern->flink) {
 		if (str$match_wild(&text, &pattern->str) == STR$_NOMATCH) {
-		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length);
+		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length,
+			       " ", 1);
 		    break;
 		}
 	    }
