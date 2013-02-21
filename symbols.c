@@ -3111,6 +3111,9 @@ static int apply_warn (int argc, struct dsc$descriptor *argv,
 
     int i;
 
+    *out = 0;
+    *outlen = 0;
+
     for (i = 0; i < argc; i++)
 	lib$signal(MMK__WARN, 1, &argv[i]);
 
