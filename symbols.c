@@ -2368,6 +2368,9 @@ static int apply_info (int argc, struct dsc$descriptor *argv,
 
     int i;
 
+    *out = 0;
+    *outlen = 0;
+
     for (i = 0; i < argc; i++)
 	lib$signal(MMK__INFO, 1, &argv[i]);
 
