@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2013, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -91,9 +91,12 @@
 **	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
 **	07-JUL-2012 V2.4    Sneddon	Added support for '!='.
 **	25-JUL-2012 V2.4-1  Sneddon	Add some comments to sym_do_actrtn.
+**	21-FEB-2013 V2.5    Sneddon	Change .IF handling to call
+**					 Resolve_Symbol so we catch function
+**					 calls.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.4-1"
+#pragma module PARSE_DESCRIP "V2.5"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -390,11 +393,12 @@ int parse_store (struct TPABLK *tpa) {
         return SS$_NORMAL;
 
     case PRS_K_DIR_IFLHS:
-    	iflhs.dsc$w_length = tpa->tpa0.tpa$l_tokencnt;
-    	iflhs.dsc$a_pointer = tpa->tpa_l_stringbase +
-    	    	(((char *)tpa->tpa0.tpa$l_tokenptr)-tpa->tpa_l_upbase);
+	Resolve_Symbols(tpa->tpa_l_stringbase + (((char *)tpa->tpa0.tpa$l_tokenptr)-tpa->tpa_l_upbase),
+			tpa->tpa0.tpa$l_tokencnt, &cp, &len, 0);
+	iflhs.dsc$w_length = (unsigned short)len;
     	iflhs.dsc$b_dtype = DSC$K_DTYPE_T;
     	iflhs.dsc$b_class = DSC$K_CLASS_S;
+	iflhs.dsc$a_pointer = cp;
     	return SS$_NORMAL;
 
     case PRS_K_DIR_IFEQL:
@@ -430,9 +434,10 @@ int parse_store (struct TPABLK *tpa) {
             s = Lookup_Symbol(symnam);
             do_it = (s != 0) && (s->value != 0) && (s->value[0] != '\0');
         } else {
-            ifrhs.dsc$w_length = tpa->tpa0.tpa$l_tokencnt;
-            ifrhs.dsc$a_pointer = tpa->tpa_l_stringbase +
-    	    	(((char *)tpa->tpa0.tpa$l_tokenptr)-tpa->tpa_l_upbase);
+	    Resolve_Symbols(tpa->tpa_l_stringbase + (((char *)tpa->tpa0.tpa$l_tokenptr)-tpa->tpa_l_upbase),
+			    tpa->tpa0.tpa$l_tokencnt, &cp, &len, 0);
+            ifrhs.dsc$w_length = (unsigned short)len;
+            ifrhs.dsc$a_pointer = cp;
             ifrhs.dsc$b_dtype = DSC$K_DTYPE_T;
             ifrhs.dsc$b_class = DSC$K_CLASS_S;
             i = str$case_blind_compare(&iflhs, &ifrhs);
@@ -457,7 +462,9 @@ int parse_store (struct TPABLK *tpa) {
                 do_it = (i <  0) ? 1 : 0;
                 break;
             }
+	    free(ifrhs.dsc$a_pointer);
         }
+	free(iflhs.dsc$a_pointer);
         do_it = (not) ? !do_it : do_it;
 	do_it = (and) ? ifent->do_it && do_it : do_it;
 	do_it = (or ) ? ifent->do_it || do_it : do_it;
