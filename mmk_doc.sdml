@@ -1175,20 +1175,32 @@ The following examples show how to call the <reference>(func_origin)
 builtin function and demonstrate the expected output.
 <EXC>
 FOO = BAR
-
+BAR = $(ORIGIN 0)
 ALL :
     @ WRITE SYS$OUTPUT "MMSVAX              = $(ORIGIN MMSVAX)"
     @ WRITE SYS$OUTPUT "MMSALPHA            = $(ORIGIN MMSALPHA)"
-    @ WRITE SYS$OUTPUT "MMSDESCRIPTION_FILE = $(ORIGIN MMSDESCRIPTION_FILE)"
-    @ WRITE SYS$OUTPUT "MMS$TARGET          = $(ORIGIN MMS$TARGET)"
+    @ WRITE SYS$OUTPUT "CC                  = $(ORIGIN CC)"
+    @ WRITE SYS$OUTPUT "CALL ARGUMENT 0     = $(CALL BAR)"
     @ WRITE SYS$OUTPUT "FOO                 = $(ORIGIN FOO)"
+    @ WRITE SYS$OUTPUT "VARIANT             = $(ORIGIN VARIANT)"
+    @ WRITE SYS$OUTPUT "CLISYM              = $(ORIGIN CLISYM)"
 <EXTEXT>
 Description file to demonstrate the <reference>(func_origin) function.
 <EXI>
-FOO =
-BAR = D 
+MMSVAX              = SPECIAL
+MMSALPHA            = UNDEFINED
+CC                  = DEFAULT
+CALL ARGUMENT 0     = TEMPORARY
+FOO                 = FILE
+VARIANT             = COMMAND LINE
+CLISYM              = CLI SYMBOL
 <EXTEXT>
 The output the above description file would generate if run on a VAX system.
+With the following commands:
+<CODE_EXAMPLE>
+$ CLISYM == 1
+$ MMK/MACRO=VARIANT=1
+<ENDCODE_EXAMPLE>
 <ENDEXAMPLE_SEQUENCE>
 
 <ROUTINE>(PATSUBST\Pattern Substitution\\func_patsubst)
