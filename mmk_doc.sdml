@@ -1293,8 +1293,8 @@ wild-carded portions of the match are placed in a queue.  Therefore, when
 specifying <argument>(to) it is also possible to include pattern operators
 which will insert the wildcarded portions back into the output.
 <NOTE>
-Unlike the substitution mentioned in <reference>(macrosubst) the comparisson
-done by <reference>(func_patsubst) is case-sensitive.
+Unlike the substitution mentioned in <reference>(macrosubst\full) the
+comparison done by <reference>(func_patsubst) is case-sensitive.
 <ENDNOTE>
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
@@ -1370,6 +1370,37 @@ ALL :
 Description file to demonstrate the <reference>(func_strip) function.
 <EXI>
 FOO = This has lots of space
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(SUBST\String Substiution\\func_subst)
+<SYNTAX>
+$(SUBST from,to,text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+SUBST replaces all instances of <argument>(from) found in <argument>(text)
+with <argument>(to).
+<NOTE>
+This builtin function, like <reference>(func_patsubst), is case sensitive
+in its matching.  For case-insensitive string substitution please use,
+<reference>(macrosubst\full).
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_subst) builtin
+function and demonstrate the expected output.
+<EXC>
+ALL :
+    @ WRITE SYS$OUTPUT "$(SUBST ee,EE,feet on the street)"
+    @ WRITE SYS$OUTPUT "$(SUBST EE,ee,feet on the street)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_subst) function.
+<EXI>
+fEEt on the strEEt
+feet on the street
 <EXTEXT>
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
