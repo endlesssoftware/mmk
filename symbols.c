@@ -95,10 +95,19 @@
 **	26-OCT-2012 V3.3-6  Sneddon	Add SORT
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
-**	05-FEB-2013 V3.8-9  Sneddon	Final touches to builtin support.
+**	05-FEB-2013 V3.3-9  Sneddon	Final touches to builtin support.
+**      20-FEB-2014 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
+**					 Fix issue #27 related to built in
+**					 functions. Fix issue #29, FINDSTRING.
+**                                       Fixed IF argument mask.
+**	21-FEB-2014 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
+**					 builtin handlers.  Builtin handlers
+**					 now receive call-specific argument
+**					 stack.  Fixes issue #31.  Fix symbol
+**					 types, issue #33.
 **--
 */
-#pragma module SYMBOLS "V3.3-9"
+#pragma module SYMBOLS "V3.3-11"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -117,7 +126,7 @@
     struct FUNCTION {
 	char *name;
 	int vararg, maxarg, mask;
-	int (*handler)(int, char **, int *);
+	int (*handler)(int, struct dsc$descriptor *, char **, int *);
     };
 
 /*
@@ -143,42 +152,42 @@
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
 				int);
-    static int apply_addsuffix(int, char **, int *);
-    static int apply_addprefix(int, char **, int *);
-    static int apply_and(int, char **, int *);
-    static int apply_basename(int, char **, int*);
-    static int apply_call(int, char **, int *);
-    static int apply_collapse(int, char **, int *);
-    static int apply_dir(int, char **, int *);
-    static int apply_directory(int, char **, int *);
-    static int apply_error(int, char **, int *);
-    static int apply_filename(int, char **, int *);
-    static int apply_filetype(int, char **, int *);
-    static int apply_fileversion(int, char **, int *);
-    static int apply_filter(int, char **, int *);
-    static int apply_filter_out(int, char **, int *);
-    static int apply_findstring(int, char **, int *);
-    static int apply_firstword(int, char **, int *);
-    static int apply_foreach(int, char **, int *);
-    static int apply_if(int, char **, int *);
-    static int apply_info(int, char **, int *);
-    static int apply_join(int, char **, int *);
-    static int apply_lastword(int, char **, int *);
-    static int apply_notdir(int, char **, int *);
-    static int apply_or(int, char **, int *);
-    static int apply_origin(int, char **, int *);
-    static int apply_patsubst(int, char **, int *);
-    static int apply_sort(int, char **, int *);
+    static int apply_addsuffix(int, struct dsc$descriptor *, char **, int *);
+    static int apply_addprefix(int, struct dsc$descriptor *, char **, int *);
+    static int apply_and(int, struct dsc$descriptor *, char **, int *);
+    static int apply_basename(int, struct dsc$descriptor *, char **, int*);
+    static int apply_call(int, struct dsc$descriptor *, char **, int *);
+    static int apply_collapse(int, struct dsc$descriptor *, char **, int *);
+    static int apply_dir(int, struct dsc$descriptor *, char **, int *);
+    static int apply_directory(int, struct dsc$descriptor *, char **, int *);
+    static int apply_error(int, struct dsc$descriptor *, char **, int *);
+    static int apply_filename(int, struct dsc$descriptor *, char **, int *);
+    static int apply_filetype(int, struct dsc$descriptor *, char **, int *);
+    static int apply_fileversion(int, struct dsc$descriptor *, char **, int *);
+    static int apply_filter(int, struct dsc$descriptor *, char **, int *);
+    static int apply_filter_out(int, struct dsc$descriptor *, char **, int *);
+    static int apply_findstring(int, struct dsc$descriptor *, char **, int *);
+    static int apply_firstword(int, struct dsc$descriptor *, char **, int *);
+    static int apply_foreach(int, struct dsc$descriptor *, char **, int *);
+    static int apply_if(int, struct dsc$descriptor *, char **, int *);
+    static int apply_info(int, struct dsc$descriptor *, char **, int *);
+    static int apply_join(int, struct dsc$descriptor *, char **, int *);
+    static int apply_lastword(int, struct dsc$descriptor *, char **, int *);
+    static int apply_notdir(int, struct dsc$descriptor *, char **, int *);
+    static int apply_or(int, struct dsc$descriptor *, char **, int *);
+    static int apply_origin(int, struct dsc$descriptor *, char **, int *);
+    static int apply_patsubst(int, struct dsc$descriptor *, char **, int *);
+    static int apply_sort(int, struct dsc$descriptor *, char **, int *);
     static int apply_sort_cmp(struct dsc$descriptor *, struct LEAF *, void *);
     static int apply_sort_malloc(struct dsc$descriptor *, struct LEAF **, int);
     static int apply_sort_cat(struct LEAF *, char **);
-    static int apply_strip(int, char **, int *);
-    static int apply_subst(int, char **, int *);
-    static int apply_warn(int, char **, int *);
-    static int apply_wildcard(int, char **, int *);
-    static int apply_word(int, char **, int *);
-    static int apply_wordlist(int, char **, int *);
-    static int apply_words(int, char **, int *);
+    static int apply_strip(int, struct dsc$descriptor *, char **, int *);
+    static int apply_subst(int, struct dsc$descriptor *, char **, int *);
+    static int apply_warn(int, struct dsc$descriptor *, char **, int *);
+    static int apply_wildcard(int, struct dsc$descriptor *, char **, int *);
+    static int apply_word(int, struct dsc$descriptor *, char **, int *);
+    static int apply_wordlist(int, struct dsc$descriptor *, char **, int *);
+    static int apply_words(int, struct dsc$descriptor *, char **, int *);
 
 /*
 ** Own storage
@@ -186,7 +195,6 @@
 
     static struct SYMTABLE dcl_symbols;
     static int dcl_symbols_inited = 0;
-    static struct dsc$descriptor argv[ARGMAX];
     static char *WHITESPACE = " \r\n\t\v\f";
     static char SPECIALS[] = "@*<+?%&";
     static char *SPECIAL_VAR[] = {"MMS$TARGET","MMS$TARGET_NAME",
@@ -218,7 +226,7 @@
 	{ "FIRSTWORD",		0, 1, 0x00000000, apply_firstword,   },
 	{ "FOREACH",		0, 3, 0x00000004, apply_foreach,     },
 	{ "JOIN",		0, 2, 0x00000000, apply_join,	     },
-	{ "IF",			1, 2, 0x00000007, apply_if,	     },
+	{ "IF",			1, 2, 0x00000006, apply_if,	     },
 	{ "INFO",		1, 1, 0x00000000, apply_info,	     },
 	{ "LASTWORD",		0, 1, 0x00000000, apply_lastword,    },
 	{ "NOTDIR",		0, 1, 0x00000000, apply_notdir,	     },
@@ -310,6 +318,7 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	    if (OK(status)) {
     	    	sym = mem_get_symbol();
     	    	strcpy(sym->name, name);
+		sym->type = MMK_K_SYM_CLI;
     	    	sym->value = malloc(valdsc.dsc$w_length+1);
     	    	memcpy(sym->value, valdsc.dsc$a_pointer, valdsc.dsc$w_length);
     	    	sym->value[valdsc.dsc$w_length] = '\0';
@@ -410,6 +419,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 	    sym->value = 0;
 	}
     }
+    sym->type = symtype;
 
     if (vallen < 0) vallen = strlen(val);
     if (sym->value) {
@@ -1058,6 +1068,7 @@ static char *apply_builtin (char *name, char *in, int inlen,
 			    char **out, int *outlen, int *resolved_MMS_macro,
 			    int dont_resolve_unknowns) {
 
+    struct dsc$descriptor argv[ARGMAX];
     struct FUNCTION *f = 0;
     char *ap, *cp, *inend;
     int argc, depth, i, status;
@@ -1117,48 +1128,45 @@ static char *apply_builtin (char *name, char *in, int inlen,
     }
 
     if (f != (struct FUNCTION *)0) {
-	/*
-	** Check the function to make sure we have enough arguments, etc.
-	** and call the builtin handler.
-	*/
-	if (argc < f->maxarg) {
-	    lib$signal(MMK__INSFARGS, 1, f->name);
-	} else if (!f->vararg && argc > f->maxarg) {
-	    lib$signal(MMK__TOOMANYARGS, 1, f->name);
-   	} else {
-	    for (i = 0; i < argc; i++) {
-		if (f->mask & (1 << i)) {
-		    char *tmp;
-		    tmp = cat(0, argv[i].dsc$a_pointer, argv[i].dsc$w_length);
-		    argv[i].dsc$a_pointer = tmp;
-		} else {
-	            char *rptr;
-	            int rlen;
-	            *resolved_MMS_macro |= Resolve_Symbols(argv[i].dsc$a_pointer,
+    	if (dont_resolve_unknowns != 0) {
+	    *out = cat(*out, "$(", 2, f->name, -1, " ", 1, in, cp-in);
+	    *outlen = strlen(*out);
+    	} else {
+	    /*
+	    ** Check the function to make sure we have enough arguments, etc.
+	    ** and call the builtin handler.
+	    */
+	    if (argc < f->maxarg) {
+	    	lib$signal(MMK__INSFARGS, 1, f->name);
+	    } else if (!f->vararg && argc > f->maxarg) {
+	    	lib$signal(MMK__TOOMANYARGS, 1, f->name);
+   	    } else {
+	    	for (i = 0; i < argc; i++) {
+		    if (f->mask & (1 << i)) {
+		    	char *tmp;
+		    	tmp = cat(0, argv[i].dsc$a_pointer,
+				  argv[i].dsc$w_length);
+		    	argv[i].dsc$a_pointer = tmp;
+		    } else {
+	            	char *rptr;
+	            	int rlen;
+	            	*resolved_MMS_macro |= Resolve_Symbols(
+						argv[i].dsc$a_pointer,
 						argv[i].dsc$w_length, &rptr,
 						&rlen, dont_resolve_unknowns);
-		    argv[i].dsc$a_pointer = rptr;
-		    argv[i].dsc$w_length = (unsigned short)rlen;
+		    	argv[i].dsc$a_pointer = rptr;
+		    	argv[i].dsc$w_length = (unsigned short)rlen;
+	    	    }
 	    	}
-	    }
 
-	    if (dont_resolve_unknowns == 0) {
-	    	*resolved_MMS_macro |= (f->handler)(argc, out, outlen);
-	    } else {
-		*out = cat(*out, "$(", 2, f->name, -1, " ", 1);
-		for (i = 0; i < argc; i++) {
-		    *out = cat(*out, argv[i].dsc$a_pointer,
-			       argv[i].dsc$w_length,
-			       (i+1 == argc) ? ")" : ",", 1);
-		}
-		*outlen = strlen(*out);
-	    }
+	    	*resolved_MMS_macro |= (f->handler)(argc, argv, out, outlen);
 
-	    for (i = 0; i < argc; i++) {
-	    	if (argv[i].dsc$a_pointer != 0) {
-		    free(argv[i].dsc$a_pointer);
-		    argv[i].dsc$a_pointer = 0;
-		    argv[i].dsc$w_length = 0;
+	        for (i = 0; i < argc; i++) {
+	    	    if (argv[i].dsc$a_pointer != 0) {
+		    	free(argv[i].dsc$a_pointer);
+		    	argv[i].dsc$a_pointer = 0;
+		   	argv[i].dsc$w_length = 0;
+		    }
 	    	}
 	    }
 	}
@@ -1192,7 +1200,8 @@ static char *apply_builtin (char *name, char *in, int inlen,
 **
 **--
 */
-static int apply_addprefix (int argc, char **out, int *outlen) {
+static int apply_addprefix (int argc, struct dsc$descriptor *argv,
+			    char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend, *prefix = 0;
     int prefixlen = 0;
@@ -1255,7 +1264,8 @@ static int apply_addprefix (int argc, char **out, int *outlen) {
 
 **--
 */
-static int apply_addsuffix (int argc, char **out, int *outlen) {
+static int apply_addsuffix (int argc, struct dsc$descriptor *argv,
+			    char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend, *suffix = 0;
     int suffixlen = 0;
@@ -1317,9 +1327,8 @@ static int apply_addsuffix (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_and (int argc, char **out, int *outlen) {
-
-    static int dont_resolve_unknowns = 1; // need to do this properly...
+static int apply_and (int argc, struct dsc$descriptor *argv,
+		      char **out, int *outlen) {
 
     int i, len, resolved_MMS_macro;
     char *ep, *sp, *tmp, *tmpend;
@@ -1329,8 +1338,8 @@ static int apply_and (int argc, char **out, int *outlen) {
 
     for (i = 0; i < argc; i++) {
 	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
-					argv[i].dsc$w_length, &tmp, &len,
-					dont_resolve_unknowns);
+					     argv[i].dsc$w_length, &tmp,
+					     &len, 0);
 	if (len != 0) {
 	    sp = tmp;
 	    tmpend = tmp + len;
@@ -1393,7 +1402,8 @@ static int apply_and (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_basename (int argc, char **out, int *outlen) {
+static int apply_basename (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -1460,9 +1470,8 @@ static int apply_basename (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_call (int argc, char **out, int *outlen) {
-
-    static int dont_resolve_unknowns = 1;
+static int apply_call (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     struct SYMBOL *sym;
     struct SYMTABLE *symq;
@@ -1488,8 +1497,7 @@ static int apply_call (int argc, char **out, int *outlen) {
 	}
 
 	resolved_MMS_macro = Resolve_Symbols(sym->value, strlen(sym->value),
-					     out, outlen,
-					     dont_resolve_unknowns);
+					     out, outlen, 0);
 
 	symq = temporary_symbols;
 	temporary_symbols = symq->next;
@@ -1526,7 +1534,8 @@ static int apply_call (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_collapse (int argc, char **out, int *outlen) {
+static int apply_collapse (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend;
 
@@ -1577,7 +1586,8 @@ static int apply_collapse (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_dir (int argc, char **out, int *outlen) {
+static int apply_dir (int argc, struct dsc$descriptor *argv,
+		      char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -1643,7 +1653,8 @@ static int apply_dir (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_directory (int argc, char **out, int *outlen) {
+static int apply_directory (int argc, struct dsc$descriptor *argv,
+			    char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -1708,7 +1719,8 @@ static int apply_directory (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_error (int argc, char **out, int *outlen) {
+static int apply_error (int argc, struct dsc$descriptor *argv,
+			char **out, int *outlen) {
 
     lib$stop(MMK__ERROR, 1, &argv[0]);
 
@@ -1740,7 +1752,8 @@ static int apply_error (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_filename (int argc, char **out, int *outlen) {
+static int apply_filename (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -1805,7 +1818,8 @@ static int apply_filename (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_filetype (int argc, char **out, int *outlen) {
+static int apply_filetype (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -1870,10 +1884,11 @@ static int apply_filetype (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_fileversion (int argc, char **out, int *outlen) {
+static int apply_fileversion (int argc, struct dsc$descriptor *argv,
+			      char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
+    char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
     struct FAB fab;
     struct NAM nam;
 
@@ -1884,7 +1899,8 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
     nam = cc$rms_nam;
     nam.nam$l_esa = esa;
     nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
+    nam.nam$l_rsa = rsa;
+    nam.nam$b_rss = sizeof(rsa);
 #ifdef NAM$M_NO_SHORT_UPCASE
     nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
 #endif
@@ -1898,14 +1914,18 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 		;
 	    fab.fab$b_fns = cp - fab.fab$l_fna;
 	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		if (OK(sys$search(&fab))) {
+	    	    *out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
+		} else {
+		    *out = cat(*out, ";", 1, " ", 1);
+		}
 	    }
 	}
 	while ((++cp < inend)
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_fileversion */
@@ -1935,7 +1955,8 @@ static int apply_fileversion (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_filter (int argc, char **out, int *outlen) {
+static int apply_filter (int argc, struct dsc$descriptor *argv,
+			 char **out, int *outlen) {
 
     struct PATDEF {
 	struct PATDEF *flink, *blink;
@@ -1980,7 +2001,8 @@ static int apply_filter (int argc, char **out, int *outlen) {
 	    for (pattern = patque.flink; pattern != &patque;
 			pattern = pattern->flink) {
 		if (str$match_wild(&text, &pattern->str) == STR$_MATCH) {
-		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length);
+		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length,
+			       " ", 1);
 		    break;
 		}
 	    }
@@ -2023,7 +2045,8 @@ static int apply_filter (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_filter_out (int argc, char **out, int *outlen) {
+static int apply_filter_out (int argc, struct dsc$descriptor *argv,
+			     char **out, int *outlen) {
 
     struct PATDEF {
 	struct PATDEF *flink, *blink;
@@ -2059,6 +2082,7 @@ static int apply_filter_out (int argc, char **out, int *outlen) {
     inend = in + argv[1].dsc$w_length;
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+	    int nomatch = 1;
     	    text.dsc$a_pointer = cp;
     	    while ((++cp < inend)
     	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
@@ -2067,10 +2091,15 @@ static int apply_filter_out (int argc, char **out, int *outlen) {
 
 	    for (pattern = patque.flink; pattern != &patque;
 			pattern = pattern->flink) {
-		if (str$match_wild(&text, &pattern->str) == STR$_NOMATCH) {
-		    *out = cat(*out, text.dsc$a_pointer, text.dsc$w_length);
+		if (str$match_wild(&text, &pattern->str) != STR$_NOMATCH) {
+		    nomatch = 0;
 		    break;
 		}
+	    }
+
+	    if (nomatch) {
+		*out = cat(*out, text.dsc$a_pointer, text.dsc$w_length,
+			   " ", 1);
 	    }
     	}
     	while ((++cp < inend)
@@ -2111,7 +2140,8 @@ static int apply_filter_out (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_findstring (int argc, char **out, int *outlen) {
+static int apply_findstring (int argc, struct dsc$descriptor *argv,
+			     char **out, int *outlen) {
 
     struct dsc$descriptor substr;
     char *cp, *in, *inend;
@@ -2120,8 +2150,8 @@ static int apply_findstring (int argc, char **out, int *outlen) {
     *outlen = 0;
 
     INIT_SDESC(substr, 0, 0);
-    in = cp = argv[1].dsc$a_pointer;
-    inend = in + argv[1].dsc$w_length;
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
     	    substr.dsc$a_pointer = cp;
@@ -2168,7 +2198,8 @@ static int apply_findstring (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_firstword (int argc, char **out, int *outlen) {
+static int apply_firstword (int argc, struct dsc$descriptor *argv,
+			    char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
 
@@ -2217,9 +2248,8 @@ static int apply_firstword (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_foreach (int argc, char **out, int *outlen) {
-
-    static int dont_resolve_unknowns = 1;
+static int apply_foreach (int argc, struct dsc$descriptor *argv,
+			  char **out, int *outlen) {
 
     struct SYMTABLE *symq;
     int resolved_MMS_macro = 0, tmplen;
@@ -2244,8 +2274,7 @@ static int apply_foreach (int argc, char **out, int *outlen) {
 	    Define_Symbol(MMK_K_SYM_TEMPORARY, var, ep, cp-ep);
 	    resolved_MMS_macro |= Resolve_Symbols(argv[2].dsc$a_pointer,
 						  argv[2].dsc$w_length, &tmp,
-						  &tmplen,
-						  dont_resolve_unknowns);
+						  &tmplen, 0);
 	    *out = cat (*out, tmp, tmplen, " ");
     	}
     	while ((++cp < inend)
@@ -2287,9 +2316,8 @@ static int apply_foreach (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_if (int argc, char **out, int *outlen) {
-
-    static int dont_resolve_unknowns = 1; // need to do this properly...
+static int apply_if (int argc, struct dsc$descriptor *argv,
+		     char **out, int *outlen) {
 
     int i, len, resolved_MMS_macro;
     char *ep, *in, *inend, *sp;
@@ -2311,12 +2339,10 @@ static int apply_if (int argc, char **out, int *outlen) {
 
     if ((ep - sp) + 1 > 0) {
 	resolved_MMS_macro = Resolve_Symbols(argv[1].dsc$a_pointer,
-					argv[1].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					argv[1].dsc$w_length, out, outlen, 0);
     } else if (argc > 2) {
 	resolved_MMS_macro = Resolve_Symbols(argv[2].dsc$a_pointer,
-					argv[2].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					argv[2].dsc$w_length, out, outlen, 0);
     }
 
     return resolved_MMS_macro;
@@ -2347,9 +2373,13 @@ static int apply_if (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_info (int argc, char **out, int *outlen) {
+static int apply_info (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     int i;
+
+    *out = 0;
+    *outlen = 0;
 
     for (i = 0; i < argc; i++)
 	lib$signal(MMK__INFO, 1, &argv[i]);
@@ -2382,7 +2412,8 @@ static int apply_info (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_join (int argc, char **out, int *outlen) {
+static int apply_join (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     char *cp1, *cp2, *in1, *in2, *inend1, *inend2;
 
@@ -2457,7 +2488,8 @@ static int apply_join (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_lastword (int argc, char **out, int *outlen) {
+static int apply_lastword (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend;
 
@@ -2506,7 +2538,8 @@ static int apply_lastword (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_notdir (int argc, char **out, int *outlen) {
+static int apply_notdir (int argc, struct dsc$descriptor *argv,
+			 char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS];
@@ -2572,17 +2605,16 @@ static int apply_notdir (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_or (int argc, char **out, int *outlen) {
-
-    static int dont_resolve_unknowns = 1; // need to do this properly...
+static int apply_or (int argc, struct dsc$descriptor *argv,
+		     char **out, int *outlen) {
 
     int i, len, resolved_MMS_macro;
     char *ep, *sp, *outend;
 
     for (i = 0; i < argc; i++) {
 	resolved_MMS_macro = Resolve_Symbols(argv[i].dsc$a_pointer,
-					argv[i].dsc$w_length, out, outlen,
-					dont_resolve_unknowns);
+					     argv[i].dsc$w_length, out,
+					     outlen, 0);
 	if (*outlen != 0) {
 	    sp = *out;
 	    outend = *out + *outlen;
@@ -2639,14 +2671,14 @@ static int apply_or (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_origin (int argc, char **out, int *outlen) {
+static int apply_origin (int argc, struct dsc$descriptor *argv,
+			 char **out, int *outlen) {
 
     static char *ORIGINS[] = { "UNDEFINED", "SPECIAL", "FILE",
 	"COMMAND LINE", "SPECIAL", "DEFAULT", "CLI SYMBOL", "TEMPORARY" };
 
     struct SYMBOL *sym;
     char *var;
-    int type;
 
     var = malloc(argv[0].dsc$w_length+1);
     memcpy(var, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
@@ -2656,8 +2688,7 @@ static int apply_origin (int argc, char **out, int *outlen) {
     if (sym == (struct SYMBOL *)0) {
 	*out = strdup(ORIGINS[0]);
     } else {
-	type = (sym->type & ~0x7) + 1;
-	*out = strdup(ORIGINS[type]);
+	*out = strdup(ORIGINS[sym->type+1]);
     }
     *outlen = strlen(*out);
     free(var);
@@ -2690,7 +2721,8 @@ static int apply_origin (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_patsubst (int argc, char **out, int *outlen) {
+static int apply_patsubst (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     struct FROM {
 	struct FROM *flink, *blink;
@@ -2804,7 +2836,8 @@ static int apply_patsubst (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_sort (int argc, char **out, int *outlen) {
+static int apply_sort (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     struct dsc$descriptor symbol;
     static int zone = 0;
@@ -2981,7 +3014,8 @@ static int apply_sort_cat(struct LEAF *node,
 **
 **--
 */
-static int apply_strip (int argc, char **out, int *outlen) {
+static int apply_strip (int argc, struct dsc$descriptor *argv,
+			char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend;
 
@@ -3032,7 +3066,8 @@ static int apply_strip (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_subst (int argc, char **out, int *outlen) {
+static int apply_subst (int argc, struct dsc$descriptor *argv,
+			char **out, int *outlen) {
 
     struct dsc$descriptor *from, *in, *to;
     int pos, start = 1;
@@ -3082,9 +3117,13 @@ static int apply_subst (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_warn (int argc, char **out, int *outlen) {
+static int apply_warn (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     int i;
+
+    *out = 0;
+    *outlen = 0;
 
     for (i = 0; i < argc; i++)
 	lib$signal(MMK__WARN, 1, &argv[i]);
@@ -3117,7 +3156,8 @@ static int apply_warn (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_wildcard (int argc, char **out, int *outlen) {
+static int apply_wildcard (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     char *cp, *in, *inend, *sp;
     char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
@@ -3187,7 +3227,8 @@ static int apply_wildcard (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_word (int argc, char **out, int *outlen) {
+static int apply_word (int argc, struct dsc$descriptor *argv,
+		       char **out, int *outlen) {
 
     char *cp, *ep, *in, *inend;
     int e, n, status;
@@ -3250,7 +3291,8 @@ static int apply_word (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_wordlist (int argc, char **out, int *outlen) {
+static int apply_wordlist (int argc, struct dsc$descriptor *argv,
+			   char **out, int *outlen) {
 
     int b, e, i, status;
     char *cp, *in, *inend, *sp;
@@ -3312,7 +3354,8 @@ static int apply_wordlist (int argc, char **out, int *outlen) {
 **
 **--
 */
-static int apply_words (int argc, char **out, int *outlen) {
+static int apply_words (int argc, struct dsc$descriptor *argv,
+			char **out, int *outlen) {
 
     char *cp, *in, *inend;
     int e;

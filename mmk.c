@@ -11,7 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2013, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -141,8 +141,10 @@
 **	10-OCT-2008 V4.1    Sneddon 	New MMS compat. features.
 **	01-APR-2010 V4.1-1  Sneddon 	Updated version number for minor release.  Added MMSTARGETS.
 **	04-OCT-2010 V5.0    Sneddon	New version. Add /VERIFY=ALL.
-**	07-SEP-2012	    Sneddon	Add temporary_symbols.
+**	07-SEP-2012 V5.0    Sneddon	Add temporary_symbols.
 **	10-DEC-2012 V5.0    Sneddon	Fix to /VERIFY=ALL code.
+**	21-FEB-2013 V5.0    Sneddon	Move definition of MMSTARGETS to before
+**					 we read in the description file.
 **--
 */
 #define MMK_VERSION 	  "V5.0"
@@ -150,7 +152,7 @@
 #define MMK_MINOR_VERSION "0"
 #define MMK_REVISION	  "0"
 #define MMK_COPYRIGHT	"Copyright (c) 2008, Matthew Madison.\r\n" \
-		        "    Copyright (c) 2012, Endless Software Solutions.\r\n" \
+		        "    Copyright (c) 2013, Endless Software Solutions.\r\n" \
 			"  See LICENSE.TXT in distribution kit for license information."
 
 #pragma module MMK MMK_VERSION
@@ -627,6 +629,28 @@ unsigned int main (void) {
     Define_Symbol(MMK_K_SYM_BUILTIN, "MMSQUALIFIERS", mmsqual, strlen(mmsqual));
 
 /*
+**  Build list of targets specified on the command line into MMSTARGETS.
+*/
+    status = cli_present("TARGET");
+    if (status == CLI$_PRESENT) {
+	cli_get_value("TARGET", target, sizeof(target));
+	while (1) {
+	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, 1);
+
+	    targetent = malloc(sizeof(struct TARGET));
+	    targetent->name = strdup(target);
+	    queue_insert(targetent, &targetque);
+
+	    if (!OK(cli_get_value("TARGET", target, sizeof(target)))) break;
+	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", ",", 1, 1);
+	}
+    } else {
+	target[0] = '\0';
+	targetque.name = target;
+	Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, 0);
+    }
+
+/*
 **  Now read in and parse the description file.
 */
     Read_Description(descripfile, "SYS$DISK:[]DESCRIP.MMS", 0);
@@ -648,25 +672,6 @@ unsigned int main (void) {
 /*
 ** Now that all the dependencies are defined, we can do the build.
 */
-    status = cli_present("TARGET");
-    if (status == CLI$_PRESENT) {
-	cli_get_value("TARGET", target, sizeof(target));
-	while (1) {
-	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, 1);
-
-	    targetent = malloc(sizeof(struct TARGET));
-	    targetent->name = strdup(target);
-	    queue_insert(targetent, &targetque);
-
-	    if (!OK(cli_get_value("TARGET", target, sizeof(target)))) break;
-	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", ",", 1, 1);
-	}
-    } else {
-	target[0] = '\0';
-	targetque.name = target;
-	Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, 0);
-    }
-
     targetent = targetque.flink;
     do {
     	did_an_update = 0;
