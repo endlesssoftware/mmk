@@ -96,18 +96,19 @@
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **	05-FEB-2013 V3.3-9  Sneddon	Final touches to builtin support.
-**      20-FEB-2014 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
+**      20-FEB-2013 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **					 Fix issue #27 related to built in
 **					 functions. Fix issue #29, FINDSTRING.
 **                                       Fixed IF argument mask.
-**	21-FEB-2014 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
+**	21-FEB-2013 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
 **					 builtin handlers.  Builtin handlers
 **					 now receive call-specific argument
 **					 stack.  Fixes issue #31.  Fix symbol
 **					 types, issue #33.
+**	22-FEB-2013 V3.3-12 Sneddon	Fix WORDS, issue #39.
 **--
 */
-#pragma module SYMBOLS "V3.3-11"
+#pragma module SYMBOLS "V3.3-12"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -3363,8 +3364,8 @@ static int apply_words (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
-    in = cp = argv[1].dsc$a_pointer;
-    inend = in + argv[1].dsc$w_length;
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
     e = 0;
     while (cp < inend) {
 	if (strchr(WHITESPACE, *cp) == (char *)0) {
