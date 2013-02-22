@@ -1441,7 +1441,7 @@ static int apply_basename (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_basename */
@@ -1624,7 +1624,7 @@ static int apply_dir (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_dir */
@@ -1690,7 +1690,7 @@ static int apply_directory (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_directory */
@@ -1789,7 +1789,7 @@ static int apply_filename (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_filename */
@@ -1855,7 +1855,7 @@ static int apply_filetype (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_filetype */
@@ -2576,7 +2576,7 @@ static int apply_notdir (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_notdir */
@@ -3088,7 +3088,7 @@ static int apply_subst (int argc, struct dsc$descriptor *argv,
     if ((pos == 0) && (start <= in->dsc$w_length))
 	*out = cat(*out, in->dsc$a_pointer+start-1, in->dsc$w_length-start+1);
 
-    if (*out) *outlen = strlen(*out);
+    if (*out != 0) *outlen = strlen(*out);
 
     return 0;
 } /* apply_subst */
@@ -3198,7 +3198,7 @@ static int apply_wildcard (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_wildcard */
