@@ -1,36 +1,30 @@
-<FRONT_MATTER>(MMK_DOC_1)
-<TITLE_PAGE>
-<TITLE>(Guide to the MMK Make Utility)
-<ABSTRACT>(March, 2008)
-<P>This manual describes the MMK Make Utility, a <quote>(make)
-utility for VMS systems.
-<ENDABSTRACT>
-<REVISION_INFO>(This is a revised manual.)
-<REVISION_INFO>(Operating System and Version:\VAX/VMS V5.2 or later;
-OpenVMS Alpha V1.5 or later; OpenVMS IA64 V8.2 or later)
-<REVISION_INFO>(Software Version:\MMK V4.0)
-<ENDTITLE_PAGE>(Matthew Madison<LINE>Santa Cruz, California)
+<COMMENT>
 
-<COPYRIGHT_PAGE>
-<PRINT_DATE>(03 March 2008)
-<p>
+   Abstract:    VAX DOCUMENT source for _MMK User's Guide_
+
+   Authors:     Matt Madison
+
+Copyright (c) 2008, Matthew Madison.
+Copyright (c) 2013, Endless Software Solutions.
+
+All rights reserved.
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
-<list>(unnumbered)
-    <le>Redistributions of source code must retain the above
+
+    * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the following
       disclaimer.
-    <le>Redistributions in binary form must reproduce the above
+    * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the following
       disclaimer in the documentation and/or other materials provided
       with the distribution.
-    <le>Neither the name of the copyright owner nor the names of any
+    * Neither the name of the copyright owner nor the names of any
       other contributors may be used to endorse or promote products
       derived from this software without specific prior written
       permission.
-<endlist>
-<p>
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,16 +36,29 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-<P>The following are trademarks of Hewlett-Packard Development Company, LP:
-<TABLE>
-<TABLE_ATTRIBUTES>(SINGLE_SPACED)
-<TABLE_SETUP>(3\20\20)
-<TABLE_ROW>(AXP\DEC\OpenVMS)
-<TABLE_ROW>(VAX\VMS\)
-<ENDTABLE>
-<p>UNIX is a registered trademark of USL, Inc.
-<COPYRIGHT_DATE>(2008\Matthew Madison.  All rights reserved.)
-<ENDCOPYRIGHT_PAGE>
+
+   Modified by:
+
+        03-Aug-2012     Sneddon         Initial commenting (plus other
+					 rearrangments.
+	15-Feb-2013	Sneddon		Updated for V5.0.
+
+<ENDCOMMENT>
+<INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
+<FRONT_MATTER>(MMK_DOC_1)
+<TITLE_PAGE>
+<TITLE>(Guide to the MMK Make Utility)
+<ABSTRACT>(<REFERENCE>(RELMONTH))
+<P>This manual describes the MMK Make Utility, a <quote>(make)
+utility for VMS systems.
+<ENDABSTRACT>
+<REVISION_INFO>(This is a revised manual.)
+<REVISION_INFO>(Operating System and Version:\VAX/VMS V5.2 or later;
+OpenVMS Alpha V1.5 or later; OpenVMS IA64 V8.2 or later)
+<REVISION_INFO>(Software Version:\MMK <REFERENCE>(VER))
+<ENDTITLE_PAGE>(Endless Software Solutions<LINE>Perth, Western Australia)
+
+<INCLUDE>(SRC_DIR:COPYRIGHT.SDML)
 <CONTENTS_FILE>
 <PREFACE>(7\MMK_DOC_2)
 <P>This guide explains how to install and use MMK.
@@ -71,7 +78,19 @@ utility.
 <head1>(Document Structure\MMK_DOC_4)
 <p>tbs
 <head1>(Related Documents\MMK_DOC_5)
-<p>tbs
+<p>
+The following documents might also be helpful when using MMK:
+<list>(unnumbered)
+<le>The <emphasis>(MMK Release Notes) contain further information related to
+new and deprecated features of MMK.
+<le>The <emphasis>(Guide to the Module Management System)
+(order number: <keep>(AA-P119J-TE)) contains further information related to DEC/MMS
+and can be found at
+<keep>(<emphasis>(http://h71000.www7.hp.com/doc/decset.html)).
+<le>The <emphasis>(GNU Make Manual) contains information related to
+<emphasis>(make) and can be found at
+<keep>(<emphasis>(http://www.gnu.org/software/make/manual/)).
+<endlist>
 <head1>(Conventions\MMK_DOC_6)
 <p>In this document, the following convention will be used for the names
 of the three similar utilities:
@@ -329,21 +348,146 @@ want inference rules to be enabled.
 <head1>(Using Conditionals\using_cond)
 <p>
 MMK provides several directives that can be used to modify the build sequence
-based on conditions.  These directives are .IF, .IFDEF, .IFNDEF, .ELSE, and .ENDIF.
-The .IFDEF, .ELSE, and .ENDIF directives work the same as for MMS; the .IF and
-.IFNDEF directives are MMK extensions.  The .IFNDEF directive provides the logical
-inverse to .IFDEF; the check succeeds if the specified macro is <emphasis>(not)
-defined.  The .IF directive supports more general comparisons.  Its syntax is
+based on conditions.  These directives are .IF, .IFDEF, .IFNDEF, .ELSE,
+.ELSIF and .ENDIF.  The .IFDEF directive checks if the specified macro is
+defined and .IFNDEF is the logical inverse, the syntax of which is:
+
 <interactive>
-.IF "<emphasis>(expression1)" <emphasis>(comparison) "<emphasis>(expression2)"
+.IFDEF VEGETABLE
+...
+.ENDIF
 <endinteractive>
-<cp>
-where <emphasis>(expression1) and <emphasis>(expression2) can be any string
-that does not contain quotation marks.  Macro references may be used in
-the expressions as long as the macro values do not contain quotation marks.
-The <emphasis>(comparison) operator is either <keyword>(EQL) (equals) or
-<keyword>(NEQ) (not equals).  The quotation marks around the two expressions
-are required.  Comparisons are performed without regard to upper/lower case.
+
+<p>or,
+
+<interactive>
+.IFNDEF VEGETABLE
+...
+.ENDIF
+<endinteractive>
+
+<p>The .IF directive supports more general comparison (and thus greater
+power) by allowing the specification of a boolean expression, like so:
+
+<interactive>
+.IF expression
+...
+[.ELSEIF expression]
+[...]
+[.ELSE]
+[...]
+.ENDIF
+<endinteractive>
+
+<p>In the example above, <emphasis>(expression) can be replaced by any
+operations consisting of the operators (both MMS and MMK operators are
+listed) listed in <reference>(boolop).
+
+<table>(Conditional Expression Operators\boolop)
+<table_setup>(3\10\10)
+<table_heads>(MMS Syntax\MMK Syntax\Example)
+<table_unit>
+<table_unit_heads>(<span>(3)Boolean Operators)
+<table_row>(.AND\AND\expression .AND expression)
+<table_row>(.NOT\NOT\.NOT expression)
+<table_row>(.OR\OR\expression .OR expression)
+<endtable_unit>
+<table_unit>
+<table_unit_heads>(<span>(3)Comparison Operators)
+<table_row>(.EQ\EQL\expression .EQ expression)
+<table_row>(.GE\GEQ\expression .GE expression)
+<table_row>(.GT\GTR\expression .GT expression)
+<table_row>(.LE\LEQ\expression .LE expression)
+<table_row>(.LT\LSS\expression .LT expression)
+<table_row>(.NE\NEQ\expression .NE expression)
+<endtable_unit>
+<endtable>
+
+<p>All expressions evaluate to a boolean result.  After all macro substitution
+is performed and the the operand is not an empty string it is the equivalent
+of a boolean TRUE.  All comparisons are performed without regard to
+upper/lower case.
+
+<head2>(GNU Make Conditionals\gnucond)
+<p>
+Supplemental to the MMS/MMK conditionals, MMK also supports the specification
+of the GNU Make-style conditionals <emphasis>(ifeq), <emphasis>(ifneq),
+<emphasis>(ifdef), <emphasis>(ifndef), <emphasis>(else) and <emphasis>(endif).
+The ifdef and ifndef conditionals behave exactly as their MMS/MMK
+counter-parts.  However, ifeq and ifneq have a slightly different syntax:
+
+<interactive>
+ifeq (arg1, arg2)
+ifeq 'arg1' 'arg2'
+ifeq "arg1" "arg2"
+ifeq "arg1" 'arg2'
+ifeq 'arg1' "arg2"
+<endinteractive>
+
+<p>Although the example lists ifeq, it can be replaced with its logical
+inverse, ifneq.  These two directives simply compare their arguments
+(ignoring case) and test for equality.  The following is an example adapted
+from the GNU Make manual:
+
+<interactive>
+ifeq ($(strip $(foo)),)
+# Come in here if foo is an empty string
+...
+endif
+<endinteractive>
+
+<p>In order to use the conditionals it is necessary to first enable them.
+This can be done from the command line with the specification of the
+/EXTENDED_SYNTAX=GNU_SYNTAX qualifier or with the .GNU_SYNTAX directive in
+the description file.
+
+<head1>(Macro Definitions\macrodef)
+<p>
+MMK supports a range of operators for assigning values to macros.  To simplyfy
+description files it is possible to concatenate and test before assignment.
+<reference>(macops) defines the available assignment operators.
+
+<table>(Macro Assignment Operator\macops)
+<table_setup>(3\8\20)
+<table_heads>(Operator\Description\Example)
+<table_row>(<emphasis>(=\bold)\Assign value.\<interactive>(FOO = BAR))
+<table_row>(<emphasis>(+=\bold)\Concatenate to existing value.\<interactive>(FOR += ,NEXT))
+<table_row>(<emphasis>(?=\bold)\Assign if macro is undefined.\<interactive>(FOO ?= FIRST))
+<table_row>(<emphasis>(!=\bold)\Assign command results.\<interactive>(FOO != DIRECTORY))
+<endtable>
+
+<p>The special case is the <emphasis>(!=\bold) operator.  The assigned
+value is taken as a command and executed, with the results being assigned
+to the macro.  Using this mechanism it would be possible to determine
+some details of the running system, like so:
+
+<interactive>
+FOO != SHOW SYSTEM/NOPROCESS
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO)"
+<endinteractive>
+
+<p>the results of which might look something like:
+
+<interactive>
+$ MMK
+OpenVMS V7.3  on node BENDER  15-FEB-2013 16:05:10.03  Uptime  37 15:54:40
+<endinteractive>
+
+<note>
+<p>
+The '!' character is already a comment delimiter in MMK.  To resolve this,
+the MMK description file parser now tests for a '=' character immediately
+following a '!'.  Usually when detecting a '!' character the remainder of the
+line (including the comment delimiter) will be stripped from the output.
+However, in this special case the delimiter and the following characters will 
+not be stripped and instead parsed as an assignment.  This may create issues
+for existing procedures that contain comments that match this pattern.
+<P>
+However, it is worth noting that this restriction only applies to the
+'!' comment delimiter.  It is still possible to use '#' in any place
+and achieve the desired result.
+<endnote>
 
 <head1>(Deferring Macro Substitution\deferring)
 <p>
@@ -426,6 +570,997 @@ REPLACED  = $(TEST::YZ =YZ,)
 <CP>the REPLACED macro would have the value <QUOTE>(XYZ,xYZ,xyZ), due to the
 case-blind comparisons and the inclusion of the space in the <EMPHASIS>(old-str)
 specification.
+
+<head1>(Builtin Functions\builtins)
+<p>
+As well as symbol substituion it is also possible to call a number of
+builtin functions that can process text to automate and simplify build
+definitions.  The following reference describes what each of these functions
+does, with examples.
+
+<ROUTINE_SECTION>(\\NONEWPAGE)
+<ROUTINE>(ADDPREFIX\Prefix List Elements\\func_addprefix)
+<SYNTAX>
+$(ADDPREFIX prefix,text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ADDPREFIX treats <argument>(text) as a whitespace delimited list of words.
+Each word is prefixed with <argument>(prefix) and returned in a space
+delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_addprefix)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = CAT, DOG, SECRET, HEAVY 
+ALL :
+    @ WRITE SYS$OUTPUT "Unprefixed = $(LIST)"
+    @ WRITE SYS$OUTPUT "Prefixed   = $(ADDPREFIX TOP ,$(LIST))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_addprefix) function.
+<EXI>
+Unprefixed = CAT, DOG, SECRET, HEAVY
+Prefixed   = TOP CAT, TOP DOG, TOP SECRET, TOP HEAVY
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(ADDSUFFIX\Suffix List Elements\\func_addsuffix)
+<SYNTAX>
+$(ADDSUFFIX suffix,text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ADDSUFFIX treats <argument>(text) as a whitespace delimited list of words.
+Each word is suffixed with <argument>(suffix) and returned in a space
+delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_addsuffix)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = OX VAX
+SUFFIX = EN,
+ALL :
+    @ WRITE SYS$OUTPUT "Unsuffixed = $(LIST)"
+    @ WRITE SYS$OUTPUT "Suffixed   = $(ADDSUFFIX $(SUFFIX),$(LIST))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_addsuffix) function.
+Notice that the suffix to be appended to each word is a symbol.  This is
+so that the text <interactive>(EN,) will recognize the '<s>(,)' character
+as part of the suffix and not an argument delimiter in the builtin function.
+<EXI>
+Unsuffixed = OX VAX QUICK LENGTH STRENGTH
+Suffixed   = OXEN, VAXEN, QUICKEN, LENGTHEN, STRENGTHEN,
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(AND\Logical And\\func_and)
+<SYNTAX>
+$(AND condition[,condition[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The AND function provides a logical and operation.  Each of the
+<argument>(condition) arguments are expanded until one evaluates to the
+empty string.  The arguments are evaluated individually and consecutively,
+so if one should fail (evaluate to an empty string) then the remaining
+conditions will <emphasis>(not\bold) be evaluated.
+
+<P>
+If all conditions evaluate to a non-empty string, then the result of this
+function is the expansion of the final condition.  Otherwise this function
+will return the empty string.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_and)
+builtin function and demonstrate the expected output.
+<EXC>
+A = A
+B = B
+C = C
+D =
+FOO = $(AND $(A),$(B),$(C))
+BAR = $(AND $(A),$(B),$(C),$(D))
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_and) function.
+<EXI>
+FOO = C
+BAR = 
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(BASENAME\Get File Specification Without Type\\func_basename)
+<SYNTAX>
+$(BASENAME text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+BASENAME returns the device, directory and file name portions of the
+specifications found in <argument>(text).  The result does not include
+the file type.  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_basename)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(BASENAME SYS$LOGIN:LOGIN.COM)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_basename) function.
+<EXI>
+FOO = USER$:[FLYNN]LOGIN
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(CALL\Call User-defined Function\\func_call)
+<SYNTAX>
+$(CALL macro[,param[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The CALL function makes it possible for a user to develop their own macro
+functions.  To call a macro function, specify the name in <argument>(macro),
+not the substitution, and pass up to 31 arguments in <argument>(param).
+<P>
+Before <argument>(macro) is call (looked up and resolved) the arguments
+passed in <argument>(param) are resolved and defined as symbols $(1)-$(31),
+with $(0) being <argument>(macro).
+<P>
+It is important to remember certain escaping rules when defining
+callable macros.  MMK supports the concept of deferred substitution (see
+<reference>(deferring) by using <S>(${) and <S>(}) as the substitution
+delimiters.  It is necessary to use this method of substitution when
+specifying the macro arguments outside of any builtin function call, for
+example:
+<CODE_EXAMPLE>
+REVERSE = ${2} ${1}
+FOO = $(CALL REVERSE,A,B)
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_call)
+builtin function and demonstrate the expected output.  Another example can
+be found under the documentation for <reference>(func_findstring).
+<EXC>
+ORIGINS = $(FOREACH VAR,$(1),$(ORIGIN $(VAR)))
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "$(CALL ORIGINS,MMSALPHA MMSIA64 MMSVAX)"
+<EXTEXT>
+This description file shows the definition of the user defined function
+<emphasis>(ORIGINS\bold), which is a multi-argument version of the
+<reference>(func_origin) builtin.
+<P>
+This example also demonstrates that because the $(1) substitution is
+made within the <reference>(func_foreach) call, there is no need to use
+deferred substitution.
+<EXI>
+UNDEFINED UNDEFINED SPECIAL
+<EXTEXT>
+The output the above description file would generate when run on a VAX system.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(COLLAPSE\Collapse Whitespace\\func_collapse)
+<SYNTAX>
+$(COLLAPSE text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The COLLAPSE function removes all whitespace fomr <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_collapse)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(COLLAPSE 1   2  3      4       5       6 7) 8 9 10
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_collapse) function.
+<EXI>
+FOO = 1234567 8 9 10
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(DIR\Get Device and Directory\\func_dir)
+<SYNTAX>
+$(DIR text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+DIR returns the device and directory portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<P>
+To retrieve only the directory, please see <reference>(func_directory).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_dir)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(DIR SYS$LOGIN)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_dir) function.
+<EXI>
+FOO = USER$:[FLYNN]
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(DIRECTORY\Get Directory\\func_directory)
+<SYNTAX>
+$(DIRECTORY text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+DIRECTORY returns only the directory portion of the specifications found in
+<argument>(text).  This is different to <reference>(func_dir) which returns
+both the device and directory.
+<P>
+If multiple specifications are supplied, they will each be evaluated and
+returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_directory)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(DIRECTORY SYS$LOGIN)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_directory) function.
+<EXI>
+FOO = [FLYNN]
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILENAME\Get Filename\\func_filename)
+<SYNTAX>
+$(FILENAME text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILENAME returns only the file name portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filename)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILENAME SYS$LOGIN:LOGIN.COM)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filename) function.
+<EXI>
+FOO = LOGIN
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILETYPE\Get File Type\\func_filetype)
+<SYNTAX>
+$(FILETYPE text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILETYPE returns only the file type portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filetype)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILENAME SYS$LOGIN:LOGIN.COM)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filetype) function.
+<EXI>
+FOO = .COM
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILEVERSION\Get File Version\\func_fileversion)
+<SYNTAX>
+$(FILEVERSION text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILEVERSION returns only the file version portion of the specifications found
+in <argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+
+<P>
+FILEVERSION retrieves the version information calling the $PARSE and then
+the $SEARCH system services.  In the event that the file does not exist,
+the version number is returned as ";" so that a missing element does not
+disrupt the list.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_fileversion)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(FILEVERSION SYS$LOGIN:LOGIN.COM SYS$LOGIN:DOESNOTEXIST.TXT)
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_fileversion) function.
+<EXI>
+FOO = ;17 ;
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILTER\Filter Words\\func_filter)
+<SYNTAX>
+$(FILTER pattern[ ...],text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILTER treats <argument>(text) as a whitespace delimited list for words.  It
+compares each word against <argument>(pattern), which itself is a whitespace
+delimited list of petterns, to determine if it should be included in the
+result.  If the pattern matches the word, the word is included in the space
+delimited result list. The pattern wildcard characters are
+<S>('%') and <S>('*').
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filter)
+builtin function and demonstrate the expected output.
+<EXC>
+SOURCES = FOO.C BAR.C BAZ.S UGH.H
+ALL :
+    @ WRITE SYS$OUTPUT "$(FILTER *.C *.S,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER *.H,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER *.T,$(SOURCES))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filter) function.
+<EXI>
+FOO.C BAR.C BAZ.S
+UGH.H
+
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FILTER-OUT\Filter Out Words\\func_filterout)
+<SYNTAX>
+$(FILTER-OUT pattern[ ...],text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FILTER treats <argument>(text) as a whitespace delimited list for words.  It
+compares each word against <argument>(pattern), which itself is a whitespace
+delimited list of petterns, to determine if it should be included in the
+result.  If the pattern matches the word, the word is not included in the
+space delimited result list. The pattern wildcard characters are
+<S>('%') and <S>('*').
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_filterout)
+builtin function and demonstrate the expected output.
+<EXC>
+SOURCES = FOO.C   BAR.C   BAZ.S   UGH.H
+ALL :
+    @ WRITE SYS$OUTPUT "$(FILTER-OUT *.C *.S,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER-OUT *.H,$(SOURCES))"
+    @ WRITE SYS$OUTPUT "$(FILTER-OUT *.T,$(SOURCES))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_filterout) function.
+<EXI>
+UGH.H
+FOO.C BAR.C BAZ.S
+FOO.C BAR.C BAZ.S UGH.H
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FINDSTRING\String Search\\func_findstring)
+<SYNTAX>
+$(FINDSTRING find,text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FINDSTRING searchs <argument>(text) for any occurrence of <argument>(find).
+If <argument>(find) is found then the result is <argument>(find).  Otherwise
+the result is an empty string.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_findstring)
+builtin function and demonstrate the expected output.
+<EXC>
+ISPRESENT = ${IF $(FINDSTRING $(1),$(2)),YES,NO}
+
+TEXT = KERMIT PIGGY FOZZIE
+ALL :
+    @ WRITE SYS$OUTPUT "LIST = $(LIST)"
+    @ WRITE SYS$OUTPUT "1. KERMIT? $(CALL ISPRESENT,KERMIT,$(TEXT))
+    @ WRITE SYS$OUTPUT "2. GONZO? $(CALL ISPRESENT,GONZO,$(TEXT))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_findstring) function.
+In this example FINDSTRING is being called indirectly via a macro call.
+For further information on this, please see the documentation for
+the <reference>(func_call) builtin function.
+<EXI>
+LIST = KERMIT PIGGY FOZZIE
+1. KERMIT? YES
+2. GONZO? NO
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(FIRSTWORD\Get First Word\\func_firstword)
+<SYNTAX>
+$(FIRSTWORD text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FIRSTWORD fetches the first word in the whitespace separated list in
+<argument>(text).  This is equivalent to:
+<CODE_EXAMPLE>
+$(word 1, <argument>(text))
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_firstword)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = kermit the frog
+FOO = $(FIRSTWORD $(LIST))
+BAR = $(WORD 1,$(LIST))
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_firstword) function.
+<EXI>
+kermit = kermit
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(IF\Conditional Evaluation\\func_if)
+<SYNTAX>
+$(IF condition,then[,else]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The IF function evaluates <argument>(condition).  If it evaluates to a
+non-empty string, then the <argument>(then) argument is evaluated and
+returned as the result.  Otherwise, if <argument>(condition) evaluates
+to an empty string (false) and the <argument>(else) argument is present,
+it is evaluated and returned as the result.
+
+<P>
+The <argument>(then) and <argument>(else) arguments are not evaluated until
+<argument>(condition) has been evaluated.  Then only the appropriate argument
+is evaluated.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_if)
+builtin function and demonstrate the expected output.
+<EXC>
+TRUE = TRUE
+FALSE = 
+
+FOO = $(IF $(TRUE),TRUE)
+BAR = $(IF $(FALSE),,FALSE)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_if) function.
+<EXI>
+FOO = TRUE
+BAR = FALSE
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(JOIN\Merge Lists\\func_join)
+<SYNTAX>
+$(JOIN list,text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+JOIN merges the whitespace delimited lists in <argument>(list) and
+<argument>(text).  If the length of the two lists are not the same, then
+the remainder of the longer list is concatenated to the result.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_join)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(JOIN A B C D, 1 2 3 4)
+BAR = $(JOIN A      , 1 2 3 4)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_join) function.
+<EXI>
+FOO = A1 B2 C3 D4
+BAR = A1 2 3 4
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(LASTWORD\Get Last Word\\func_lastword)
+<SYNTAX>
+$(LASTWORD text ...)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+LASTWORD fetches the last word in the whitespace separated list in
+<argument>(text).  This is equivalent to:
+<CODE_EXAMPLE>
+$(word $(words <argument>(text)), <argument>(text))
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_lastword)
+builtin function and demonstrate the expected output.
+<EXC>
+LIST = kermit the frog
+FOO = $(LASTWORD $(LIST))
+BAR = $(WORD $(WORDS $(LIST)),$(LIST))
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOO) = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_lastword) function.
+<EXI>
+frog = frog
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(NOTDIR\Get Filename\\func_notdir)
+<SYNTAX>
+$(NOTDIR text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+NOTDIR is the opposite of <reference>(func_dir).  NOTDIR returns the
+file name and type portion of the specifications found in
+<argument>(text).  If multiple specifications are supplied, they will each
+be evaluated and returned in a space delimited list.
+<P>
+To retrieve only filename, type or version, consider using
+<reference>(func_filename), <reference>(func_filetype) or
+<reference>(func_fileversion) respectively.
+<NOTE>
+NOTDIR performs a "syntax only" parse.  It does not test for the existance
+of the file specified before parsing.
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_notdir)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = $(NOTDIR SYS$LOGIN:A.A)
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_notdir) function.
+<EXI>
+FOO = A.A
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(OR\Logical Or\\func_or)
+<SYNTAX>
+$(OR condition[,condition[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The OR function provides a logical or operation.  Each of the
+<argument>(condition) arguments are expanded until one evaluates to a
+non-empty string.  The arguments are evaluated individually and consecutively,
+so if one should succeed (evaluate to a non-empty string) then the remaining
+conditions will <emphasis>(not\bold) be evaluated.
+
+<P>
+If all conditions evaluate to an empty string, then the result of this
+function is the empty string.  Otherwise this function will return the
+result of the last condition evaluated.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_or)
+builtin function and demonstrate the expected output.
+<EXC>
+A = 
+B = 
+C = 
+D = D
+FOO = $(OR $(A),$(B),$(C))
+BAR = $(OR $(A),$(B),$(C),$(D))
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_or) function.
+<EXI>
+FOO =
+BAR = D 
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(ORIGIN\Symbol Origin\\func_origin)
+<SYNTAX>
+$(ORIGIN macro)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+ORIGIN returns a string describing in which context <argument>(macro) was
+defined.  <reference>(origins) lists the possible results and what they mean.
+
+<TABLE>(Macro Definition Origins\origins)
+<TABLE_SETUP>(2\8)
+<TABLE_HEADS>(Type\Description)
+<TABLE_ROW>(UNDEFINED\The symbol is not yet defined.)
+<TABLE_ROW>(FILE\These symbols have been defined within the description file.)
+<TABLE_ROW>(COMMAND LINE\These symbols have been defined through use of
+		  	 the /MACRO= command line qualifier.)
+<TABLE_ROW>(SPECIAL\Special symbols are defined per target, these include
+		    $(MMS$TARGET) and $(MMS$SOURCE).)
+<TABLE_ROW>(DEFAULT\This includes all symbols defined by the default
+		    rules.)
+<TABLE_ROW>(CLI SYMBOL\This macro takes its definition from a DCL symbol.)
+<TABLE_ROW>(TEMPORARY\These symbols are defined through the use of
+		      <reference>(func_call), like $(0) amd $(1), or
+		      <reference>(func_foreach) and the definition of the
+		      loop symbol.)
+<ENDTABLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_origin)
+builtin function and demonstrate the expected output.
+<EXC>
+FOO = BAR
+BAR = $(ORIGIN 0)
+ALL :
+    @ WRITE SYS$OUTPUT "MMSVAX              = $(ORIGIN MMSVAX)"
+    @ WRITE SYS$OUTPUT "MMSALPHA            = $(ORIGIN MMSALPHA)"
+    @ WRITE SYS$OUTPUT "CC                  = $(ORIGIN CC)"
+    @ WRITE SYS$OUTPUT "CALL ARGUMENT 0     = $(CALL BAR)"
+    @ WRITE SYS$OUTPUT "FOO                 = $(ORIGIN FOO)"
+    @ WRITE SYS$OUTPUT "VARIANT             = $(ORIGIN VARIANT)"
+    @ WRITE SYS$OUTPUT "CLISYM              = $(ORIGIN CLISYM)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_origin) function.
+<EXI>
+MMSVAX              = SPECIAL
+MMSALPHA            = UNDEFINED
+CC                  = DEFAULT
+CALL ARGUMENT 0     = TEMPORARY
+FOO                 = FILE
+VARIANT             = COMMAND LINE
+CLISYM              = CLI SYMBOL
+<EXTEXT>
+The output the above description file would generate if run on a VAX system.
+With the following commands:
+<CODE_EXAMPLE>
+$ CLISYM == 1
+$ MMK/MACRO=VARIANT=1
+<ENDCODE_EXAMPLE>
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(PATSUBST\Pattern Substitution\\func_patsubst)
+<SYNTAX>
+$(PATSUBST pattern, to, text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+PATSUBST replaces all instances of <argument>(pattern) with <argument>(to) in
+<argument>(text).  However, unlike the function <reference>(func_subst) this
+builtin allows the specification of a pattern.  <reference>(patops) details
+the pattern operators.
+
+<TABLE>(PATSUBST Pattern Operators\patops)
+<TABLE_SETUP>(3\8\20)
+<TABLE_HEADS>(Operator\Match\Replace)
+<TABLE_ROW>(<S>(*)\Match any sequence of any length.\Insert the entire matched sequence.)
+<TABLE_ROW>(<S>(%)\Match any single character.\Insert the first character of the matched sequence.)
+<ENDTABLE>
+
+<P>
+When matching the words in <argument>(text) if a match is found, the
+wild-carded portions of the match are placed in a queue.  Therefore, when
+specifying <argument>(to) it is also possible to include pattern operators
+which will insert the wildcarded portions back into the output.
+<NOTE>
+Unlike the substitution mentioned in <reference>(macrosubst\full) the
+comparison done by <reference>(func_patsubst) is case-sensitive.
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_patsubst) builtin
+function and demonstrate the expected output.
+<EXC>
+LIST = FIRST.C SECOND.C THIRD.C
+
+FOO = $(PATSUBST *.C,*.OBJ,$(LIST))
+BAR = $(PATSUBST *.*,*.%,$(FOO)) 
+
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_patsubst) function.
+<EXI>
+FOO = FIRST.OBJ SECOND.OBJ THIRD.OBJ
+BAR = FIRST.O SECOND.O THIRD.O
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(SORT\Sort Words\\func_sort)
+<SYNTAX>
+$(SORT text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+SORT treats <argument>(text) as a whitespace delimited list of words.  These
+words are then sorted into into lexical order, removing duplicates and
+returned to the caller.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_sort) builtin
+function and demonstrate the expected output.
+<EXC>
+ECHO = WRITE SYS$OUTPUT
+MUPPETS = PIGGY FOZZIE KERMIT GONZO BEAKER ROWLF
+DILBERT = DILBERT ALICE WALLY ASOK DOGBERT RATBERT
+ALL :
+    @ $(ECHO) "$(SORT $(DILBERT))
+    @ $(ECHO) "$(SORT $(MUPPETS))
+<EXTEXT>
+Description file to demonstrate the <reference>(func_sort) function.
+<EXI>
+ALICE ASOK DILBERT DOGBERT RATBERT WALLY
+BEAKER FOZZIE GONZO KERMIT PIGGY ROWLF
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(STRIP\Compress Whitespace\\func_strip)
+<SYNTAX>
+$(STRIP text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+STRIP replaces all whitespace characters with a single space as well as
+removing the leading and trailing whitespace from <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_strip) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(STRIP    This   has        lots of   space   )
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_strip) function.
+<EXI>
+FOO = This has lots of space
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(SUBST\String Substiution\\func_subst)
+<SYNTAX>
+$(SUBST from,to,text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+SUBST replaces all instances of <argument>(from) found in <argument>(text)
+with <argument>(to).
+<NOTE>
+This builtin function, like <reference>(func_patsubst), is case sensitive
+in its matching.  For case-insensitive string substitution please use,
+<reference>(macrosubst\full).
+<ENDNOTE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_subst) builtin
+function and demonstrate the expected output.
+<EXC>
+ALL :
+    @ WRITE SYS$OUTPUT "$(SUBST ee,EE,feet on the street)"
+    @ WRITE SYS$OUTPUT "$(SUBST EE,ee,feet on the street)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_subst) function.
+<EXI>
+fEEt on the strEEt
+feet on the street
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WILDCARD\File Search\\func_wildcard)
+<SYNTAX>
+$(WILDCARD text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WILDCARD searches for the files matching the specification in
+<argument>(text) and returns the name and type portions as a space delimited
+list.  It is also possible to list multiple specifications in
+<argument>(text), each must be separated by whitespace.  The wildcard
+characters '%' and '*' can also be used.
+<P>
+It is possible to specify multiple search specifications by separating them
+with space.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_wildcard) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WILDCARD BLISS32_BLD:LEX*.BLI)
+BAR = $(WILDCARD BLISS32_BLD:K*.BLI BLISS32_BLD:LEX*.BLI)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_wildcard) function.
+<EXI>
+FOO = LEXAN.BLI LEXFUN.BLI
+BAR = KFOLD.BLI KOST.BLI LEXAN.BLI LEXFUN.BLI
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WORD\Return the n'th Word\\func_word)
+<SYNTAX>
+$(WORD n, text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WORD treats <argument>(text) as a space delimited (multiple
+consecutive whitespace characters are treated as one) array of words.  The
+parameter <argument>(n) is an index into this array, specifying which word
+to return.
+
+<P>
+If you specify a value of <argument>(n) that is less than 1 or greater than
+the number of elements in <argument>(text), then the result will be an empty
+string, "".  The builtin function <reference>(func_words) can be used to
+determine the upper limit of the array in <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_words) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WORD 2, first second third)
+BAR = $(WORD 5, kermit the frog)
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_word) function.
+<EXI>
+FOO = second
+BAR =
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WORDLIST\Extract Words\\func_wordlist)
+<SYNTAX>
+$(WORDLIST start,end,text[ ...])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WORDLIST treats <argument>(text) as a whitespace delimited list of words.
+The words, start with <argument>(start) and ending at <argument>(end)
+(inclusive) are extracted from <argument>(text) and resturned as a space
+delimited list.  The first word in <argument>(text) is <emphasis>(1).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_wordlist) builtin
+function and demonstrate the expected output.
+<EXC>
+ALL :
+     @ WRITE SYS$OUTPUT "$(WORDLIST 2, 3, FOO BAR BAZ)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_wordlist) function.
+<EXI>
+BAR BAZ
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(WORDS\Count Words\\func_words)
+<SYNTAX>
+$(WORDS text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+WORDS counts the number of words in <argument>(text).  The contents of
+<argument>(text) is treated as a space delimited (multiple consecutive
+whitespace characters are treated as one) array of words.
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_words) builtin
+function and demonstrate the expected output.
+<EXC>
+FOO = $(WORDS first second third)
+BAR = $(WORDS )
+ALL :
+    @ WRITE SYS$OUTPUT "FOO = $(FOO)"
+    @ WRITE SYS$OUTPUT "BAR = $(BAR)"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_words) function.
+<EXI>
+FOO = 3
+BAR = 0
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ENDROUTINE_SECTION>
 
 <chapter>(Using DEC/CMS with MMK\cms_chapter)
 <p>
@@ -535,6 +1670,7 @@ Invokes the MMK utility to build a software system.
 <qpair>(/CMS_LIBRARY=(dir-spec...)\)
 <qpair>(/DESCRIPTION=file-spec\)
 <qpair>(/DUMP)
+<qpair>(/EXTENDED_SYNTAX\)
 <qpair>(/[NO]FORCE\/NOFORCE)
 <qpair>(/[NO]FROM_SOURCES\/NOFROM_SOURCES)
 <qpair>(/GENERATION=string\/GENERATION="1+")
@@ -606,6 +1742,10 @@ Causes MMK to dump the suffix list, all currently defined macros, all
 inference rules, and all dependencies to the current output before starting
 the build.  This qualifier is useful in debugging problems in rules files
 and makefiles.
+
+<qualitem>(/EXTENDED_SYNTAX)
+<qualdef>
+...describe what this does, largely for MMS compatability...
 
 <qualitem>(/[NO]FORCE)
 <qualdef>
@@ -710,9 +1850,12 @@ the .OBJ file if it is missing, and then in turn build the .EXE.  If
 a build; the build will only occur if the .C file is newer than the .EXE
 file.
 
-<qualitem>(/[NO]VERIFY)
+<qualitem>(/[NO]VERIFY[=ALL])
 <qualdef>
 Controls whether MMK echoes action lines to SYS$OUTPUT.  Enabled by default.
+By specifying the keyword <argument>(ALL) it is possible to force MMK to
+echo all command output, including that which is prefixed with
+<emphasis>(@\bold).
 
 For debugging purposes it is possible to specify the keyword ALL which will
 cause MMK to verify all action lines, even those prefixed with @ (silent)
@@ -829,8 +1972,6 @@ action list.
 on the right-hand side of a macro definition.
 <le>MMK adds a generic string-susbstitution function for macro
 references.
-<le>MMK adds the .IFNDEF and .IF directives to make it easier to
-conditionalize builds.
 <endlist>
 <p>You should avoid using these extended features if you need to
 maintain compatibility with DEC/MMS.
