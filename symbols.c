@@ -96,18 +96,19 @@
 **	12-NOV-2012 V3.3-7  Sneddon	Add PATSUBST.
 **	30-JAN-2013 V3.3-8  Sneddon	Add SUBST.
 **	05-FEB-2013 V3.3-9  Sneddon	Final touches to builtin support.
-**      20-FEB-2014 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
+**      20-FEB-2013 V3.3-10 Sneddon     Fix issue #25 related to FILEVERSION.
 **					 Fix issue #27 related to built in
 **					 functions. Fix issue #29, FINDSTRING.
 **                                       Fixed IF argument mask.
-**	21-FEB-2014 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
+**	21-FEB-2013 V3.3-11 Sneddon	Fix calls to Resolve_Symbols by
 **					 builtin handlers.  Builtin handlers
 **					 now receive call-specific argument
 **					 stack.  Fixes issue #31.  Fix symbol
 **					 types, issue #33.
+**	22-FEB-2013 V3.3-12 Sneddon	Fix WORDS, issue #39.
 **--
 */
-#pragma module SYMBOLS "V3.3-11"
+#pragma module SYMBOLS "V3.3-12"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -1440,7 +1441,7 @@ static int apply_basename (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_basename */
@@ -1623,7 +1624,7 @@ static int apply_dir (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_dir */
@@ -1689,7 +1690,7 @@ static int apply_directory (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_directory */
@@ -1788,7 +1789,7 @@ static int apply_filename (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_filename */
@@ -1854,7 +1855,7 @@ static int apply_filetype (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_filetype */
@@ -2575,7 +2576,7 @@ static int apply_notdir (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_notdir */
@@ -3087,7 +3088,7 @@ static int apply_subst (int argc, struct dsc$descriptor *argv,
     if ((pos == 0) && (start <= in->dsc$w_length))
 	*out = cat(*out, in->dsc$a_pointer+start-1, in->dsc$w_length-start+1);
 
-    if (*out) *outlen = strlen(*out);
+    if (*out != 0) *outlen = strlen(*out);
 
     return 0;
 } /* apply_subst */
@@ -3197,7 +3198,7 @@ static int apply_wildcard (int argc, struct dsc$descriptor *argv,
 	    && (strchr(WHITESPACE, *cp) != (char *) 0))
 	    ;
     }
-    *outlen = strlen(*out) - 1;
+    if (*out != 0) *outlen = strlen(*out) - 1;
 
     return 0;
 } /* apply_wildcard */
@@ -3363,8 +3364,8 @@ static int apply_words (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
-    in = cp = argv[1].dsc$a_pointer;
-    inend = in + argv[1].dsc$w_length;
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
     e = 0;
     while (cp < inend) {
 	if (strchr(WHITESPACE, *cp) == (char *)0) {
