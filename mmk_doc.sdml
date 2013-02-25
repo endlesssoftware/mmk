@@ -571,32 +571,12 @@ REPLACED  = $(TEST::YZ =YZ,)
 case-blind comparisons and the inclusion of the space in the <EMPHASIS>(old-str)
 specification.
 
-<head1>(Special Macros\specialmacros)
-<p>
-
-<head1>(Reserved Macros\reservedmacros)
-<p>
-...need to describe MMS special case also...mention that we can identify
-MMK with __MMK__ (and other macros) instead.
-
 <head1>(Builtin Functions\builtins)
 <p>
 As well as symbol substituion it is also possible to call a number of
-builtin functions the can process text to automate and simplify build
-definitions.  The following reference describes what the functions do as
-well as provide exampls
-<comment>
-
-...mention that all functions are limited to 32 arguments...
-
-$(CALL macro [, ...])
-    ...$(CALL name, arg1, ...)...use ${name} deferred processing for args?
-    ...explain $(0)...
-    ...explain defining the function and deferred substitution...
-
-$(SUBST from, to, str)
-  -- case-sensitive
-<endcomment>
+builtin functions that can process text to automate and simplify build
+definitions.  The following reference describes what each of these functions
+does, with examples.
 
 <ROUTINE_SECTION>(\\NONEWPAGE)
 <ROUTINE>(ADDPREFIX\Prefix List Elements\\func_addprefix)
@@ -724,6 +704,56 @@ Description file to demonstrate the <reference>(func_basename) function.
 FOO = USER$:[FLYNN]LOGIN
 <EXTEXT>
 The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
+<ROUTINE>(CALL\Call User-defined Function\\func_call)
+<SYNTAX>
+$(CALL macro[,param[,...]])
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+The CALL function makes it possible for a user to develop their own macro
+functions.  To call a macro function, specify the name in <argument>(macro),
+not the substitution, and pass up to 31 arguments in <argument>(param).
+<P>
+Before <argument>(macro) is call (looked up and resolved) the arguments
+passed in <argument>(param) are resolved and defined as symbols $(1)-$(31),
+with $(0) being <argument>(macro).
+<P>
+It is important to remember certain escaping rules when defining
+callable macros.  MMK supports the concept of deferred substitution (see
+<reference>(deferring) by using <S>(${) and <S>(}) as the substitution
+delimiters.  It is necessary to use this method of substitution when
+specifying the macro arguments outside of any builtin function call, for
+example:
+<CODE_EXAMPLE>
+REVERSE = ${2} ${1}
+FOO = $(CALL REVERSE,A,B)
+<ENDCODE_EXAMPLE>
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_call)
+builtin function and demonstrate the expected output.  Another example can
+be found under the documentation for <reference>(func_findstring).
+<EXC>
+ORIGINS = $(FOREACH VAR,$(1),$(ORIGIN $(VAR)))
+ECHO = WRITE SYS$OUTPUT
+
+ALL :
+    @ $(ECHO) "$(CALL ORIGINS,MMSALPHA MMSIA64 MMSVAX)"
+<EXTEXT>
+This description file shows the definition of the user defined function
+<emphasis>(ORIGINS\bold), which is a multi-argument version of the
+<reference>(func_origin) builtin.
+<P>
+This example also demonstrates that because the $(1) substitution is
+made within the <reference>(func_foreach) call, there is no need to use
+deferred substitution.
+<EXI>
+UNDEFINED UNDEFINED SPECIAL
+<EXTEXT>
+The output the above description file would generate when run on a VAX system.
 <ENDEXAMPLE_SEQUENCE>
 
 <ROUTINE>(COLLAPSE\Collapse Whitespace\\func_collapse)
@@ -994,7 +1024,7 @@ ALL :
 Description file to demonstrate the <reference>(func_findstring) function.
 In this example FINDSTRING is being called indirectly via a macro call.
 For further information on this, please see the documentation for
-the <reference>(fun_call) builtin function.
+the <reference>(func_call) builtin function.
 <EXI>
 LIST = KERMIT PIGGY FOZZIE
 1. KERMIT? YES
