@@ -1484,7 +1484,7 @@ $(WORDLIST start,end,text[ ...])
 WORDLIST treats <argument>(text) as a whitespace delimited list of words.
 The words, start with <argument>(start) and ending at <argument>(end)
 (inclusive) are extracted from <argument>(text) and resturned as a space
-delimited list.  The first word in <argument>(text) is <empahsis>(1).
+delimited list.  The first word in <argument>(text) is <emphasis>(1).
 <ENDDESCRIPTION>
 <EXAMPLE_SEQUENCE>(EXAMPLE)
 <EXAMPLES_INTRO>
