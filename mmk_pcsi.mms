@@ -49,14 +49,19 @@ ARCH = I64VMS
 .ELSIF MMSVAX
 ARCH = VAXVMS
 .ENDIF
-DAYTIME != SHOW DAYTIME
-DATE = $(WORD 1,$(DAYTIME))
+!DAYTIME != SHOW DAYTIME
+!DATE = $(WORD 1,$(DAYTIME))
+GEN = 20130226
+
+BINDIR = MG_BIN:[MMK]
+KITDIR = MG_KIT:[MMK]
 
 A = $(FOREACH FILE,$(1),  file $(NOTDIR $(FILE)) generation $(GEN) archive ;)
 
 DESCRIPTION :
     @ $(ECHO) "product $(PRODUCER) $(ARCH) $(PRODUCT) $(VERSION) full ;"
-    @ $(ECHO) "$(CALL A,$(WILDCARD $(KITDIR)*.EXE))"
+    @ $(ECHO) "$(WILDCARD $(BINDIR)*.EXE)"
+    @ $(ECHO) "$(CALL A,$(WILDCARD $(BINDIR)*.EXE))"
     @ $(ECHO) "end product ;"
     @ CONTINUE
 
