@@ -3174,7 +3174,6 @@ static int apply_wildcard (int argc, struct dsc$descriptor *argv,
     nam.nam$b_ess = sizeof(esa);
     nam.nam$l_rsa = rsa;
     nam.nam$b_rss = sizeof(rsa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
 #ifdef NAM$M_NO_SHORT_UPCASE
     nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
 #endif
