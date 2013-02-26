@@ -145,16 +145,12 @@
 **	10-DEC-2012 V5.0    Sneddon	Fix to /VERIFY=ALL code.
 **	21-FEB-2013 V5.0    Sneddon	Move definition of MMSTARGETS to before
 **					 we read in the description file.
+**	26-FEB-2013 V5.1    Sneddon     Move version number into its own
+**					 #include file, now it is totally
+**					 unrelated to this module.
 **--
 */
-#define MMK_VERSION 	  "V5.0"
-#define MMK_MAJOR_VERSION "5"
-#define MMK_MINOR_VERSION "0"
-#define MMK_REVISION	  "0"
-#define MMK_COPYRIGHT	"Copyright (c) 2008, Matthew Madison.\r\n" \
-		        "    Copyright (c) 2013, Endless Software Solutions.\r\n" \
-			"  See LICENSE.TXT in distribution kit for license information."
-
+#include "version.h"
 #pragma module MMK MMK_VERSION
 
 #pragma extern_model save
