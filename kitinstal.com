@@ -94,13 +94,82 @@ $   VMI$CALLBACK MESSAGE E VMSVER -
 $   EXIT VMI$_FAILURE
 $ ENDIF
 $ OPEN/READ MMK_T VMI$KWD:MMK_INSTALLING_VERSION.DAT
-$ READ MMK_T mmk___tmp
+$ READ MMK_T mmk_installing_version
 $ CLOSE MMK_T
-$ IF F$LOCATE (":", mx___tmp) .LT. F$LENGTH (mx___tmp)
+$!
+$ mmk_say ""
+$ mmk_say F$FAO("               MMK Make Utility !AS Installation Procedure",-
+		mmk_installing_version)
+$ TYPE SYS$INPUT:
+
+        Copyright (c) 2008, Matthew Madison.
+        Copyright (c) 2013, Endless Software Solutions.
+
+        All rights reserved.
+
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+
+            * Redistributions of source code must retain the above
+              copyright notice, this list of conditions and the following
+              disclaimer.
+            * Redistributions in binary form must reproduce the above
+              copyright notice, this list of conditions and the following
+              disclaimer in the documentation and/or other materials provided
+              with the distribution.
+            * Neither the name of the copyright owner nor the names of any
+              other contributors may be used to endorse or promote products
+              derived from this software without specific prior written
+              permission.
+
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+        "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+        LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+        A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+        OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+        SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+        LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+        DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+        THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+        (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+        OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+$!
+$ mmk_upgrading = 0
+$ mmk_reinstalling = 0
+$!
+$ mmk_dir == F$TRNLNM("MMK_DIR")
+$ IF MMK_DIR .NES. ""
 $ THEN
-$   mx_installing_version = F$EDIT (F$ELEMENT (1, ":", mx___tmp), "TRIM,COMPRESS")
-$ ELSE
-$   mx_installing_version = mx___tmp
+$    VMI$CALLBACK MESSAGE I FOUNDOLDVER
+$    ! indicate so
+$    ! ask if want to install there
 $ ENDIF
-$! Pull off architecture name
-$ mx_installing_version = f$element(1," ", mx_installing_version)
+$!
+$ VMI$CALLBACK 
+$ ! if not installing to old location
+$    ! indicate SYS$SYSTEM as default
+$
+$ ! Ask if want to install source code
+$ !  -- get the builder to use WGET to download the source kit as a zip?
+$ ! if do
+$    ! where? SYS$HELP:[EXAMPLES.MMK]
+$!
+$
+$ VMI$CALLBACK MESSAGE I INSTALL "Installing MMK software..."
+$!
+$ VMI$CALLBACK PROVIDE_DCL_COMMAND MMK_CLD.CLD
+$ VMI$CALLBACK PROVIDE_DCL_HELP MMK_HELP.HLP
+$!
+$ VMI$CALLBACK RESTORE_SAVESET 'base_saveset'
+$ VMI$CALLBACK PROVIDE_IMAGE MMK_TMP MMK.EXE dest K
+$!
+$ IF MMK_DO_DOC .NES. ""
+$ THEN
+$ ! SYS$SYSROOT:[SYSHLP.MMK] - only if we're not installing it in MMK_DIR
+$   VMI$CALLBACK MESSAGE I INSTALL_DOC "Installing documentation files..."
+$   VMI$CALLBACK PROVIDE_FILE 
+$ ENDIF
+$!
+$ EXIT VMI$_SUCCESS
