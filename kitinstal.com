@@ -39,8 +39,8 @@ $ ON WARNING THEN GOTO MMK_FAIL
 $!
 $ DELETE_SYMBOL := DELETE/SYMBOL
 $!
-$ IF P1 .EQS. "VMI$_INSTALL" THEN GOTO MX_INSTALL
-$ IF P1 .EQS. "VMI$_POSTINSTALL" THEN GOTO MX_POSTINSTALL
+$ IF P1 .EQS. "VMI$_INSTALL" THEN GOTO MMK_INSTALL
+$ IF P1 .EQS. "VMI$_POSTINSTALL" THEN GOTO MMK_POSTINSTALL
 $ EXIT VMI$_UNSUPPORTED
 $!
 $MMK_CONTROL_Y:
@@ -72,37 +72,30 @@ $ IF mmk_arch .EQS. "VAX"
 $ THEN
 $   MMK_REQD_VMSVER = "V6.2"
 $   MMK_REQD_VMSVER_OLD = "062"
-$   base_saveset   = "D"
-$   smtp_saveset   = "G"
-$   other_saveset  = "J"
+$   base_saveset   = "B"
 $ ENDIF
 $ IF mmk_arch .EQS. "ALPHA"
 $ THEN
-$   MMK_REQD_VMSVER = "V6.2"
-$   MMK_REQD_VMSVER_OLD = "062"
-$   base_saveset   = "B"
-$   smtp_saveset   = "E"
-$   other_saveset  = "H"
+$   MMK_REQD_VMSVER = "V1.5"
+$   MMK_REQD_VMSVER_OLD = "015"
+$   base_saveset   = "C"
 $ ENDIF
 $ IF mmk_arch .EQS. "IA64"
 $ THEN
 $   MMK_REQD_VMSVER = "V8.2"
 $   MMK_REQD_VMSVER_OLD = "082"
-$   base_saveset   = "C"
-$   smtp_saveset   = "F"
-$   other_saveset  = "I"
+$   base_saveset   = "D"
 $ ENDIF
-$ VMI$CALLBACK CHECK_VMS_VERSION MMK_VMSVEROK 'MX_REQD_VMSVER_OLD'
-$ IF .NOT. MX_VMSVEROK
+$ VMI$CALLBACK CHECK_VMS_VERSION MMK_VMSVEROK 'MMK_REQD_VMSVER_OLD'
+$ IF .NOT. MMK_VMSVEROK
 $ THEN
 $   VMI$CALLBACK MESSAGE E VMSVER -
-        "This product requires OpenVMS ''mx_system_type' ''MX_REQD_VMSVER' to run."
+        "This product requires OpenVMS ''mmk_system_type' ''MMK_REQD_VMSVER' to run."
 $   EXIT VMI$_FAILURE
 $ ENDIF
-$ OPEN/READ MX_T VMI$KWD:MX_INSTALLING_VERSION.DAT
-$ READ MX_T mx___tmp  ! first line blank
-$ READ MX_T mx___tmp
-$ CLOSE MX_T
+$ OPEN/READ MMK_T VMI$KWD:MMK_INSTALLING_VERSION.DAT
+$ READ MMK_T mmk___tmp
+$ CLOSE MMK_T
 $ IF F$LOCATE (":", mx___tmp) .LT. F$LENGTH (mx___tmp)
 $ THEN
 $   mx_installing_version = F$EDIT (F$ELEMENT (1, ":", mx___tmp), "TRIM,COMPRESS")
