@@ -53,15 +53,33 @@ ARCH = VAXVMS
 !DATE = $(WORD 1,$(DAYTIME))
 GEN = 20130226
 
+
+
 BINDIR = MG_BIN:[MMK]
 KITDIR = MG_KIT:[MMK]
 
+EXEFILES  = $(WILDCARD $(BINDIR)*.EXE)
+HTMLFILES = $(WILDCARD $(KITDIR)*.HTML)
+PDFFILES  = $(WILDCARD $(KITDIR)*.PDF)
+PSFILES   = $(WILDCARD $(KITDIR)*.PS)
+TXTFILES  = $(WILDCARD $(KITDIR)*.TXT)
+
 A = $(FOREACH FILE,$(1),  file $(NOTDIR $(FILE)) generation $(GEN) archive ;)
+
+ALL : $(KITDIR)MMK.PCSI$DESC
+
+$(KITDIR)MMK.PCSI$DESC : $(MMSDESCRIPTION_FILE)
+    $(MMS)/DESCRIPTION=$(MMSDESCRIPTION_FILE)/OUTPUT=$(MMS$TARGET) DESCRIPTION
 
 DESCRIPTION :
     @ $(ECHO) "product $(PRODUCER) $(ARCH) $(PRODUCT) $(VERSION) full ;"
-    @ $(ECHO) "$(WILDCARD $(BINDIR)*.EXE)"
-    @ $(ECHO) "$(CALL A,$(WILDCARD $(BINDIR)*.EXE))"
+    @ $(ECHO) "  ! Executables"
+    @ $(CALL A,$(EXEFILES)))
+    @ $(ECHO) "  ! Documentation"
+    @ $(CALL A,$(HTMLFILES)))
+    @ $(CALL A,$(PDFFILES)))
+    @ $(CALL A,$(PSFILES)))
+    @ $(CALL A,$(TXTFILES)))
     @ $(ECHO) "end product ;"
     @ CONTINUE
 
