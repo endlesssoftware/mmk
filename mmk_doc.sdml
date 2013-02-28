@@ -1063,6 +1063,34 @@ kermit = kermit
 The output the above description file would generate.
 <ENDEXAMPLE_SEQUENCE>
 
+<ROUTINE>(FOREACH\Repeat Expansion\\func_foreach)
+<SYNTAX>
+$(FOREACH macro,list[ ...text],text)
+<ENDSYNTAX>
+<DESCRIPTION>
+<P>
+FOREACH provides a basic "for" loop construct by treating <argument>(list)
+as a whitespace delimited lost of words and executing <argument>(text) for
+each word in <argument>(list).  The temporary variable <argument>(macro) is
+defined to the next word before each execution of <argument>(text).
+<ENDDESCRIPTION>
+<EXAMPLE_SEQUENCE>(EXAMPLE)
+<EXAMPLES_INTRO>
+The following examples show how to call the <reference>(func_foreach)
+builtin function and demonstrate the expected output.  An example of FOREACH
+can also be found in the examples for <reference>(func_call).
+<EXC>
+LETTERS = A B C D
+ALL :
+    @ WRITE SYS$OUTPUT "$(FOREACH LETTER,$(LETTERS),A$(LETTER))"
+<EXTEXT>
+Description file to demonstrate the <reference>(func_firstword) function.
+<EXI>
+AA AB AC AD
+<EXTEXT>
+The output the above description file would generate.
+<ENDEXAMPLE_SEQUENCE>
+
 <ROUTINE>(IF\Conditional Evaluation\\func_if)
 <SYNTAX>
 $(IF condition,then[,else]])
