@@ -3,7 +3,7 @@ $ THEN doc_dir = "MG_KIT:[MMK]"
 $ ELSE doc_dir = p1
 $ ENDIF
 $ IF p2 .EQS. ""
-$ THEN outfile = "MG_KIT:[]MMK_DOC_LIST.TXT"
+$ THEN outfile = "MG_KIT:[]MMK_DOC_LIST.DAT"
 $ ELSE outfile = p2
 $ ENDIF
 $ create 'outfile
