@@ -138,25 +138,27 @@ $ TYPE SYS$INPUT:
 $!
 $ mmk_upgrading = 0
 $ mmk_reinstalling = 0
+$ mmk_dir = F$TRNLNM("MMK_DIR")
 $!
-$ mmk_dir == F$TRNLNM("MMK_DIR")
-$ IF MMK_DIR .NES. ""
+$ IF mmk_dir .NES. ""
 $ THEN
-$    VMI$CALLBACK MESSAGE I FOUNDOLDVER
-$    ! indicate so
-$    ! ask if want to install there
+$   VMI$CALLBACK MESSAGE W OLD_MMK "An older version of MMK was found in ''mmk_dir'."
+$   TYPE SYS$INPUT:
+ 
+    ** WARNING **
+    The installation procedure has detected a non-VMSINSTAL
+    installation of MMK.  This may be a pre-V5.0 release of MMK or
+    a locally built version.  Please make sure that after completing
+    this software installation the previous installation is removed
+    or disabled.
+
 $ ENDIF
 $!
-$ VMI$CALLBACK 
-$ ! if not installing to old location
-$    ! indicate SYS$SYSTEM as default
-$
 $ ! Ask if want to install source code
 $ !  -- get the builder to use WGET to download the source kit as a zip?
 $ ! if do
 $    ! where? SYS$HELP:[EXAMPLES.MMK]
 $!
-$
 $ VMI$CALLBACK MESSAGE I INSTALL "Installing MMK software..."
 $!
 $ VMI$CALLBACK PROVIDE_DCL_COMMAND MMK_CLD.CLD
@@ -167,9 +169,9 @@ $ VMI$CALLBACK PROVIDE_IMAGE MMK_TMP MMK.EXE dest K
 $!
 $ IF MMK_DO_DOC .NES. ""
 $ THEN
-$ ! SYS$SYSROOT:[SYSHLP.MMK] - only if we're not installing it in MMK_DIR
 $   VMI$CALLBACK MESSAGE I INSTALL_DOC "Installing documentation files..."
-$   VMI$CALLBACK PROVIDE_FILE 
+$   VMI$CALLBACK CREATE_DIRECTORY COMMON SYSHLP.MMK "/PROTECTION=W:R"
+$   VMI$CALLBACK PROVIDE_FILE "" MMK_DOC_LIST.TXT "" T
 $ ENDIF
 $!
 $ EXIT VMI$_SUCCESS
