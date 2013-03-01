@@ -40,7 +40,6 @@ $!
 $ DELETE_SYMBOL := DELETE/SYMBOL
 $!
 $ IF P1 .EQS. "VMI$_INSTALL" THEN GOTO MMK_INSTALL
-$ IF P1 .EQS. "VMI$_POSTINSTALL" THEN GOTO MMK_POSTINSTALL
 $ EXIT VMI$_UNSUPPORTED
 $!
 $MMK_CONTROL_Y:
@@ -63,8 +62,9 @@ $   mmk_system_type = mmk_arch
 $   opt = ".OPT"
 $   mmk_exe_dir = "EXE"
 $ ELSE
-$   mmk_system_type = F$GETSYI ("ARCH_NAME")
-$   mmk_arch = F$EDIT (mmk_system_type, "TRIM,UPCASE")
+$   mmk_system_type = F$GETSYI ("ARCH_TYPE")
+$   mmk_system_name = F$ELEMENT(mmk_system_type, ",", "OTHER,VAX,AXP,I64") - ","
+$   mmk_arch = F$EDIT (F$GETSYI ("ARCH_NAME"), "TRIM,UPCASE")
 $   opt = ".''mmk_arch'_OPT"
 $   mmk_exe_dir = "''mmk_arch'_EXE"
 $ ENDIF
@@ -90,11 +90,12 @@ $ VMI$CALLBACK CHECK_VMS_VERSION MMK_VMSVEROK 'MMK_REQD_VMSVER_OLD'
 $ IF .NOT. MMK_VMSVEROK
 $ THEN
 $   VMI$CALLBACK MESSAGE E VMSVER -
-        "This product requires OpenVMS ''mmk_system_type' ''MMK_REQD_VMSVER' to run."
+        "This product requires OpenVMS ''mmk_system_name' ''MMK_REQD_VMSVER' to run."
 $   EXIT VMI$_FAILURE
 $ ENDIF
 $ OPEN/READ MMK_T VMI$KWD:MMK_INSTALLING_VERSION.DAT
 $ READ MMK_T mmk_installing_version
+$ READ MMK_T mmk_kit_version
 $ CLOSE MMK_T
 $!
 $ mmk_say ""
@@ -136,8 +137,8 @@ $ TYPE SYS$INPUT:
         OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 $!
-$ mmk_upgrading = 0
-$ mmk_reinstalling = 0
+$ mmk_do_doc = 0
+$ mmk_do_source = 0
 $ mmk_dir = F$TRNLNM("MMK_DIR")
 $!
 $ IF mmk_dir .NES. ""
@@ -152,12 +153,18 @@ $   TYPE SYS$INPUT:
     this software installation the previous installation is removed
     or disabled.
 
+    Note that this installation will not change any existing installation
+    that was not installed with VMSINSTAL or PCSI.
+
+$   VMI$CALLBACK ASK mmk_ok "Do you want to continue this installation anyway" "YES" B
+$   IF .NOT. mmk_ok THEN EXIT VMI$_FAILURE
 $ ENDIF
 $!
-$ ! Ask if want to install source code
-$ !  -- get the builder to use WGET to download the source kit as a zip?
-$ ! if do
-$    ! where? SYS$HELP:[EXAMPLES.MMK]
+$ VMI$CALLBACK ASK mmk_ok "Do you want to install the MMK documentation set" "YES" B
+$ IF mmk_ok THEN mmk_do_doc = 1
+$!
+$ VMI$CALLBACK ASK mmk_ok "Do you want to install the MMK source code" "NO" B
+$ IF mmk_ok THEN mmk_do_source = 1
 $!
 $ VMI$CALLBACK MESSAGE I INSTALL "Installing MMK software..."
 $!
@@ -165,13 +172,25 @@ $ VMI$CALLBACK PROVIDE_DCL_COMMAND MMK_CLD.CLD
 $ VMI$CALLBACK PROVIDE_DCL_HELP MMK_HELP.HLP
 $!
 $ VMI$CALLBACK RESTORE_SAVESET 'base_saveset'
-$ VMI$CALLBACK PROVIDE_IMAGE MMK_TMP MMK.EXE dest K
+$ VMI$CALLBACK PROVIDE_IMAGE MMK_TMP MMK.EXE VMI$ROOT:[SYSEXE] K
 $!
-$ IF MMK_DO_DOC .NES. ""
+$ IF mmk_do_doc
 $ THEN
 $   VMI$CALLBACK MESSAGE I INSTALL_DOC "Installing documentation files..."
 $   VMI$CALLBACK CREATE_DIRECTORY COMMON SYSHLP.MMK "/PROTECTION=W:R"
 $   VMI$CALLBACK PROVIDE_FILE "" MMK_DOC_LIST.TXT "" T
 $ ENDIF
+$!
+$ IF mmk_do_source
+$ THEN
+$   VMI$CALLBACK MESSAGE I INSTALL_SOURCE "Installing source kit..."
+$   VMI$CALLBACK CREATE_DIRECTORY COMMON SYSHLP.MMK "/PROTECTION=W:R"
+$   VMI$CALLBACK RESTORE_SAVESET E
+$   VMI$CALLBACK PROVIDE_FILE MMK_TMP MMK'mmk_kit_version'_SOURCE.ZIP VMI$ROOT:[SYSHLP.MMK]
+$ ENDIF
+$!
+$ regprod = "SYS$UPDATE:PCSI$REGISTER_PRODUCT.COM"
+$ IF F$SEARCH(regprod) .NES. "" THEN -
+$   @'regprod' "MMK" "''mmk_installing_version" "ESS" "''mmk_system_name'VMS"
 $!
 $ EXIT VMI$_SUCCESS
