@@ -189,8 +189,4 @@ $   VMI$CALLBACK RESTORE_SAVESET E
 $   VMI$CALLBACK PROVIDE_FILE MMK_TMP MMK'mmk_kit_version'_SOURCE.ZIP VMI$ROOT:[SYSHLP.MMK]
 $ ENDIF
 $!
-$ regprod = "SYS$UPDATE:PCSI$REGISTER_PRODUCT.COM"
-$ IF F$SEARCH(regprod) .NES. "" THEN -
-$   @'regprod' "MMK" "''mmk_installing_version'" "ESS" "''mmk_system_name'VMS"
-$!
 $ EXIT VMI$_SUCCESS
