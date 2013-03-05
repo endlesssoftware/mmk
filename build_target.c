@@ -825,7 +825,7 @@ static void perform_update (struct DEPEND *dep, struct RULE *xrule,
     	get_rdt(dep->target);
     	if ((old_rdt.long1 == dep->target->rdt.long1) &&
     	    	 (old_rdt.long2 == dep->target->rdt.long2)) {
-    	    lib$signal(MMK__ACTNOUPD, 1, target_name);
+    	    if (do_log) lib$signal(MMK__ACTNOUPD, 1, target_name);
     	}
     }
     dep->target->have_rdt = 1;
