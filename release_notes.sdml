@@ -101,8 +101,9 @@ Issues tracking system for this project.
 borrowed from BSD and GNU make:
 <LIST>(UNNUMBERED)
 <LE>+= - concatenate to existing macro definition;
-<LE>?= - assign only if macro is undefined; and
-<LE>!= - assign output from a command line
+<LE>?= - assign only if macro is undefined; 
+<LE>!= - assign output from a command line; and
+<LE>~= - immediate evaluation assignment.
 <ENDLIST>
 
 <HEAD1>(New Else-If Directive)
