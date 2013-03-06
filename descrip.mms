@@ -304,7 +304,7 @@ $(KITDIR)$(KITNAME).E : $(KITDIR)$(KITNAME)_SOURCE.ZIP
 $(KITDIR)$(KITNAME)_SOURCE.ZIP : ALWAYS_MAKE
     - DELETE/NOLOG $(MMS$TARGET);*
     wget --no-check-certificate --output-document=$(MMS$TARGET) -
-	"https://github.com/endlesssoftware/mmk/zipball/master"
+	"https://github.com/endlesssoftware/mmk/archive/$(MMK_VERSION).zip"
 
 PCSI : $(KITDIR)MMK.PCSI$DESC $(KITDIR)MMK.PCSI$TEXT
     MCR $(BINDIR)MMK.EXE PACKAGE/DESCRIPTION=$(SRCDIR)MMK_PCSI.MMS
