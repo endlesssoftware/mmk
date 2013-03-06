@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2012, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -96,10 +96,9 @@
 **	08-DEC-2012 V2.9-1  Craig Berry Unconditionally update double colon
 **					  targets with no sources, but not all
 **					  generic targets.
-**	05-MAR-2013 V2.10   Sneddon	/NOLOG now prevents ACTNOUPD.
 **--
 */
-#pragma module BUILD_TARGET "V2.10"
+#pragma module BUILD_TARGET "V2.8-1"
 #include "mmk.h"
 #include "globals.h"
 #include <rmsdef.h>
