@@ -94,9 +94,11 @@
 **	21-FEB-2013 V2.5    Sneddon	Change .IF handling to call
 **					 Resolve_Symbol so we catch function
 **					 calls.
+**	05-MAR-2013 V2.6    Sneddon	Add support for immediate evaluation
+**					 assignment.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.5"
+#pragma module PARSE_DESCRIP "V2.6"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -187,6 +189,7 @@
 #define PRS_K_SYM_DEFINED   51
 #define PRS_K_SYM_APPEND    52
 #define PRS_K_SYM_DO	    53
+#define PRS_K_SYM_EVAL      54
 
 /*
 ** .IFDEF context block.  Used for tracking when we're in and out
@@ -837,7 +840,7 @@ int parse_store (struct TPABLK *tpa) {
     case PRS_K_SYM_DO:
 	Resolve_Symbols((tpa->tpa_l_stringbase+
     	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
-    	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 2);
+    	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 0);
 
 	INIT_DYNDESC(result);
 	INIT_SDESC(cmd, len, cp);
@@ -851,6 +854,15 @@ int parse_store (struct TPABLK *tpa) {
 	free(cp);
 	mem_free_symbol(current_sym);
     	current_sym = (struct SYMBOL *) 0;
+    	just_did_rule = 0;
+    	break;
+
+    case PRS_K_SYM_EVAL:
+	Resolve_Symbols((tpa->tpa_l_stringbase+
+    	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+    	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 0);
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+	free(cp);
     	just_did_rule = 0;
     	break;
 
