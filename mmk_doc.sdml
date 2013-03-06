@@ -70,6 +70,13 @@ need to build software systems.
 is in turn based on the UNIX <emphasis>(make) utility.
 The reader is assumed to have at least cursory knowledge of <emphasis>(make)
 or DEC/MMS.
+<p>
+Further information regarding MMK, including release details and support
+agreements can be found at the Endless Software Solutions website:
+
+<code_example>
+http://www.endlesssoftware.com.au
+<endcode_example>
 <NOTE>
 This document does not provide a general tutorial on <emphasis>(make) utilities.
 New users are advised to learn more about description files (makefiles) by reviewing
