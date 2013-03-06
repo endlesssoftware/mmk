@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         03-Aug-2012     Sneddon         Initial commenting (plus other
 					 rearrangments.
 	15-Feb-2013	Sneddon		Updated for V5.0.
+	06-Mar-2013	Sneddon		Document '~=' assignment.
 
 <ENDCOMMENT>
 <INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
@@ -454,9 +455,15 @@ description files it is possible to concatenate and test before assignment.
 <table_row>(<emphasis>(+=\bold)\Concatenate to existing value.\<interactive>(FOR += ,NEXT))
 <table_row>(<emphasis>(?=\bold)\Assign if macro is undefined.\<interactive>(FOO ?= FIRST))
 <table_row>(<emphasis>(!=\bold)\Assign command results.\<interactive>(FOO != DIRECTORY))
+<table_row>(<emphasis>(~=\bold)\Completely evaluate value before assignment\)
 <endtable>
 
-<p>The special case is the <emphasis>(!=\bold) operator.  The assigned
+<P>
+Two of these assignment operators behave a little differently than the others.
+They are both described in more detail below.
+
+<head2>(Command Assignment)
+<p>Command assignment is the <emphasis>(!=\bold) operator.  The assigned
 value is taken as a command and executed, with the results being assigned
 to the macro.  Using this mechanism it would be possible to determine
 some details of the running system, like so:
@@ -488,6 +495,51 @@ However, it is worth noting that this restriction only applies to the
 '!' comment delimiter.  It is still possible to use '#' in any place
 and achieve the desired result.
 <endnote>
+
+<head2>(Evaluated Assignment)
+<p>
+Evaluated assignment is the <emphasis>(~=\bold) operator.  This assignment
+operator is special in that it completely evaluated the value before
+assigning it to the macro.
+
+<p>
+All records in the description file are evaluated and an attempt is made to
+resolve all macros as they are read in to the parser.  However, if an
+unresolved macro, or a builtin function call is found it is not
+evaluated to the empty string, rather it is retained for a time when those
+macros are available.  An example from the default definitions within MMK
+is:
+
+<code_example>
+BASIC       = BASIC
+BASFLAGS    = /NOLIST/OBJECT=$(MMS$TARGET_NAME)$(OBJ)
+<endcode_example>
+
+The definition of BASFLAGS will not be evaluated fully as the description
+file is processed, leaving MMS$TARGET_NAME and OBJ unresolved until BASFLAGS
+is resolved as a part of executing the build actions that include this
+definition (shown below).
+
+<code_example>
+.BAS$(OBJ) :
+    $(BASIC)$(BASFLAGS) $(MMS$SOURCE)
+<endcode_example>
+
+<P>
+Sometimes this is not what is wanted and it is necessary to evaluate the
+definition completely.  The following is an excert from the procedure
+that builds MMK's PCSI Product Definition File.
+
+<code_example>
+DOCUMENTATION ~= $(ADDPREFIX $(KITDIR),$(WILDCARD $(KITDIR)*.HTML)) -
+                 $(ADDPREFIX $(KITDIR),$(WILDCARD $(KITDIR)*.PDF)) -
+                 $(ADDPREFIX $(KITDIR),$(WILDCARD $(KITDIR)*.PS)) -
+                 $(ADDPREFIX $(KITDIR),$(WILDCARD $(KITDIR)*.TXT))
+<endcode_example>
+
+Without being able to evaluate the macro definition for DOCUMENTATION
+the list documentation files would actually evaluate to the function
+calls, not the results of the builtin function calls.
 
 <head1>(Deferring Macro Substitution\deferring)
 <p>

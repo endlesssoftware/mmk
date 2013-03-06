@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.3-1'
+	.IDENT	'V2.4'
 ;++
 ;
 ; FACILITY: 	    MMK
@@ -14,7 +14,7 @@
 ; AUTHOR:   	    M. Madison
 ;
 ; Copyright (c) 2008, Matthew Madison.
-; Copyright (c) 2012, Endless Software Solutions.
+; Copyright (c) 2013, Endless Software Solutions.
 ; 
 ; All rights reserved.
 ; 
@@ -82,6 +82,7 @@
 ;   17-MAY-2011 V2.2    Sneddon	    Add support for '?=' and '+='.
 ;   07-JUL-2012 V2.3	Sneddon	    Add support for '!='.
 ;   28-AUG-2012 V2.3-1	Sneddon	    Allow description file lines to be empty.
+;   05-MAR-2013 V2.4    Sneddon	    Add support for '~=' immediate evaluation.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -155,6 +156,7 @@ PRS_K_DIR_GNU     = 50
 PRS_K_SYM_DEFINED = 51
 PRS_K_SYM_APPEND  = 52
 PRS_K_SYM_DO	  = 53
+PRS_K_SYM_EVAL    = 54
 
 ; Transition codes used with routine PARSE_OBJECTS.  Must match the
 ; corresponding definitions in that module.
@@ -381,6 +383,7 @@ TILDE		= 126
 	$TRAN	'?',SYMDEF2
 	$TRAN	'+',SYMDEF3
 	$TRAN	'!',SYMDEF4
+	$TRAN	TILDE,SYMDEF5
     	$TRAN	COMMA,DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
 	$TRAN	'-',DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
 	$TRAN	'(',DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
@@ -399,6 +402,7 @@ TILDE		= 126
 	$TRAN	'?',SYMDEF2
 	$TRAN	'+',SYMDEF3
 	$TRAN	'!',SYMDEF4
+	$TRAN	TILDE,SYMDEF5
     	$TRAN	COMMA,DEPEND,PRS_STORE,,,PRS_K_SYM2DEP
 	$TRAN	':',DEPEND1B,PRS_STORE,,,PRS_K_SYM2DEP2
     	$TRAN	TPA$_LAMBDA,DEPEND1,PRS_STORE,,,PRS_K_SYM2DEP2
@@ -427,6 +431,12 @@ TILDE		= 126
 	$STATE	SYMDEF4A
 	$TRAN	TPA$_BLANK,SYMDEF4A
 	$TRAN	TPA$_LAMBDA,TPA$_EXIT,PRS_STORE,,,PRS_K_SYM_DO
+
+	$STATE	SYMDEF5
+	$TRAN	'=',SYMDEF5A
+	$STATE	SYMDEF5A
+	$TRAN	TPA$_BLANK,SYMDEF5A
+	$TRAN	TPA$_LAMBDA,TPA$_EXIT,PRS_STORE,,,PRS_K_SYM_EVAL
 
 	$STATE	DEPEND
 	$TRAN	TPA$_BLANK,DEPEND1
