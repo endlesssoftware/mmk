@@ -40,17 +40,9 @@
 TMP != PIPE TMP="$(MMK_MAJOR_VERSION)" ; IF F$LENGTH(TMP) .EQ 1 THEN TMP="0"+TMP ; WRITE/SYMBOL SYS$OUTPUT TMP
 KIT_VERSION = $(COLLAPSE $(TMP)$(MMK_MINOR_VERSION))
 GENERATION != WRITE SYS$OUTPUT F$CVTIME(,,"DATE")-"-"-"-"
+BASE_SYSTEM = $(KITARCH)VMS
 
 ECHO = WRITE SYS$OUTPUT
-.IF MMSALPHA
-ARCH = AXPVMS
-.ELSIF MMSIA64
-ARCH = I64VMS
-.ELSIF MMSVAX
-ARCH = VAXVMS
-.ENDIF
-!DAYTIME != SHOW DAYTIME
-!DATE = $(WORD 1,$(DAYTIME))
 
 BINDIR = MG_BIN:[MMK]
 KITDIR = MG_KIT:[MMK]
@@ -68,10 +60,10 @@ DOCUMENTATION ~= $(ADDPREFIX $(KITDIR),$(WILDCARD $(KITDIR)*.HTML)) -
 #=============================================================================
 
 PACKAGE :
-    PRODUCT PACKAGE MMK/PRODUCER=ESS/BASE_SYSTEM=$(ARCH) -
+    PRODUCT PACKAGE MMK/PRODUCER=ESS/BASE_SYSTEM=$(BASE_SYSTEM) -
 	/DESTINATION=$(KITDIR)/LOG/TRACE -
 	/SOURCE=$(KITDIR)MMK.PCSI$DESC -
-	/MATERIAL=(MG_KIT:[MMK],MG_BIN:[MMK],MG_SRC:[MMK]) -
+	/MATERIAL=(MG_KIT:[MMK],MG_BIN_$(KITARCH):[MMK],MG_SRC:[MMK]) -
 	/FORMAT=SEQUENTIAL
 
 #=============================================================================
@@ -87,7 +79,7 @@ DESCRIPTION : HEADER,-
     @ CONTINUE
 
 HEADER :
-    @ $(ECHO) "product ESS $(ARCH) MMK $(MMK_VERSION) full ;"
+    @ $(ECHO) "product ESS $(BASE_SYSTEM) MMK $(MMK_VERSION) full ;"
     @ $(ECHO) "  directory [SYSHLP.MMK] ;"
     @ $(ECHO) "  file [SYSHLP]MMK$(KIT_VERSION).RELEASE_NOTES release notes ;"
     @ $(ECHO) "  file [SYSEXE]MMK.EXE generation $(GENERATION) archive ;"
@@ -118,7 +110,7 @@ FOOTER :
 #=============================================================================
 
 TEXT :
-    @ $(ECHO) "=product ESS $(ARCH) MMK $(MMK_VERSION) full"
+    @ $(ECHO) "=product ESS $(BASE_SYSTEM) MMK $(MMK_VERSION) full"
     @ $(ECHO) "1 'PRODUCT"
     @ $(ECHO) "=prompt MMK Make Uility"
     @ $(ECHO) "MMK is a ""make"" utility for VMS systems.  It is used for "
