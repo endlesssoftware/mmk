@@ -115,6 +115,15 @@ SOURCE :
     @ $(ECHO) "  end option ;"
 
 FOOTER :
+    @ $(ECHO) "  execute postinstall ""@PCSI$SOURCE:[MMK]MMK_PCSI.COM POSTINSTALL"""
+    @ $(ECHO) "    uses [MMK]MMK_PCSI.COM ;"
+    @ $(ECHO) "  if (<option SYSTEM_STARTUP default YES>) ;
+    @ $(ECHO) "    execute postinstall "
+    @ $(ECHO) "      ""COPY/LOG PCSI$DESTINATION:[MMK]MMK_STARTUP.COM SYS$COMMON:[SYS$STARTUP]"" ;"
+    @ $(ECHO) "  end if ;"
+    @ $(ECHO) "  file [MMK]MMK_PCSI.COM ;"
+    @ $(ECHO) "  execute remove ""@PCSI$DESTINATION:[MMK]MMK_PCSI.COM REMOVE"""
+    @ $(ECHO) "    uses [MMK]MMK_PCSI.COM ;"
     @ $(ECHO) "end product ;"
 
 #=============================================================================
@@ -212,3 +221,10 @@ TEXT :
     @ $(ECHO) "MMK is open source software and includes the full source of"
     @ $(ECHO) "the software.  To install a ZIP file containing the source"
     @ $(ECHO) "code, answer YES to this option."
+    @ $(ECHO) "1 SYSTEM_STARTUP"
+    @ $(ECHO) "=prompt Copy system startup procedure to SYS$STARTUP?"
+    @ $(ECHO) "As part of the installation process MMK generates a small "
+    @ $(ECHO) "system startup procedure that needs to be executed before "
+    @ $(ECHO) "using MMK.  To make things more convenient, the install "
+    @ $(ECHO) "process can copy this procedure to SYS$STARTUP.  This is"
+    @ $(ECHO) "not a critical feature of the product."
