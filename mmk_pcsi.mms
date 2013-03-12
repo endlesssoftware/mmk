@@ -175,7 +175,7 @@ TEXT :
     @ $(ECHO) "1 RELEASE_NOTES"
     @ $(ECHO) "=prompt Release notes for MMK $(MMK_VERSION) are available."
     @ $(ECHO) "Release notes for MMK $(MMK_VERSION) are avilable in the "
-    @ $(ECHO) "file SYS$HELP:MMK$(KIT_VERSION).RELEASE_NOTES."
+    @ $(ECHO) "file ddcu:[MMK]MMK$(KIT_VERSION).RELEASE_NOTES."
     @ $(ECHO) "1 COMMAND"
     @ $(ECHO) "=prompt Do you want to install the MMK command into DCLTABLES?"
     @ $(ECHO) "The MMK make utility can be installed into DCLTABLES making"
