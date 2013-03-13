@@ -80,6 +80,8 @@ DESCRIPTION : HEADER,-
 
 HEADER :
     @ $(ECHO) "product ESS $(BASE_SYSTEM) MMK $(MMK_VERSION) full ;"
+    @ $(ECHO) "  information CHECK_DESTINATION confirm phase before "
+    @ $(ECHO) "    with helptext ;"
     @ $(ECHO) "  directory [MMK] ;"
     @ $(ECHO) "  file [MMK]MMK$(KIT_VERSION).RELEASE_NOTES release notes ;"
     @ $(ECHO) "  execute preconfigure (""WRITE SYS$OUTPUT """"%I, moving release notes to SYS$HELP"""""","
@@ -115,14 +117,16 @@ SOURCE :
     @ $(ECHO) "  end option ;"
 
 FOOTER :
-    @ $(ECHO) "  execute postinstall ""@PCSI$SOURCE:[MMK]MMK_PCSI.COM POSTINSTALL"""
+    @ $(ECHO) "  execute "
+    @ $(ECHO) "    postinstall ""@PCSI$SOURCE:[MMK]MMK_PCSI.COM POSTINSTALL"""
     @ $(ECHO) "    uses [MMK]MMK_PCSI.COM ;"
     @ $(ECHO) "  if (<option SYSTEM_STARTUP default YES>) ;
     @ $(ECHO) "    execute postinstall "
     @ $(ECHO) "      ""COPY/LOG PCSI$DESTINATION:[MMK]MMK_STARTUP.COM SYS$COMMON:[SYS$STARTUP]"" ;"
     @ $(ECHO) "  end if ;"
     @ $(ECHO) "  file [MMK]MMK_PCSI.COM ;"
-    @ $(ECHO) "  execute remove ""@PCSI$DESTINATION:[MMK]MMK_PCSI.COM REMOVE"""
+    @ $(ECHO) "  execute install """""
+    @ $(ECHO) "    remove ""@PCSI$DESTINATION:[MMK]MMK_PCSI.COM REMOVE"""
     @ $(ECHO) "    uses [MMK]MMK_PCSI.COM ;"
     @ $(ECHO) "end product ;"
 
@@ -188,6 +192,18 @@ TEXT :
     @ $(ECHO) "=prompt Release notes for MMK $(MMK_VERSION) are available."
     @ $(ECHO) "Release notes for MMK $(MMK_VERSION) are avilable in the "
     @ $(ECHO) "file SYS$HELP:MMK$(KIT_VERSION).RELEASE_NOTES."
+    @ $(ECHO) "1 CHECK_DESTINATION"
+    @ $(ECHO) "=prompt Confirm installation destination:"
+    @ $(ECHO) "************************************************************"
+    @ $(ECHO) ""
+    @ $(ECHO) " This product, by default will install the MMK product tree"
+    @ $(ECHO) " into SYS$SYSDEVICE:[VMS$COMMON.].  If you wish to install"
+    @ $(ECHO) " in an alternate location, please answer NO to this"
+    @ $(ECHO) " confirmation and reinstall using:"
+    @ $(ECHO) ""
+    @ $(ECHO) "   PRODUCT INSTALL MMK/DESTINATION=ddcu:[dir]"
+    @ $(ECHO) ""
+    @ $(ECHO) "************************************************************"
     @ $(ECHO) "1 COMMAND"
     @ $(ECHO) "=prompt Do you want to install the MMK command into DCLTABLES?"
     @ $(ECHO) "The MMK make utility can be installed into DCLTABLES making"
