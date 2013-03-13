@@ -24,6 +24,6 @@ $  _Loop:
 $	file = f$search(p1)
 $	if file.eqs."" then exit
 $	name = f$parse(file,"","","NAME")+f$parse(file,"","","TYPE")
-$	write mmk_doc_list f$fao("MMK_TMP !32AS VMI$ROOT:[SYSHLP.MMK]", name)
+$	write mmk_doc_list f$fao("MMK_TMP !32AS MMK_INSTALL_ROOT:[DOC]", name)
 $	goto _loop
 $ ENDSUBROUTINE
