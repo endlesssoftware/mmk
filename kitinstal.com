@@ -210,7 +210,7 @@ $ then
 $   vmi$callback ask mmk_ok -
 	"Do you want to upgrade the current installation" -
 	"YES" BH "@VMI$KWD:KITINSTAL HELP_UPGRADE"
-$   if (mmk_ok) then goto Ask_MMK_Top
+$   if (.not. mmk_ok) then goto Ask_MMK_Top
 $ endif
 $!
 $ VMI$CALLBACK ASK mmk_do_command -
@@ -311,7 +311,7 @@ $ type SYS$INPUT:
     To replace this installation with the software in this
     software installation kit, answer YES.  To chose another
     directory to install to, answer NO and enter a different
-    path.  To exit this installation completely type ^C.
+    path.  To exit this installation completely type CTRL/Y.
 
 $ exit VMI$_SUCCESS
 $help_command:
