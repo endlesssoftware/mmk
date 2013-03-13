@@ -209,7 +209,7 @@ $ if (mmk_upgrading .and. (mmk_def_root .eqs. mmk_root))
 $ then
 $   vmi$callback ask mmk_ok -
 	"Do you want to upgrade the current installation" -
-	"YES" B "@VMI$KWD:VMSINSTAL HELP_UPGRADE"
+	"YES" BH "@VMI$KWD:KITINSTAL HELP_UPGRADE"
 $   if (mmk_ok) then goto Ask_MMK_Top
 $ endif
 $!
@@ -292,13 +292,14 @@ $ vmi$callback provide_file MMK_TMP MMK_STARTUP.COM 'mmk_root'] C
 $!
 $ if (mmk_do_startup)
 $ then
-$    vmi$callback provide_file MMK_TMP MMK_STARTUP.COM 'mmk_root'] C
+$    vmi$callback provide_file MMK_TMP MMK_STARTUP.COM -
+	VMI$ROOT:[SYS$STARTUP] C
 $    vmi$callback set startup MMK_STARTUP.COM
 $ endif
 $
 $ EXIT VMI$_SUCCESS
 $!
-$HELP_:
+$help_upgrade:
 $ type SYS$INPUT:
 
     The following version of MMK has been detected by the
