@@ -45,7 +45,7 @@ that contain comments that match this pattern.
 '!' comment delimiter.  It is still possible to use '#' in any place
 and achieve the desired result.
 
-<CHAPTER>(New Features and Changes in MMX V5.0)
+<CHAPTER>(New Features and Changes in MMK V5.0)
 <P>
 This chapter notes the changes that were made in MMK V5.0.
 
