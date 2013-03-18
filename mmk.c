@@ -323,8 +323,11 @@ unsigned int main (void) {
     ** parse it ourselves.
     */
     status = cli_get_value("$VERB", tmp, sizeof(tmp));
-    if (!OK(status)) return (status | STS$M_INHIB_MSG);
-    if (strncmp(tmp, cmdname.dsc$a_pointer, cmdname.dsc$w_length-1) != 0) {
+    if (OK(status)) {
+	status = strncmp(tmp, cmdname.dsc$a_pointer,
+			 cmdname.dsc$w_length-1) == 0;
+    }
+    if (!OK(status)) {
 	INIT_DYNDESC(cmdstr);
 	status = lib$get_foreign(&cmdstr);
 	str$prefix(&cmdstr, &cmdname);
