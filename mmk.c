@@ -148,6 +148,8 @@
 **	26-FEB-2013 V5.1    Sneddon     Move version number into its own
 **					 #include file, now it is totally
 **					 unrelated to this module.
+**	18-MAR-2013 V5.2    Sneddon	Fix for #58. We only parse the command
+**					 line if DCL hasn't done it already.
 **--
 */
 #include "version.h"
@@ -313,11 +315,23 @@ unsigned int main (void) {
 /*
 ** Fetch and parse command string
 */
-    INIT_DYNDESC(cmdstr);
-    status = lib$get_foreign(&cmdstr);
-    str$prefix(&cmdstr, &cmdname);
-    status = cli$dcl_parse(&cmdstr, MMK_CLD, lib$get_input, lib$get_input);
+
+    /*
+    ** Fetch the value of the DCL reserved word $VERB.  We use this to
+    ** test if the command line has already been parsed by DCL.  If the
+    ** value returned does NOT match the MMK verb, then we need to
+    ** parse it ourselves.
+    */
+    status = cli_get_value("$VERB", tmp, sizeof(tmp));
     if (!OK(status)) return (status | STS$M_INHIB_MSG);
+    if (strncmp(tmp, cmdname.dsc$a_pointer, cmdname.dsc$w_length-1) != 0) {
+	INIT_DYNDESC(cmdstr);
+	status = lib$get_foreign(&cmdstr);
+	str$prefix(&cmdstr, &cmdname);
+	status = cli$dcl_parse(&cmdstr, MMK_CLD, lib$get_input,
+			       lib$get_input);
+	if (!OK(status)) return (status | STS$M_INHIB_MSG);
+    }
 
 /*
 ** Check for /IDENT
