@@ -3,7 +3,7 @@
 !
 !   Description file for building MMK.
 !   Copyright (c) 2008, Matthew Madison.
-!   Copyright (c) 2012, Endless Software Solutions.
+!   Copyright (c) 2013, Endless Software Solutions.
 !
 !   All rights reserved.
 !
@@ -44,6 +44,8 @@
 !   16-APR-2010 V2.2	Sneddon     New modules, etc.
 !   06-AUG-2010 V2.3	Sneddon     Add release notes, plus SDML dynamic
 !				     symbols.
+!   26-MAR-2013 V2.3-1  Sneddon	    MMK_MSG.H is now kept in the source
+!				     repo. and regenerated when necessary. #59
 !--
 
 .IFDEF ARCH
@@ -137,7 +139,7 @@ $(BINDIR)MMK.EXE : $(BINDIR)MMK.OLB($(OBJECTS)),$(SRCDIR)MMK$(OPT)
     $(LIBR)/COMPRESS/OUTPUT=$(BINDIR)MMK.OLB $(BINDIR)MMK.OLB
     $(LINK)$(LINKFLAGS) $(SRCDIR)MMK$(OPT)/OPT
 
-MMK_H	    	    	    = $(SRCDIR)MMK.H, $(ETCDIR)MMK_MSG.H
+MMK_H	    	    	    = $(SRCDIR)MMK.H, $(SRCDIR)MMK_MSG.H
 
 $(BINDIR)MMK.OBJ            : $(SRCDIR)MMK.C,$(MMK_H) $(SRCDIR)VERSION.H
 $(BINDIR)MEM.OBJ            : $(SRCDIR)MEM.C,$(MMK_H)
@@ -163,7 +165,7 @@ $(BINDIR)DEFAULT_RULES.OBJ  : $(SRCDIR)DEFAULT_RULES.C,$(MMK_H),$(SRCDIR)GLOBALS
 $(BINDIR)MMK_MSG.OBJ        : $(SRCDIR)MMK_MSG.MSG
 $(BINDIR)MMK_CLD.OBJ        : $(SRCDIR)MMK_CLD.CLD
 
-$(ETCDIR)MMK_MSG.H	    : $(SRCDIR)MMK_MSG.MSG
+$(SRCDIR)MMK_MSG.H	    : $(SRCDIR)MMK_MSG.MSG
     $(MESSAGE)/NOOBJECT/SDL=$(ETCDIR)MMK_MSG.SDL $(MMS$SOURCE)
     $(SDL)/LANGUAGE=CC=$(MMS$TARGET) $(ETCDIR)MMK_MSG.SDL
 
