@@ -47,18 +47,18 @@ $ err = "call___ err"
 $ saysym = "write/symbol sys$output"
 $
 $start:
-$ dns/translation=concealed	MMK_ROOT	'mmk_root'.]
-$ dns				MMK_EXE_AXP	'mmk_root'.EXE_AXP]
-$ dns				MMK_EXE_I64	'mmk_root'.EXE_I64]
-$ dns				MMK_EXE_VAX	'mmk_root'.EXE_VAX]
-$ dns				MMK_EXE		MMK_EXE_'_arch_name';
+$ dns/translation=concealed	MMK_ROOT	'location'.]
+$ dns				MMK_EXE_AXP	MMK_ROOT:[EXE_AXP]
+$ dns				MMK_EXE_I64	MMK_ROOT:[EXE_I64]
+$ dns				MMK_EXE_VAX	MMK_ROOT:[EXE_VAX]
+$ dns				MMK_EXE		MMK_EXE_'_arch_name':
 $
 $ dns				MMK		MMK_EXE:MMK.EXE
 $
 $ if (f$parse(mmk_root+".SOURCE]") .nes. "") then -
-$ dns				MMK_SRC		'mmk_root'.SRC]
+$ dns				MMK_SRC		MMK_ROOT:[SRC]
 $ if (f$parse(mmk_root+".DOC]") .nes. "") then -
-$ dns				MMK_DOC		'mmk_root'.DOC]
+$ dns				MMK_DOC		MMK_ROOT:[DOC]
 $
 $bail_out:
 $ exitt 1.or.(0*f$verify(__vfy_saved))
