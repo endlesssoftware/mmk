@@ -85,6 +85,7 @@ HEADER :
     @ $(ECHO) "  information CHECK_DESTINATION confirm phase before "
     @ $(ECHO) "    with helptext ;"
     @ $(ECHO) "  directory [MMK] ;"
+    @ $(ECHO) "  file [MMK]MMK___STARTUP.COM generation $(GENERATION) archive ;"
     @ $(ECHO) "  file [MMK]MMK$(KIT_VERSION).RELEASE_NOTES release notes ;"
     @ $(ECHO) "  execute preconfigure (""WRITE SYS$OUTPUT """"%I, moving release notes to SYS$HELP"""""","
     @ $(ECHO) "    ""COPY/LOG PCSI$SOURCE:[MMK]MMK$(KIT_VERSION).RELEASE_NOTES SYS$COMMON:[SYSHLP]"")"
