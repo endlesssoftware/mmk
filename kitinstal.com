@@ -178,9 +178,9 @@ $ if (f$trnlnm("MMK_ROOT") .eqs. "")
 $ then
 $   mmk_def_root = "SYS$COMMON:[MMK.]"
 $ else
-$   mmk_def_root = f$parse("MMK_ROOT",,,"DEVICE","NO_CONCEAL") -
-                 + f$parse("MMK_ROOT",,,"DIRECTORY","NO_CONCEAL") -
-                 - "[000000]" -"]["
+$   mmk_def_root = f$parse("MMK_ROOT:[000000]",,,"DEVICE","NO_CONCEAL") -
+                 + f$parse("MMK_ROOT:[000000]",,,"DIRECTORY","NO_CONCEAL") -
+                 - "[000000]"
 $   if (f$search("MMK") .nes. "")
 $   then
 $     VMI$CALLBACK MESSAGE I INSTALDET -
