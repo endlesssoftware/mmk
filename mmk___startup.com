@@ -31,7 +31,7 @@ $ set symbol/scope=(nolocal)
 $ on warning then goto bail_out
 $ on control_y then goto bail_out
 $
-$ if (f$getsyi("HW_MODEL") .gt. 0) .and. (f$getsyi("HW_MODEL") .lt. 1024))
+$ if ((f$getsyi("HW_MODEL") .gt. 0) .and. (f$getsyi("HW_MODEL") .lt. 1024))
 $ then _arch_type = 1
 $ else _arch_type = f$getsyi("ARCH_TYPE")
 $ endif
