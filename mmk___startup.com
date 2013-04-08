@@ -48,16 +48,16 @@ $ saysym = "write/symbol sys$output"
 $
 $start:
 $ dns/translation=concealed	MMK_ROOT	'location'.]
-$ dns				MMK_EXE_AXP	MMK_ROOT:[EXE_AXP]
-$ dns				MMK_EXE_I64	MMK_ROOT:[EXE_I64]
-$ dns				MMK_EXE_VAX	MMK_ROOT:[EXE_VAX]
-$ dns				MMK_EXE		MMK_EXE_'_arch_name':
+$ dns				MMK_AXP_EXE	MMK_ROOT:[AXP_EXE]
+$ dns				MMK_I64_EXE	MMK_ROOT:[I64_EXE]
+$ dns				MMK_VAX_EXE	MMK_ROOT:[VAX_EXE]
+$ dns				MMK_EXE		MMK_'_arch_name'_EXE:
 $
 $ dns				MMK		MMK_EXE:MMK.EXE
 $
-$ if (f$parse(mmk_root+".SRC]") .nes. "") then -
+$ if (f$parse(location+".SRC]") .nes. "") then -
 $ dns				MMK_SRC		MMK_ROOT:[SRC]
-$ if (f$parse(mmk_root+".DOC]") .nes. "") then -
+$ if (f$parse(location+".DOC]") .nes. "") then -
 $ dns				MMK_DOC		MMK_ROOT:[DOC]
 $
 $bail_out:
