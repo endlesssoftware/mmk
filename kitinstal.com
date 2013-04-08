@@ -188,7 +188,7 @@ $     VMI$CALLBACK MESSAGE I INSTALDET -
 $     mmk_upgrading = 1
 $   endif
 $ endif
-$ mmk_def_root = mmk_def_root - ".]"
+$ mmk_def_root = mmk_def_root - ".]" + "]"
 $!
 $Ask_MMK_Top:
 $ VMI$CALLBACK ASK mmk_root -
