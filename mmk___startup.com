@@ -55,7 +55,7 @@ $ dns				MMK_EXE		MMK_EXE_'_arch_name':
 $
 $ dns				MMK		MMK_EXE:MMK.EXE
 $
-$ if (f$parse(mmk_root+".SOURCE]") .nes. "") then -
+$ if (f$parse(mmk_root+".SRC]") .nes. "") then -
 $ dns				MMK_SRC		MMK_ROOT:[SRC]
 $ if (f$parse(mmk_root+".DOC]") .nes. "") then -
 $ dns				MMK_DOC		MMK_ROOT:[DOC]
