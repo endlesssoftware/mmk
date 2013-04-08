@@ -174,12 +174,12 @@ $ ENDIF
 $!
 $ if (f$search("SYS$STARTUP:MMK_STARTUP.COM") .nes. "") then -
 $   @SYS$STARTUP:MMK_STARTUP
-$ if (f$trnlnm("MMK") .eqs. "")
+$ if (f$trnlnm("MMK_ROOT") .eqs. "")
 $ then
 $   mmk_def_root = "SYS$COMMON:[MMK.]"
 $ else
-$   mmk_def_root = f$parse("MMK",,,"DEVICE","NO_CONCEAL") -
-                 + f$parse("MMK",,,"DIRECTORY","NO_CONCEAL") -
+$   mmk_def_root = f$parse("MMK_ROOT",,,"DEVICE","NO_CONCEAL") -
+                 + f$parse("MMK_ROOT",,,"DIRECTORY","NO_CONCEAL") -
                  - "[000000]" -"]["
 $   if (f$search("MMK") .nes. "")
 $   then
