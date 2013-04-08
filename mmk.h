@@ -4,7 +4,7 @@
 **  Main #include file for the MMK Make utilty.
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2013, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -74,7 +74,7 @@
 /*
 **  Status codes
 */
-#include "etc_dir:mmk_msg.h"
+#include "mmk_msg.h"
 
 /*
 ** Some private type names that I use sometimes
