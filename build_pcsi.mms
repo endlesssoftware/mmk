@@ -36,6 +36,8 @@
 !   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 !   25-FEB-2011 V1.0    Sneddon     Initial coding.
+!   26-MAR-2013 V1.1    Sneddon     Change to put executables in arch-specific
+!				     directory. See issue #57.
 !--
 TMP != PIPE TMP="$(MMK_MAJOR_VERSION)" ; IF F$LENGTH(TMP) .EQ 1 THEN TMP="0"+TMP ; WRITE/SYMBOL SYS$OUTPUT TMP
 KIT_VERSION = $(COLLAPSE $(TMP)$(MMK_MINOR_VERSION))
@@ -83,11 +85,13 @@ HEADER :
     @ $(ECHO) "  information CHECK_DESTINATION confirm phase before "
     @ $(ECHO) "    with helptext ;"
     @ $(ECHO) "  directory [MMK] ;"
+    @ $(ECHO) "  file [MMK]MMK___STARTUP.COM generation $(GENERATION) archive ;"
     @ $(ECHO) "  file [MMK]MMK$(KIT_VERSION).RELEASE_NOTES release notes ;"
     @ $(ECHO) "  execute preconfigure (""WRITE SYS$OUTPUT """"%I, moving release notes to SYS$HELP"""""","
     @ $(ECHO) "    ""COPY/LOG PCSI$SOURCE:[MMK]MMK$(KIT_VERSION).RELEASE_NOTES SYS$COMMON:[SYSHLP]"")"
     @ $(ECHO) "    uses [MMK]MMK$(KIT_VERSION).RELEASE_NOTES ;"
-    @ $(ECHO) "  file [MMK]MMK.EXE generation $(GENERATION) archive ;"
+    @ $(ECHO) "  directory [MMK.$(KITARCH)_EXE] ;"
+    @ $(ECHO) "  file [MMK.$(KITARCH)_EXE]MMK.EXE generation $(GENERATION) archive ;"
     @ $(ECHO) "  information RELEASE_NOTES phase after with helptext ;"
     @ $(ECHO) "  if (<option COMMAND default YES>) ;"
     @ $(ECHO) "    module [MMK]MMK_CLD.CLD type command module MMK ;"
@@ -217,7 +221,7 @@ TEXT :
     @ $(ECHO) "Because MMK was not installed as a command, you will need "
     @ $(ECHO) "to define a foreign command, like so:"
     @ $(ECHO) " "
-    @ $(ECHO) "    $ MMK == ""$ddcu:[MMK]MMK.EXE"""
+    @ $(ECHO) "    $ MMK == ""$ddcu:[MMK.$(KITARCH)_EXE]MMK.EXE"""
     @ $(ECHO) " "
     @ $(ECHO) "1 HELP"
     @ $(ECHO) "=prompt Do you want to add MMK to the system help library?"
