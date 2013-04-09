@@ -83,6 +83,8 @@
 **	07-APR-2010 V1.10-1 Sneddon 	Got ahead of myself with symbols.  Changed
 **                                      MMSDESCRIPTION_FILE to MMK_K_SYM_BUILTIN.
 **	12-JUL-2012 V1.11   Sneddon	Tweak strip_comments to support '!='.
+**	09-APR-2013 V1.12   Sneddon	#57. Fix to support default filespec
+**					correctly in Read_Description.
 **--
 */
 #pragma module READDESC "V1.11"
@@ -152,7 +154,8 @@ void Read_Description (char *fspec, char *defspec, int rules_file) {
     int bufsize, len;
     int continuation, maxlen, xlen, itry;
     char element[256];
-    static char *tryfile[] = {"SYS$DISK:[]DESCRIP.MMS","SYS$DISK:[]MAKEFILE."};
+    static char *tryfile[] =
+	{"SYS$DISK:[]DESCRIP.MMS", "SYS$DISK:[]MAKEFILE."};
 
     if (*fspec == '\0') {
         for (itry = 0; itry < 2; itry++) {
@@ -182,7 +185,9 @@ void Read_Description (char *fspec, char *defspec, int rules_file) {
                             OK(lib$sub_times(&crdt, &frdt, &junktime))))
                     status = cms_fetch_file(element, fspec);
             }
-        }
+        } else {
+	    status = SS$_NORMAL;
+	}
     }
 
     if (OK(status) && *fspec != '\0')
