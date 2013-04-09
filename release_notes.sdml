@@ -160,6 +160,18 @@ on their use.
 <P>MMK now supports using the ALL keyword with the /VERIFY qualifier.  This
 new keyword forces all action lines to be verified, even those prefixed
 with @.  This qualifier also overrides the .SILENT directive.
+
+<HEAD1>(INCLUDE directive fixes)
+<P>It was reported that the INCLUDE directive was not parsing correctly.
+MMK was interpreting (incorrectly) the following example as an INCLUDE
+directive, rather than an assignment.
+<interactive>
+INCLUDE = text
+<endinteractive>
+
+<HEAD1>(Packaging)
+<P>The MMK software package is now shipped in binary form (as well as source)
+in both VMSINSTAL and POLYCENTER Sotware Installation (PCSI) kits.
 
 <CHAPTER>(New Features and Changes in MMX V4.0)
 <P>
