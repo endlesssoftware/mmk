@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.4'
+	.IDENT	'V2.5'
 ;++
 ;
 ; FACILITY: 	    MMK
@@ -83,6 +83,7 @@
 ;   07-JUL-2012 V2.3	Sneddon	    Add support for '!='.
 ;   28-AUG-2012 V2.3-1	Sneddon	    Allow description file lines to be empty.
 ;   05-MAR-2013 V2.4    Sneddon	    Add support for '~=' immediate evaluation.
+;   09-APR-2013 V2.5    Sneddon	    Correct INCLUDE.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -254,9 +255,11 @@ TILDE		= 126
 	$TRAN	TPA$_LAMBDA,DEPEND,PRS_STORE,,,PRS_K_DEP_INIT
 
 	$STATE	INCLUDE
-	$TRAN	'INCLUDE'
-	$STATE
-	$TRAN	TPA$_BLANK,TPA$_EXIT
+	$TRAN	'INCLUDE',INC1
+	$STATE	INC1
+	$TRAN	TPA$_BLANK,INC1
+	$TRAN	'=',TPA$_FAIL
+	$TRAN	TPA$_LAMBDA,TPA$_EXIT
 
 	$STATE	DIRECTIVE
 	$TRAN	'IFDEF',IFDEF

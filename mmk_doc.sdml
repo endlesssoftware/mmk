@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 					 rearrangments.
 	15-Feb-2013	Sneddon		Updated for V5.0.
 	06-Mar-2013	Sneddon		Document '~=' assignment.
+	09-Apr-2013	Sneddon		INCLUDE does not require leading '.'.
 
 <ENDCOMMENT>
 <INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
@@ -1982,7 +1983,6 @@ so that they can be fixed.
 <le>MMK does not honor the <quote>(; <emphasis>(action)) syntax on
 dependency rule lines that can be used with DEC/MMS.  Make sure all actions
 are on separate lines.
-<le>MMK requires the leading dot on the .INCLUDE directive.
 <le>MMK does not handle wildcard dependency rules.
 <le>MMK does not support all of the command qualifiers supported by
 DEC/MMS.  In addition, the MMK's /GENERATION qualifier is completely different
