@@ -150,6 +150,8 @@
 **					 unrelated to this module.
 **	18-MAR-2013 V5.2    Sneddon	Fix for #58. We only parse the command
 **					 line if DCL hasn't done it already.
+**	01-MAY-2013 V5.2-1  Sneddon	#66: Targets inserted into wrong end
+**					 of queue.
 **--
 */
 #include "version.h"
@@ -652,7 +654,7 @@ unsigned int main (void) {
 
 	    targetent = malloc(sizeof(struct TARGET));
 	    targetent->name = strdup(target);
-	    queue_insert(targetent, &targetque);
+	    queue_insert(targetent, targetque.blink);
 
 	    if (!OK(cli_get_value("TARGET", target, sizeof(target)))) break;
 	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", ",", 1, 1);
