@@ -89,16 +89,18 @@
 **	01-JUL-2009 V2.3    Sneddon	Changed definition for tpa0.  Now
 **					 works better with older compilers.
 **	16-APR-2010 V2.3-1  Sneddon	Fix symnam to be length of MMK_S_SYMBOL.
-**	07-JUL-2012 V2.4    Sneddon	Added support for '!='.
+**	07-JUL-2012 V2.4    Sneddon	Added support for '|='.
 **	25-JUL-2012 V2.4-1  Sneddon	Add some comments to sym_do_actrtn.
 **	21-FEB-2013 V2.5    Sneddon	Change .IF handling to call
 **					 Resolve_Symbol so we catch function
 **					 calls.
 **	05-MAR-2013 V2.6    Sneddon	Add support for immediate evaluation
 **					 assignment.
+**	01-MAY-2013 V2.6-1  Sneddon	#68: Updated all mention of '!=' to
+**					 be '|='.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.6"
+#pragma module PARSE_DESCRIP "V2.6-1"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -1078,7 +1080,7 @@ static void copy_objrefs (struct OBJREF *destq, struct QUE *srcq) {
 **  FUNCTIONAL DESCRIPTION:
 **
 **	Call back routine for sp_once to accumulate output
-**  for '!='.
+**  for '|='.
 **
 **  RETURNS:	None.
 **

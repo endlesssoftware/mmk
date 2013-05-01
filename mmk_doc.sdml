@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	15-Feb-2013	Sneddon		Updated for V5.0.
 	06-Mar-2013	Sneddon		Document '~=' assignment.
 	09-Apr-2013	Sneddon		INCLUDE does not require leading '.'.
+	01-May-2013	Sneddon		#68: change '!=' to '|='.
 
 <ENDCOMMENT>
 <INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
@@ -462,7 +463,7 @@ description files it is possible to concatenate and test before assignment.
 <table_row>(<emphasis>(=\bold)\Assign value.\<interactive>(FOO = BAR))
 <table_row>(<emphasis>(+=\bold)\Concatenate to existing value.\<interactive>(FOR += ,NEXT))
 <table_row>(<emphasis>(?=\bold)\Assign if macro is undefined.\<interactive>(FOO ?= FIRST))
-<table_row>(<emphasis>(!=\bold)\Assign command results.\<interactive>(FOO != DIRECTORY))
+<table_row>(<emphasis>(|=\bold)\Assign command results.\<interactive>(FOO |= DIRECTORY))
 <table_row>(<emphasis>(~=\bold)\Completely evaluate value before assignment\)
 <endtable>
 
@@ -471,13 +472,13 @@ Two of these assignment operators behave a little differently than the others.
 They are both described in more detail below.
 
 <head2>(Command Assignment)
-<p>Command assignment is the <emphasis>(!=\bold) operator.  The assigned
+<p>Command assignment is the <emphasis>(|=\bold) operator.  The assigned
 value is taken as a command and executed, with the results being assigned
 to the macro.  Using this mechanism it would be possible to determine
 some details of the running system, like so:
 
 <interactive>
-FOO != SHOW SYSTEM/NOPROCESS
+FOO |= SHOW SYSTEM/NOPROCESS
 ALL :
     @ WRITE SYS$OUTPUT "$(FOO)"
 <endinteractive>
