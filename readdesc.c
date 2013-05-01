@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2013, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -85,9 +85,10 @@
 **	12-JUL-2012 V1.11   Sneddon	Tweak strip_comments to support '!='.
 **	09-APR-2013 V1.12   Sneddon	#57. Fix to support default filespec
 **					correctly in Read_Description.
+**	01-MAY-2013 V1.13   Sneddon	#68, undo V1.12 changes.
 **--
 */
-#pragma module READDESC "V1.11"
+#pragma module READDESC "V1.13"
 #include <ctype.h>
 #include "mmk.h"
 #include "globals.h"
@@ -345,10 +346,8 @@ static void strip_comments (char *dest, char *source) {
     	if (quote) {
     	    if (*cp == '"') quote = !quote;
     	} else {
-	    if (*cp == '!') {
-		if (*(cp+1) != '=') break;
-	    } else if (*cp == '#') break;
-    	}
+	    if (*cp == '!' || *cp == '#') break;
+	}
     	*cp1++ = *cp;
     }
     while (cp1 > dest && isspace(*(cp1-1))) cp1--;
