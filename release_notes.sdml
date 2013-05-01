@@ -25,25 +25,6 @@ that is not provided elsewhere in the MMK manual.
 <P>
 This chapter contains items of interest pertaining to the installation
 of MX.
-
-<HEAD1>(Upgrade Information)
-<P>This release includes a new feature that makes it possible to assign
-the output from the execution of a command to a macro.  The syntax for
-this assignment has been taken from BSD make (where the feature itself
-first appeared).
-<P>However, using this syntax does introduce a potential incompatability with
-existing MMK description files.  To assign the output of a command it is
-necessary to use the '!=' operator.  However, the '!' character is already
-a comment delimiter in MMK.  To resolve this, the MMK description file parser
-now tests for a '=' character immediately following a '!'.  Usually when
-detecting a '!' character the remainder of the line (including the comment
-delimiter) will be stripped from the output.  However, in this special case
-the delimiter and the following characters will not be stripped and instead
-parsed as an assignment.  This may create issues for existing procedures
-that contain comments that match this pattern.
-<P>However, it is worth noting that this restriction only applies to the
-'!' comment delimiter.  It is still possible to use '#' in any place
-and achieve the desired result.
 
 <CHAPTER>(New Features and Changes in MMK V5.0)
 <P>
@@ -102,7 +83,7 @@ borrowed from BSD and GNU make:
 <LIST>(UNNUMBERED)
 <LE>+= - concatenate to existing macro definition;
 <LE>?= - assign only if macro is undefined; 
-<LE>!= - assign output from a command line; and
+<LE>|= - assign output from a command line; and
 <LE>~= - immediate evaluation assignment.
 <ENDLIST>
 
