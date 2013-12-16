@@ -1,7 +1,7 @@
 Building and Installing MMK
 ---------------------------
 
-The MMK.ZIP package includes all the source code needed to build MMK from
+The MMK zip package includes all the source code needed to build MMK from
 sources on recent versions of OpenVMS.
 
 Requirements:
@@ -29,16 +29,18 @@ Copy the image to an appropriate directory, and define a symbol for it:
 
     $ MMK :== $device:[dir]MMK
 
-
 A RUNOFF (.RNH) file is included for generating help that is suitable for
-inclusion in the system help library.  You can install it in the library
-with:
+inclusion in the system help library.  You can generate it using the
+following command:
+
+    $ RUNOFF/OUTPUT=MMK_HELP.HLP MMK_HELP.RNH
+
+You can then install it in the library with:
 
     $ LIBRARY/REPLACE/HELP SYS$HELP:HELPLIB.HLB MMK_HELP.HLP
 
 The DESCRIP.MMS file included in the source kit includes the commands for
 generating the .HLP file from the .RNH file.
-
 
 BUILDING MMK FROM SOURCES
 -------------------------
