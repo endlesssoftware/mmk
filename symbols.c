@@ -1269,15 +1269,8 @@ static int apply_addsuffix (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
-    in = cp = argv[0].dsc$a_pointer;
-    inend = in + argv[0].dsc$w_length;
-    while ((cp < inend)
-    	&& (strchr(WHITESPACE, *cp) != (char *) 0))
-    	cp++;
-    if (cp < inend) {
-    	suffix = cp;
-	suffixlen = inend - suffix;
-    }
+    suffix = argv[0].dsc$a_pointer;
+    suffixlen = argv[0].dsc$w_length;
 
     in = cp = argv[1].dsc$a_pointer;
     inend = in + argv[1].dsc$w_length;
