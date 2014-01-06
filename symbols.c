@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -106,9 +106,11 @@
 **					 stack.  Fixes issue #31.  Fix symbol
 **					 types, issue #33.
 **	22-FEB-2013 V3.3-12 Sneddon	Fix WORDS, issue #39.
+**	06-JAN-2014 V3.4    Sneddon	Reviewed whitespace processing of
+**					 all builtins.
 **--
 */
-#pragma module SYMBOLS "V3.3-12"
+#pragma module SYMBOLS "V3.4"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -1210,15 +1212,8 @@ static int apply_addprefix (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
-    in = cp = argv[0].dsc$a_pointer;
-    inend = in + argv[0].dsc$w_length;
-    while ((cp < inend)
-    	&& (strchr(WHITESPACE, *cp) != (char *) 0))
-    	cp++;
-    if (cp < inend) {
-    	prefix = cp;
-	prefixlen = inend - prefix;
-    }
+    prefix = argv[0].dsc$a_pointer;
+    prefixlen = argv[0].dsc$w_length;
 
     in = cp = argv[1].dsc$a_pointer;
     inend = in + argv[1].dsc$w_length;
