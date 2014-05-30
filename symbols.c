@@ -108,9 +108,10 @@
 **	22-FEB-2013 V3.3-12 Sneddon	Fix WORDS, issue #39.
 **	06-JAN-2014 V3.4    Sneddon	Reviewed whitespace processing of
 **					 all builtins.
+**	31-MAY-2014 V3.4-1  Sneddon	Further whitespace processing review.
 **--
 */
-#pragma module SYMBOLS "V3.4"
+#pragma module SYMBOLS "V3.4-1"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -2132,31 +2133,13 @@ static int apply_filter_out (int argc, struct dsc$descriptor *argv,
 static int apply_findstring (int argc, struct dsc$descriptor *argv,
 			     char **out, int *outlen) {
 
-    struct dsc$descriptor substr;
-    char *cp, *in, *inend;
-
     *out = 0;
     *outlen = 0;
 
-    INIT_SDESC(substr, 0, 0);
-    in = cp = argv[0].dsc$a_pointer;
-    inend = in + argv[0].dsc$w_length;
-    while (cp < inend) {
-    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
-    	    substr.dsc$a_pointer = cp;
-    	    while ((++cp < inend)
-    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
-    	    	;
-	    substr.dsc$w_length = cp - substr.dsc$a_pointer;
-    	}
-    	while ((++cp < inend)
-    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-    	    ;
-    }
-
-    if ((substr.dsc$w_length > 0) && (str$position(&argv[1], &substr) != 0)) {
-	*out = cat(0, substr.dsc$a_pointer, substr.dsc$w_length);
-	*outlen = substr.dsc$w_length;
+    if ((argv[0].dsc$w_length > 0)
+	&& (str$position(&argv[1], &argv[0]) != 0)) {
+	*out = cat(0, argv[0].dsc$a_pointer, argv[0].dsc$w_length);
+	*outlen = argv[0].dsc$w_length;
     }
 
     return 0;
