@@ -3,7 +3,7 @@
 **
 **  Version information #include file for the MMK Make Utility.
 **
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **
 **  All rights reserved.
 **
@@ -43,7 +43,7 @@
 #define MMK_MINOR_VERSION "0"
 #define MMK_REVISION      "0"
 #define MMK_COPYRIGHT   "Copyright (c) 2008, Matthew Madison.\r\n" \
-                        "    Copyright (c) 2013, Endless Software Solutions.\r\n" \
+                        "    Copyright (c) 2014, Endless Software Solutions.\r\n" \
                         "  See LICENSE.TXT in distribution kit for license information."
 
 #endif /* version_h__ */
