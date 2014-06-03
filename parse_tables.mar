@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.6'
+	.IDENT	'V2.7'
 ;++
 ;
 ; FACILITY: 	    MMK
@@ -14,7 +14,7 @@
 ; AUTHOR:   	    M. Madison
 ;
 ; Copyright (c) 2008, Matthew Madison.
-; Copyright (c) 2013, Endless Software Solutions.
+; Copyright (c) 2014, Endless Software Solutions.
 ; 
 ; All rights reserved.
 ; 
@@ -85,6 +85,8 @@
 ;   05-MAR-2013 V2.4    Sneddon	    Add support for '~=' immediate evaluation.
 ;   09-APR-2013 V2.5    Sneddon	    Correct INCLUDE.
 ;   01-MAY-2013 V2.6    Sneddon	    #68: Changed '!=' to '|=',.
+;   03-JUN-2014 V2.7    Sneddon	    #80: Changed symbol parser to cope with
+;                                   builtin functions.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -487,17 +489,27 @@ TILDE		= 126
 	$TRAN   !SYMBOL,TPA$_EXIT
 	$TRAN   TPA$_STRING,TPA$_EXIT
 
-	$STATE	SYMBOL
-	$TRAN	'$',SYMBOL1
-	$TRAN	'_',SYMBOL1
-	$TRAN	TPA$_ALPHA,SYMBOL1
-	$STATE	SYMBOL1
-	$TRAN	'$',SYMBOL1
-	$TRAN	'_',SYMBOL1
-	$TRAN	'.',SYMBOL1
-	$TRAN	TPA$_ALPHA,SYMBOL1
-	$TRAN	TPA$_DIGIT,SYMBOL1
-	$TRAN	TPA$_LAMBDA,TPA$_EXIT
+        $STATE  SYMBOL
+        $TRAN   !SYMREF,TPA$_EXIT
+        $TRAN   '$',SYMBOL1
+        $TRAN   '_',SYMBOL1
+        $TRAN   TPA$_ALPHA,SYMBOL1
+        $STATE  SYMBOL1
+        $TRAN   '$',SYMBOL1
+        $TRAN   '_',SYMBOL1
+        $TRAN   '.',SYMBOL1
+        $TRAN   TPA$_ALPHA,SYMBOL1
+        $TRAN   TPA$_DIGIT,SYMBOL1
+        $TRAN   TPA$_LAMBDA,TPA$_EXIT
+
+        $STATE  SYMREF
+        $TRAN   '$',SYMREF0
+        $STATE  SYMREF0
+        $TRAN   '('
+        $STATE  SYMREF1
+        $TRAN   ')',TPA$_EXIT
+        $TRAN   !SYMREF,SYMREF1
+        $TRAN   TPA$_ANY,SYMREF1
 
 	$STATE	QUOTED
 	$TRAN	'"',DQUOTE
