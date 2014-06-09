@@ -282,7 +282,7 @@ struct DEPEND *find_dependency (struct OBJECT *xobj, int fakeit) {
 */
     extract_filetype(ftype, xobj->name);
 
-    s = (ftype[0] == '\0') ? 0 : find_suffix(ftype);
+    s = (ftype[0] == '\0') ? 0 : find_suffix(ftype, -1);
 
     if (s != 0) {
 
@@ -556,7 +556,7 @@ static int needs_updating (struct DEPEND *dep, struct RULE **rule,
     if (!doit) return doit;
     *rule = (struct RULE *) 0;
     *srcref = (struct OBJREF *) 0;
-    sfx = find_suffix(tobj->sfx);
+    sfx = find_suffix(tobj->sfx, -1);
     if (sfx) {
     	struct OBJREF *o;
     	for (o = dep->sources.flink; o != &dep->sources; o = o->flink) {

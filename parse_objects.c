@@ -330,7 +330,7 @@ int parse_obj_store (struct TPABLK *tpa) {
     	if (obj->sfx[0] == '\0') {
     	    struct SFX *s;
     	    struct RULE *r;
-    	    s = find_suffix(libobj->sfx);
+    	    s = find_suffix(libobj->sfx, -1);
     	    if (s) {
     	    	for (s = s->flink; s != &suffixes; s = s->flink) {
     	    	    r = find_rule(libobj->sfx, s->value);
