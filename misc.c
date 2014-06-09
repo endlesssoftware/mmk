@@ -11,7 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -73,9 +73,10 @@
 **	02-JUL-2012 V1.12   Sneddon	Change find_char to find first out of
 **					a list of characters.
 **	29-AUG-2012 V1.13   Sneddon	Improve cat.
+**	09-JUN-2014 V1.14   Sneddon	Add length argument to find_suffix.
 **--
 */
-#pragma module MISC "V1.13"
+#pragma module MISC "V1.14"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -102,7 +103,7 @@
     int extract_nametype(char *, char *);
     static int split_path(char *, char *, unsigned int);
     int prefix_match(char *, char *);
-    struct SFX *find_suffix(char *);
+    struct SFX *find_suffix(char *, int);
     struct RULE *find_rule(char *, char *);
     struct RULE *find_rule_with_prefixes(struct OBJECT *, struct OBJECT *);
     struct RULE *scan_rule_list(struct RULE *, char *, int);
@@ -674,7 +675,7 @@ int prefix_match(char *pfx, char *fspec) {
 **
 **  PROTOTYPE:
 **
-**  	find_suffix(char *str)
+**  	find_suffix(char *str, int)
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -688,12 +689,13 @@ int prefix_match(char *pfx, char *fspec) {
 **
 **--
 */
-struct SFX *find_suffix (char *name) {
+struct SFX *find_suffix (char *name, int len) {
 
     struct SFX *sfx;
 
+    if (len == -1) len = strlen(name);
     for (sfx = suffixes.flink; sfx != &suffixes; sfx = sfx->flink) {
-    	if (strcmp(name, sfx->value) == 0) return sfx;
+    	if (strncmp(name, sfx->value, len) == 0) return sfx;
     }
 
     return (struct SFX *) 0;
@@ -916,7 +918,7 @@ struct RULE *scan_rule_list (struct RULE *base, char *target_name, int generaliz
     	    if (!check_cms && use_cms) {
     	    	strcpy(tmpsfx, r->src);
     	    	strcat(tmpsfx, "~");
-    	    	s = find_suffix(tmpsfx);
+    	    	s = find_suffix(tmpsfx, -1);
     	    	if (s != 0) {
     	    	    tmpr = find_rule(r->src, s->value);
     	    	    if (tmpr != 0) {

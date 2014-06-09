@@ -4,7 +4,7 @@
 **  Main #include file for the MMK Make utilty.
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -61,6 +61,7 @@
 **				 version.  Is based on WRK_C_INPBUFSIZ in
 **				 [DCL]DCLDEF.SDL (VMS source).
 **  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
+**  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -394,7 +395,7 @@ typedef POINTER SPHANDLE;
     int extract_filename(char *dest, char *src);
     int extract_nametype(char *dest, char *src);
     int prefix_match(char *pfx, char *fspec);
-    struct SFX * find_suffix(char *name);
+    struct SFX * find_suffix(char *name, int);
     struct RULE * find_rule(char *trg, char *src);
     struct RULE * find_rule_with_prefixes(struct OBJECT *trg, struct OBJECT *src);
     struct RULE * scan_rule_list(struct RULE *base, char *target_name, int generalize);
