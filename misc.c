@@ -74,9 +74,10 @@
 **					a list of characters.
 **	29-AUG-2012 V1.13   Sneddon	Improve cat.
 **	09-JUN-2014 V1.14   Sneddon	Add length argument to find_suffix.
+**	10-JUN-2014 V1.14-1 Sneddon	make find_suffix match case-insensitive
 **--
 */
-#pragma module MISC "V1.14"
+#pragma module MISC "V1.14-1"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -695,7 +696,7 @@ struct SFX *find_suffix (char *name, int len) {
 
     if (len == -1) len = strlen(name);
     for (sfx = suffixes.flink; sfx != &suffixes; sfx = sfx->flink) {
-    	if (strncmp(name, sfx->value, len) == 0) return sfx;
+    	if (strncasecmp(name, sfx->value, len) == 0) return sfx;
     }
 
     return (struct SFX *) 0;
