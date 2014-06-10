@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -98,9 +98,10 @@
 **					 assignment.
 **	01-MAY-2013 V2.6-1  Sneddon	#68: Updated all mention of '!=' to
 **					 be '|='.
+**	08-JUN-2014 V2.7    Sneddon     #82: Add support for .SUFFIXES_*
 **--
 */
-#pragma module PARSE_DESCRIP "V2.6-1"
+#pragma module PARSE_DESCRIP "V2.7"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -192,6 +193,9 @@
 #define PRS_K_SYM_APPEND    52
 #define PRS_K_SYM_DO	    53
 #define PRS_K_SYM_EVAL      54
+#define PRS_K_DIR_SFX_AFTER  55
+#define PRS_K_DIR_SFX_BEFORE 56
+#define PRS_K_DIR_SFX_DELETE 57
 
 /*
 ** .IFDEF context block.  Used for tracking when we're in and out
@@ -540,6 +544,9 @@ int parse_store (struct TPABLK *tpa) {
     	break;
 
     case PRS_K_DIR_SFX:
+    case PRS_K_DIR_SFX_AFTER:
+    case PRS_K_DIR_SFX_BEFORE:
+    case PRS_K_DIR_SFX_DELETE:
     case PRS_K_DIR_FIRST:
     case PRS_K_DIR_LAST:
     	current_dirtype = tpa->tpa0.tpa$l_param;
@@ -559,6 +566,40 @@ int parse_store (struct TPABLK *tpa) {
     	    } else Build_Suffix_List("", 0);
     	    current_dirtype = 0;
     	    break;
+        case PRS_K_DIR_SFX_DELETE:
+            if (tpa->tpa0.tpa$l_stringcnt > 0) {
+                char *sfx, *sfxend;
+                int sfxlen;
+
+                Resolve_Symbols((tpa->tpa_l_stringbase+
+                    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+                    tpa->tpa0.tpa$l_stringcnt, &sfx, &sfxlen, 0);
+
+                cp = sfx;
+                sfxend = sfx+(sfxlen-1);
+                while (cp < sfxend) {
+                    struct SFX *s;
+
+                    /*
+                    ** Skip leading whitespace and then count the following
+                    ** non-whitespace characters (the suffix).
+                    */
+                    while ((cp < sfxend) && isspace(*cp)) cp++;
+                    for (len = 0; (cp+len < sfxend) && !isspace(cp[len]); len++)
+    	    	    	;
+    	    	    if (len > 0) {
+    	    	    	s = find_suffix(cp, len);
+    	    	    	if (s != 0) {
+    	    	    	    queue_remove(s, &s);
+    	    	    	    mem_free_sfx(s);
+    	    	    	}
+    	    	    }
+    	    	    cp += len;
+                }
+                free(sfx);
+            } else Build_Suffix_List("", 0);
+            current_dirtype = 0;
+            break;
     	case PRS_K_DIR_FIRST:
     	    current_cmdque = (struct QUE *) &do_first;
     	    current_dirtype = 0;
