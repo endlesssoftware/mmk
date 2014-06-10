@@ -81,7 +81,7 @@ SYMBOLS.C                 Routines for managing the symbol tables.
 COPYRIGHT NOTICE
 
 Copyright (c) 2008, Matthew Madison.
-Copyright (c) 2013, Endless Software Solutions.
+Copyright (c) 2014, Endless Software Solutions.
 
 All rights reserved.
 
