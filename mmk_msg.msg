@@ -1,6 +1,6 @@
 .TITLE		MMK_MSG
 .FACILITY	MMK,1044/PREFIX=MMK__
-.IDENT		"V1.16"
+.IDENT		"V1.16-1"
 !++
 !
 ! DESCRIPTION:
@@ -37,6 +37,7 @@
 !   28-AUG-2012 V1.15   Sneddon	    Add UNRFUN. Fixup ERROR, INFO, WARN.
 !   03-SEP-2012 V1.15-1 Sneddon	    Change UTLBADMAC to remove line number.
 !   10-JUN-2014 V1.16   Sneddon	    Add NOTINSUFFLST, ALRINSUFFLST, NOSUFFLST.
+!   12-JUN-2014 V1.16-1 Sneddon     Fixed FAO string directives for above.
 !--
 
 .SEVERITY   	FATAL
@@ -109,8 +110,8 @@ UTLBADMAC	<unterminated macro named '!AZ'>/FAO=1
 UNRFUN		<unrecognized function '!AZ'>/FAO=1
 
 .SEVERITY	INFORMATIONAL
-ALRINSUFFLST	<Type '!AS' is already in suffixes precedence list>/FAO=1
-NOSUFFLST	<!AS directive does not specify two or more types>/FAO=1
-NOTINSUFFLST	<Type '!AS' is not in suffixes precedence list>/FAO=1
+ALRINSUFFLST	<Type '!AD' is already in suffixes precedence list>/FAO=1
+NOSUFFLST	<!AZ directive does not specify two or more types>/FAO=1
+NOTINSUFFLST	<Type '!AD' is not in suffixes precedence list>/FAO=1
 
 .END
