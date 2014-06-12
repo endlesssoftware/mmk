@@ -62,6 +62,7 @@
 **				 [DCL]DCLDEF.SDL (VMS source).
 **  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
 **  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
+**  09-JUN-2014	    Sneddon	Add create_suffix.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -395,7 +396,8 @@ typedef POINTER SPHANDLE;
     int extract_filename(char *dest, char *src);
     int extract_nametype(char *dest, char *src);
     int prefix_match(char *pfx, char *fspec);
-    struct SFX * find_suffix(char *name, int);
+    struct SFX * find_suffix(char *name, int len);
+    int create_suffix(char *name, int len, struct SFX *pos);
     struct RULE * find_rule(char *trg, char *src);
     struct RULE * find_rule_with_prefixes(struct OBJECT *trg, struct OBJECT *src);
     struct RULE * scan_rule_list(struct RULE *base, char *target_name, int generalize);
