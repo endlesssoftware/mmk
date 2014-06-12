@@ -75,9 +75,10 @@
 **	29-AUG-2012 V1.13   Sneddon	Improve cat.
 **	09-JUN-2014 V1.14   Sneddon	Add length argument to find_suffix.
 **	10-JUN-2014 V1.14-1 Sneddon	make find_suffix match case-insensitive
+**	12-JUN-2014 V1.15   Sneddon	Add create_suffix.
 **--
 */
-#pragma module MISC "V1.14-1"
+#pragma module MISC "V1.15"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -104,6 +105,7 @@
     int extract_nametype(char *, char *);
     static int split_path(char *, char *, unsigned int);
     int prefix_match(char *, char *);
+    int create_suffix(char *, int, struct SFX *);
     struct SFX *find_suffix(char *, int);
     struct RULE *find_rule(char *, char *);
     struct RULE *find_rule_with_prefixes(struct OBJECT *, struct OBJECT *);
@@ -154,7 +156,7 @@
 void Build_Suffix_List (char *line, int linelen) {
 
     struct SFX *sfx;
-    char *lp, *lpmax;
+    char *lp, *lpmax, *sp;
     int i;
 
     if (linelen == 0) {
@@ -167,15 +169,18 @@ void Build_Suffix_List (char *line, int linelen) {
     while (1) {
     	while (lp < lpmax && isspace(*lp)) lp++;
     	if (lp >= lpmax) break;
-    	sfx = mem_get_sfx();
-    	i = 0;
-    	while (lp < lpmax && !isspace(*lp)) {
-    	    if (i < MMK_S_SFX-1)
-    	    	sfx->value[i++] = islower(*lp) ? toupper(*lp) : *lp;
-    	    lp++;
-    	}
-    	sfx->value[i] = '\0';
-    	queue_insert(sfx, suffixes.blink);
+   	sp = lp;
+    	while (lp < lpmax && !isspace(*lp)) lp++;
+    	/*
+    	** The behaviour here is different from .SUFFIXES_AFTER and
+    	** .SUFFIXES_BEFORE to retain compatibility with previous versions
+    	** of MMK.  However, beware that if the suffix is already in the
+    	** list, it will NOT be appended to the end as in previous versions.
+   	** However, that said the functionality will not change as the list 
+    	** is scanned from suffixes.flink, so duplicate entries will never
+    	** be reached anyway.
+    	*/
+    	create_suffix(sp, lp-sp, suffixes.blink);
     }
 }
 
@@ -663,6 +668,49 @@ int prefix_match(char *pfx, char *fspec) {
     return strneql_case_blind(tmp, pfx, len);
 
 } /* prefix_match */
+
+/*
+**++
+**  ROUTINE:	create_suffix
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Create a suffix in the suffix queue (at the specified position).
+**
+**  RETURNS:	longword status code
+**
+**  PROTOTYPE:
+**
+**  	create_suffix(char *str, int, struct SFX *)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    1:	suffix was inserted into the queue.
+**  	    0:  suffix already exists.
+**
+**  SIDE EFFECTS:   	None.
+**--
+*/
+int create_suffix (char *name, int len, struct SFX *pos) {
+    struct SFX *sfx;
+
+    if (len == -1) len = strlen(name);
+    len = len > MMK_S_SFX ? MMK_S_SFX : len;
+
+    sfx = find_suffix(name, len);
+    if (sfx != 0) return 0;
+
+    sfx = mem_get_sfx();
+    memcpy(sfx->value, name, len);
+    sfx->value[len] = '\0';
+    upcase(sfx->value);
+    queue_insert(sfx, pos);
+
+    return 1;
+}
 
 /*
 **++
