@@ -75,7 +75,8 @@
 **	29-AUG-2012 V1.13   Sneddon	Improve cat.
 **	09-JUN-2014 V1.14   Sneddon	Add length argument to find_suffix.
 **	10-JUN-2014 V1.14-1 Sneddon	make find_suffix match case-insensitive
-**	12-JUN-2014 V1.15   Sneddon	Add create_suffix.
+**	12-JUN-2014 V1.15   Sneddon	Add create_suffix. Fix find_suffix to
+**					match length before compare.
 **--
 */
 #pragma module MISC "V1.15"
@@ -744,7 +745,10 @@ struct SFX *find_suffix (char *name, int len) {
 
     if (len == -1) len = strlen(name);
     for (sfx = suffixes.flink; sfx != &suffixes; sfx = sfx->flink) {
-    	if (strncasecmp(name, sfx->value, len) == 0) return sfx;
+        if ((len == strlen(sfx->value))
+            && (strncasecmp(name, sfx->value, len) == 0)) {
+            return sfx;
+        }
     }
 
     return (struct SFX *) 0;
