@@ -162,28 +162,28 @@ void Build_Suffix_List (char *line, int linelen) {
 
     if (linelen == 0) {
     	while (queue_remove(suffixes.flink, &sfx)) mem_free_sfx(sfx);
-    	return;
+    } else {
+    	lp = line;
+    	lpmax = line+linelen;
+    	while (1) {
+    	    while (lp < lpmax && isspace(*lp)) lp++;
+    	    if (lp >= lpmax) break;
+    	    sp = lp;
+    	    while (lp < lpmax && !isspace(*lp)) lp++;
+    	    /*
+    	    ** The behaviour here is different from .SUFFIXES_AFTER and
+    	    ** .SUFFIXES_BEFORE to retain compatibility with previous versions
+    	    ** of MMK.  However, beware that if the suffix is already in the
+    	    ** list, it will NOT be appended to the end as in previous
+   	    ** versions.  However, that said the functionality will not change
+    	    ** as the list is scanned from suffixes.flink, so duplicate
+    	    ** entries will never be reached anyway.
+    	    */
+    	    create_suffix(sp, lp-sp, suffixes.blink);
+    	}
     }
-
-    lp = line;
-    lpmax = line+linelen;
-    while (1) {
-    	while (lp < lpmax && isspace(*lp)) lp++;
-    	if (lp >= lpmax) break;
-   	sp = lp;
-    	while (lp < lpmax && !isspace(*lp)) lp++;
-    	/*
-    	** The behaviour here is different from .SUFFIXES_AFTER and
-    	** .SUFFIXES_BEFORE to retain compatibility with previous versions
-    	** of MMK.  However, beware that if the suffix is already in the
-    	** list, it will NOT be appended to the end as in previous versions.
-   	** However, that said the functionality will not change as the list 
-    	** is scanned from suffixes.flink, so duplicate entries will never
-    	** be reached anyway.
-    	*/
-    	create_suffix(sp, lp-sp, suffixes.blink);
-    }
-}
+    set_mmssuffixes();
+} /* Build_Suffix_List */
 
 /*
 **++
