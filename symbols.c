@@ -109,9 +109,10 @@
 **	06-JAN-2014 V3.4    Sneddon	Reviewed whitespace processing of
 **					 all builtins.
 **	31-MAY-2014 V3.4-1  Sneddon	Further whitespace processing review.
+**	31-MAY-2014 V3.5    Sneddon	Add set_mmssuffixes.
 **--
 */
-#pragma module SYMBOLS "V3.4-1"
+#pragma module SYMBOLS "V3.5"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -152,6 +153,7 @@
     int Resolve_Symbols(char *, int, char **, int *, int);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
+    void set_mmssuffixes(void);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
@@ -849,6 +851,43 @@ void Create_Local_Symbols (struct DEPEND *dep, struct OBJREF *srcref, struct QUE
 
 
 } /* Create_Local_Symbols */
+
+/*
+**++
+**  ROUTINE:	set_mmssuffixes
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Define the value for MMSSUFFIXES.
+**
+**  RETURNS:	void
+**
+**  PROTOTYPE:
+**
+**      set_mmssuffixes(void)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+void set_mmssuffixes (void) {
+    static char mmssuffixes[] = "MMSSUFFIXES";
+    struct SFX *sfx;
+
+    Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, "", 0);
+    for (sfx = suffixes.flink; sfx != (struct SFX *) &suffixes;
+    	 sfx = sfx->flink) {
+    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value,
+    	    	      strlen(sfx->value), 1);
+    }
+
+} /* set_mmssuffixes */
 
 /*
 **++
