@@ -656,8 +656,7 @@ unsigned int main (void) {
 	    targetent->name = strdup(target);
 	    queue_insert(targetent, targetque.blink);
 
-    	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1,
-   	    	    	  (status == SS$_NORMAL) ? "" : ",");
+    	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, ",");
 	} while (status != SS$_NORMAL);
     } else {
 	target[0] = '\0';
