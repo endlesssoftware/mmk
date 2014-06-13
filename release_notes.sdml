@@ -51,7 +51,7 @@ directives listed in <reference>(sfxdir).
                             file type.)
 <table_row>(.SUFFIXES_DELETE\Removes a list of files types from the suffix
                              precedence list.)
-<end_table>
+<endtable>
 
 <note>
 These directives will produce informational messages, similar to MMS, for
