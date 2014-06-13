@@ -566,37 +566,97 @@ int parse_store (struct TPABLK *tpa) {
     	    } else Build_Suffix_List("", 0);
     	    current_dirtype = 0;
     	    break;
-        case PRS_K_DIR_SFX_DELETE:
+        case PRS_K_DIR_SFX_AFTER:
+        case PRS_K_DIR_SFX_BEFORE:
             if (tpa->tpa0.tpa$l_stringcnt > 0) {
-                char *sfx, *sfxend;
-                int sfxlen;
+                char *rhs, *rhsend;
+                int rhslen;
 
                 Resolve_Symbols((tpa->tpa_l_stringbase+
                     (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
-                    tpa->tpa0.tpa$l_stringcnt, &sfx, &sfxlen, 0);
+                    tpa->tpa0.tpa$l_stringcnt, &rhs, &rhslen, 0);
 
-                cp = sfx;
-                sfxend = sfx+(sfxlen-1);
-                while (cp < sfxend) {
-                    struct SFX *s;
+                cp = rhs;
+                rhsend = rhs+(rhslen-1);
+
+                /*
+                ** Skip leading whitespace and then count the following
+                ** non-whitespace characters (the suffix).
+                */
+                while ((cp <= rhsend) && isspace(*cp)) cp++;
+                for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]); len++)
+    	    	    ;
+		if (len == 0) {
+    	    	    lib$signal(MMK__NOSUFFLST, 1,
+    	    	    	       (current_dirtype == PRS_K_DIR_SFX_AFTER) ?
+    	    	    	    	   ".SUFFIXES_AFTER" : ".SUFFIXES_BEFORE");
+    	    	} else {
+    	    	    struct SFX *sfx;
+
+    	    	    sfx = find_suffix(cp, len);
+    	    	    if (sfx == 0) {
+    	    	    	lib$signal(MMK__NOTINSUFFLST, 2, len, cp);
+    	    	    	sfx = &suffixes;
+    	    	    } else {
+    	    	    	if (current_dirtype == PRS_K_DIR_SFX_BEFORE)
+    	    	    	    sfx = sfx->flink;
+    	    	    }
+
+    	    	    cp += len;
+                    while (cp <= rhsend) {
+                    	while ((cp <= rhsend) && isspace(*cp)) cp++;
+                    	for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]);
+    	    	    	    	len++)
+    	    	    	    ;
+    	    	    	if (len > 0) {
+    	    	    	    if (create_suffix(cp, len, sfx->blink) == 0)
+    	    	    	    	lib$signal(MMK__ALRINSUFFLST, 2, len, cp);
+    	    	    	}
+	    	    	cp += len;
+    	    	    }
+                }
+                free(rhs);
+    	    	set_mmssuffixes();
+            } else {
+    	    	lib$signal(MMK__NOSUFFLST, 1,
+    	    	    	   (current_dirtype == PRS_K_DIR_SFX_AFTER) ?
+    	    	    	       ".SUFFIXES_AFTER" : ".SUFFIXES_BEFORE");
+    	    }
+            current_dirtype = 0;
+            break;
+        case PRS_K_DIR_SFX_DELETE:
+            if (tpa->tpa0.tpa$l_stringcnt > 0) {
+                char *rhs, *rhsend;
+                int rhslen;
+
+                Resolve_Symbols((tpa->tpa_l_stringbase+
+                    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+                    tpa->tpa0.tpa$l_stringcnt, &rhs, &rhslen, 0);
+
+                cp = rhs;
+                rhsend = rhs+(rhslen-1);
+                while (cp <= rhsend) {
+                    struct SFX *sfx;
 
                     /*
                     ** Skip leading whitespace and then count the following
                     ** non-whitespace characters (the suffix).
                     */
-                    while ((cp < sfxend) && isspace(*cp)) cp++;
-                    for (len = 0; (cp+len < sfxend) && !isspace(cp[len]); len++)
+                    while ((cp <= rhsend) && isspace(*cp)) cp++;
+                    for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]);
+    	    	    	    len++)
     	    	    	;
     	    	    if (len > 0) {
-    	    	    	s = find_suffix(cp, len);
-    	    	    	if (s != 0) {
-    	    	    	    queue_remove(s, &s);
-    	    	    	    mem_free_sfx(s);
+    	    	    	sfx = find_suffix(cp, len);
+    	    	    	if (sfx != 0) {
+    	    	    	    queue_remove(sfx, &sfx);
+    	    	    	    mem_free_sfx(sfx);
     	    	    	}
     	    	    }
     	    	    cp += len;
                 }
-                free(sfx);
+                free(rhs);
+    	    	set_mmssuffixes();
             } else Build_Suffix_List("", 0);
             current_dirtype = 0;
             break;
