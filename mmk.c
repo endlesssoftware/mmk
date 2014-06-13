@@ -153,6 +153,7 @@
 **	01-MAY-2013 V5.2-1  Sneddon	#66: Targets inserted into wrong end
 **					 of queue.
 **    	13-JUN-2014 V5.3    Sneddon     Changes for new Define_Symbol args.
+**                                      Define MMSSUFFIXES before parsing.
 **--
 */
 #include "version.h"
@@ -682,6 +683,8 @@ unsigned int main (void) {
     Define_Symbol(MMK_K_SYM_DESCRIP,
     	    	   "MMS", (noaction ? "MMK/NOACTION" : "MMK"),
                           (noaction ? 12             : 3));
+
+    set_mmssuffixes();
 
 /*
 ** Now that all the dependencies are defined, we can do the build.
