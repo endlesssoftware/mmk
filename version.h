@@ -38,9 +38,9 @@
 #ifndef version_h__
 #define version_h__
 
-#define MMK_VERSION       "V5.0"
+#define MMK_VERSION       "V5.1"
 #define MMK_MAJOR_VERSION "5"
-#define MMK_MINOR_VERSION "0"
+#define MMK_MINOR_VERSION "1"
 #define MMK_REVISION      "0"
 #define MMK_COPYRIGHT   "Copyright (c) 2008, Matthew Madison.\r\n" \
                         "    Copyright (c) 2014, Endless Software Solutions.\r\n" \
