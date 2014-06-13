@@ -889,11 +889,11 @@ void set_mmssuffixes (void) {
     static char mmssuffixes[] = "MMSSUFFIXES";
     struct SFX *sfx;
 
-    Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, "", 0);
-    for (sfx = suffixes.flink; sfx != (struct SFX *) &suffixes;
-    	 sfx = sfx->flink) {
-    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value,
-    	    	      strlen(sfx->value), 1);
+    sfx = suffixes.flink;
+    while (sfx != (struct SFX *) &suffixes) {
+    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value, -1,
+    	    	      (sfx->flink != (struct SFX *) &suffixes) ? " " : "");
+    	sfx = sfx->flink;
     }
 
 } /* set_mmssuffixes */

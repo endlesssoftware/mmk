@@ -99,6 +99,7 @@
 **	01-MAY-2013 V2.6-1  Sneddon	#68: Updated all mention of '!=' to
 **					 be '|='.
 **	08-JUN-2014 V2.7    Sneddon     #82: Add support for .SUFFIXES_*
+**  	13-JUN-2014 V2.8    Sneddon	Changes to Define_Symbol args.
 **--
 */
 #pragma module PARSE_DESCRIP "V2.7"
@@ -333,8 +334,8 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
 */
 int parse_store (struct TPABLK *tpa) {
 
-    int append = 0, len, i, do_it;
-    char *cp, *cp1, *vl_cp;
+    int len, i, do_it;
+    char *append = 0, *cp, *cp1, *vl_cp;
     int vl_sb, vl_tp, vl_ub;
     struct SYMBOL *s;
     unsigned int status;
@@ -902,7 +903,7 @@ int parse_store (struct TPABLK *tpa) {
     	    break;
 	}
     case PRS_K_SYM_APPEND:
-	if (tpa->tpa0.tpa$l_param == PRS_K_SYM_APPEND) append = 1;
+	if (tpa->tpa0.tpa$l_param == PRS_K_SYM_APPEND) append = "";
     case PRS_K_SYM_VALUE:
     	if (tpa->tpa0.tpa$l_stringcnt == 0) {
     	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, "", 0, append);
@@ -951,7 +952,7 @@ int parse_store (struct TPABLK *tpa) {
 	sp_once(&cmd, sym_do_actrtn, &result);
 
 	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name,
-			result.dsc$a_pointer, result.dsc$w_length, 0);
+			result.dsc$a_pointer, result.dsc$w_length);
 
 	str$free1_dx(&result);
 	free(cp);
@@ -964,7 +965,7 @@ int parse_store (struct TPABLK *tpa) {
 	Resolve_Symbols((tpa->tpa_l_stringbase+
     	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
     	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 0);
-	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len);
 	free(cp);
     	just_did_rule = 0;
     	break;
