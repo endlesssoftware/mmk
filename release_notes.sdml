@@ -41,7 +41,7 @@ This chapter notes the changes that were made in MMK V5.1.
 directives listed in <reference>(sfxdir).
 
 <table>(New Suffix List Directives\sfxdir)
-<table_setup>(10)
+<table_setup>(2\10)
 <table_heads>(Directive\Description)
 <table_row>(.SUFFIXES_BEFORE\Inserts a list of file types in the suffixes
                              precedence list before the specified first

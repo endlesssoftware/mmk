@@ -338,7 +338,7 @@ with your own suffixes by using the directives listed in <reference>(sfxdir)
 in a rules file or a makefile.
 
 <table>(Suffix List Directives\sfxdir)
-<table_setup>(10)
+<table_setup>(2\10)
 <table_heads>(Directive\Description)
 <table_row>(.SUFFIXES\Specify no file types to clear the list or append file
                       types to the end of the suffix list)
@@ -350,7 +350,7 @@ in a rules file or a makefile.
 			    file type.)
 <table_row>(.SUFFIXES_DELETE\Removes a list of files types from the suffix
 			     precedence list.)
-<end_table>
+<endtable>
 
 <P>For example, let's say you have a Modula-2 compiler on your system, whose
 source files have a file type (suffix) of .MOD. MMK has no built-in inference
