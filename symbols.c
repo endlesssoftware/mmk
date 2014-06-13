@@ -376,8 +376,8 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 
     struct SYMBOL *sym;
     struct QUE    *symq;
-    char upname[MMK_S_SYMBOL+1];
-    unsigned char *cp, *sep = 0;
+    char *sep = 0, upname[MMK_S_SYMBOL+1];
+    unsigned char *cp;
     unsigned int hash_value;
     int actualcount, i;
     va_list ap;
