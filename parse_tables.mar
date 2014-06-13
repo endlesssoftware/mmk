@@ -1,5 +1,5 @@
 	.TITLE	PARSE_TABLES - TPARSE tables for MMK description file parser
-	.IDENT	'V2.7'
+	.IDENT	'V2.8'
 ;++
 ;
 ; FACILITY: 	    MMK
@@ -87,6 +87,7 @@
 ;   01-MAY-2013 V2.6    Sneddon	    #68: Changed '!=' to '|=',.
 ;   03-JUN-2014 V2.7    Sneddon	    #80: Changed symbol parser to cope with
 ;                                   builtin functions.
+;   08-JUN-2014 V2.8    Sneddon	    #82: Add support for .SUFFIXES_*.
 ;--
 
 	.EXTRN	PARSE_STORE
@@ -161,6 +162,9 @@ PRS_K_SYM_DEFINED = 51
 PRS_K_SYM_APPEND  = 52
 PRS_K_SYM_DO	  = 53
 PRS_K_SYM_EVAL    = 54
+PRS_K_DIR_SFX_AFTER  = 55
+PRS_K_DIR_SFX_BEFORE = 56
+PRS_K_DIR_SFX_DELETE = 57
 
 ; Transition codes used with routine PARSE_OBJECTS.  Must match the
 ; corresponding definitions in that module.
@@ -275,6 +279,9 @@ TILDE		= 126
 
 	$STATE
 	$TRAN	'SUFFIXES',DIR1,PRS_STORE,,,PRS_K_DIR_SFX
+	$TRAN	'SUFFIXES_AFTER',DIR1,PRS_STORE,,,PRS_K_DIR_SFX_AFTER
+	$TRAN	'SUFFIXES_BEFORE',DIR1,PRS_STORE,,,PRS_K_DIR_SFX_BEFORE
+	$TRAN	'SUFFIXES_DELETE',DIR1,PRS_STORE,,,PRS_K_DIR_SFX_DELETE
 	$TRAN	'FIRST',DIR1,PRS_STORE,,,PRS_K_DIR_FIRST
 	$TRAN	'LAST',DIR1,PRS_STORE,,,PRS_K_DIR_LAST
 	$TRAN	'BUILTIN',TPA$_EXIT,PRS_STORE,,,PRS_K_DIR_BUILTIN

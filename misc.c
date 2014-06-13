@@ -11,7 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2012, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -73,9 +73,13 @@
 **	02-JUL-2012 V1.12   Sneddon	Change find_char to find first out of
 **					a list of characters.
 **	29-AUG-2012 V1.13   Sneddon	Improve cat.
+**	09-JUN-2014 V1.14   Sneddon	Add length argument to find_suffix.
+**	10-JUN-2014 V1.14-1 Sneddon	make find_suffix match case-insensitive
+**	12-JUN-2014 V1.15   Sneddon	Add create_suffix. Fix find_suffix to
+**					match length before compare.
 **--
 */
-#pragma module MISC "V1.13"
+#pragma module MISC "V1.15"
 #include "mmk.h"
 #include "globals.h"
 #include <lnmdef.h>
@@ -102,7 +106,8 @@
     int extract_nametype(char *, char *);
     static int split_path(char *, char *, unsigned int);
     int prefix_match(char *, char *);
-    struct SFX *find_suffix(char *);
+    int create_suffix(char *, int, struct SFX *);
+    struct SFX *find_suffix(char *, int);
     struct RULE *find_rule(char *, char *);
     struct RULE *find_rule_with_prefixes(struct OBJECT *, struct OBJECT *);
     struct RULE *scan_rule_list(struct RULE *, char *, int);
@@ -152,30 +157,33 @@
 void Build_Suffix_List (char *line, int linelen) {
 
     struct SFX *sfx;
-    char *lp, *lpmax;
+    char *lp, *lpmax, *sp;
     int i;
 
     if (linelen == 0) {
     	while (queue_remove(suffixes.flink, &sfx)) mem_free_sfx(sfx);
-    	return;
-    }
-
-    lp = line;
-    lpmax = line+linelen;
-    while (1) {
-    	while (lp < lpmax && isspace(*lp)) lp++;
-    	if (lp >= lpmax) break;
-    	sfx = mem_get_sfx();
-    	i = 0;
-    	while (lp < lpmax && !isspace(*lp)) {
-    	    if (i < MMK_S_SFX-1)
-    	    	sfx->value[i++] = islower(*lp) ? toupper(*lp) : *lp;
-    	    lp++;
+    } else {
+    	lp = line;
+    	lpmax = line+linelen;
+    	while (1) {
+    	    while (lp < lpmax && isspace(*lp)) lp++;
+    	    if (lp >= lpmax) break;
+    	    sp = lp;
+    	    while (lp < lpmax && !isspace(*lp)) lp++;
+    	    /*
+    	    ** The behaviour here is different from .SUFFIXES_AFTER and
+    	    ** .SUFFIXES_BEFORE to retain compatibility with previous versions
+    	    ** of MMK.  However, beware that if the suffix is already in the
+    	    ** list, it will NOT be appended to the end as in previous
+   	    ** versions.  However, that said the functionality will not change
+    	    ** as the list is scanned from suffixes.flink, so duplicate
+    	    ** entries will never be reached anyway.
+    	    */
+    	    create_suffix(sp, lp-sp, suffixes.blink);
     	}
-    	sfx->value[i] = '\0';
-    	queue_insert(sfx, suffixes.blink);
     }
-}
+    set_mmssuffixes();
+} /* Build_Suffix_List */
 
 /*
 **++
@@ -664,6 +672,49 @@ int prefix_match(char *pfx, char *fspec) {
 
 /*
 **++
+**  ROUTINE:	create_suffix
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Create a suffix in the suffix queue (at the specified position).
+**
+**  RETURNS:	longword status code
+**
+**  PROTOTYPE:
+**
+**  	create_suffix(char *str, int, struct SFX *)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**  	    1:	suffix was inserted into the queue.
+**  	    0:  suffix already exists.
+**
+**  SIDE EFFECTS:   	None.
+**--
+*/
+int create_suffix (char *name, int len, struct SFX *pos) {
+    struct SFX *sfx;
+
+    if (len == -1) len = strlen(name);
+    len = len > MMK_S_SFX ? MMK_S_SFX : len;
+
+    sfx = find_suffix(name, len);
+    if (sfx != 0) return 0;
+
+    sfx = mem_get_sfx();
+    memcpy(sfx->value, name, len);
+    sfx->value[len] = '\0';
+    upcase(sfx->value);
+    queue_insert(sfx, pos);
+
+    return 1;
+}
+
+/*
+**++
 **  ROUTINE:	find_suffix
 **
 **  FUNCTIONAL DESCRIPTION:
@@ -674,7 +725,7 @@ int prefix_match(char *pfx, char *fspec) {
 **
 **  PROTOTYPE:
 **
-**  	find_suffix(char *str)
+**  	find_suffix(char *str, int)
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -688,12 +739,16 @@ int prefix_match(char *pfx, char *fspec) {
 **
 **--
 */
-struct SFX *find_suffix (char *name) {
+struct SFX *find_suffix (char *name, int len) {
 
     struct SFX *sfx;
 
+    if (len == -1) len = strlen(name);
     for (sfx = suffixes.flink; sfx != &suffixes; sfx = sfx->flink) {
-    	if (strcmp(name, sfx->value) == 0) return sfx;
+        if ((len == strlen(sfx->value))
+            && (strncasecmp(name, sfx->value, len) == 0)) {
+            return sfx;
+        }
     }
 
     return (struct SFX *) 0;
@@ -916,7 +971,7 @@ struct RULE *scan_rule_list (struct RULE *base, char *target_name, int generaliz
     	    if (!check_cms && use_cms) {
     	    	strcpy(tmpsfx, r->src);
     	    	strcat(tmpsfx, "~");
-    	    	s = find_suffix(tmpsfx);
+    	    	s = find_suffix(tmpsfx, -1);
     	    	if (s != 0) {
     	    	    tmpr = find_rule(r->src, s->value);
     	    	    if (tmpr != 0) {

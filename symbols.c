@@ -109,9 +109,12 @@
 **	06-JAN-2014 V3.4    Sneddon	Reviewed whitespace processing of
 **					 all builtins.
 **	31-MAY-2014 V3.4-1  Sneddon	Further whitespace processing review.
+**	12-JUN-2014 V3.5    Sneddon	Add set_mmssuffixes.
+**	13-JUN-2014 V3.6    Sneddon	Changed how append works for the
+**                                      routine Define_Symbol.
 **--
 */
-#pragma module SYMBOLS "V3.4-1"
+#pragma module SYMBOLS "V3.6"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -152,6 +155,7 @@
     int Resolve_Symbols(char *, int, char **, int *, int);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
+    void set_mmssuffixes(void);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
@@ -346,11 +350,17 @@ struct SYMBOL *Lookup_Symbol (char *name) {
 **  	Creates or re-defines a symbol in the global symbol
 **  	table.
 **
+**  	The fifth (and optional) argument controls whether val is appended
+**  	to the existing symbol value or not.  If present, and non-zero, the
+**  	fifth argument is a pointer to a separator string (use the string ""
+**  	for no separator).  A 0 pointer indicates that val should replace
+**  	the symbols value.
+**
 **  RETURNS:	void
 **
 **  PROTOTYPE:
 **
-**  	Define_Symbol(SYMTYPE symtype, char *name, char *val, int vallen)
+**  	Define_Symbol(SYMTYPE symtype, char *name, char *val, int vallen, ...)
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -366,17 +376,17 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 
     struct SYMBOL *sym;
     struct QUE    *symq;
-    char upname[MMK_S_SYMBOL+1];
+    char *sep = 0, upname[MMK_S_SYMBOL+1];
     unsigned char *cp;
     unsigned int hash_value;
-    int actualcount, append = 0, i;
+    int actualcount, i;
     va_list ap;
 
     va_count(actualcount);
     if (actualcount > 4) {
-	va_start(ap, vallen);
-	append = va_arg(ap, int);
-	va_end(ap);
+    	va_start(ap, vallen);
+    	sep = va_arg(ap, char *);
+    	va_end(ap);
     }
 
     strcpy(upname, name);
@@ -418,7 +428,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     	strcpy(sym->name, upname);
     	queue_insert(sym, symq->tail);
     } else {
-	if (!append) {
+	if (sep == 0) {
     	    free(sym->value);
 	    sym->value = 0;
 	}
@@ -427,8 +437,9 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 
     if (vallen < 0) vallen = strlen(val);
     if (sym->value) {
-	vallen += strlen(sym->value);
+	vallen += strlen(sym->value) + strlen(sep);
 	sym->value = realloc(sym->value, vallen+1);
+    	if (sep != 0) strcat(sym->value, sep);
     } else {
 	sym->value = malloc(vallen+1);
 	sym->value[0] = '\0';
@@ -849,6 +860,43 @@ void Create_Local_Symbols (struct DEPEND *dep, struct OBJREF *srcref, struct QUE
 
 
 } /* Create_Local_Symbols */
+
+/*
+**++
+**  ROUTINE:	set_mmssuffixes
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**	Define the value for MMSSUFFIXES.
+**
+**  RETURNS:	void
+**
+**  PROTOTYPE:
+**
+**      set_mmssuffixes(void)
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:	None.
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+void set_mmssuffixes (void) {
+    static char mmssuffixes[] = "MMSSUFFIXES";
+    struct SFX *sfx;
+
+    Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, "", 0);
+    sfx = suffixes.flink;
+    while (sfx != (struct SFX *) &suffixes) {
+    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value, -1, " ");
+    	sfx = sfx->flink;
+    }
+
+} /* set_mmssuffixes */
 
 /*
 **++

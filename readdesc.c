@@ -462,7 +462,7 @@ static void Fill_In_Missing_Sources (void) {
             continue;
     	if (dep->cmdqptr != 0 && dep->cmdqptr->flink != dep->cmdqptr)
             continue;
-        s = find_suffix(dep->target->sfx);
+        s = find_suffix(dep->target->sfx, -1);
         if (s != 0)
             Find_Usable_Object(s, dep);
     }

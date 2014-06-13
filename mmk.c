@@ -11,7 +11,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -152,6 +152,8 @@
 **					 line if DCL hasn't done it already.
 **	01-MAY-2013 V5.2-1  Sneddon	#66: Targets inserted into wrong end
 **					 of queue.
+**    	13-JUN-2014 V5.3    Sneddon     Changes for new Define_Symbol args.
+**                                      Define MMSSUFFIXES before parsing.
 **--
 */
 #include "version.h"
@@ -648,17 +650,15 @@ unsigned int main (void) {
 */
     status = cli_present("TARGET");
     if (status == CLI$_PRESENT) {
-	cli_get_value("TARGET", target, sizeof(target));
-	while (1) {
-	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, 1);
+    	do {
+    	    status = cli_get_value("TARGET", target, sizeof(target));
 
 	    targetent = malloc(sizeof(struct TARGET));
 	    targetent->name = strdup(target);
 	    queue_insert(targetent, targetque.blink);
 
-	    if (!OK(cli_get_value("TARGET", target, sizeof(target)))) break;
-	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", ",", 1, 1);
-	}
+    	    Define_Symbol(MMK_K_SYM_BUILTIN, "MMSTARGETS", target, -1, ",");
+	} while (status != SS$_NORMAL);
     } else {
 	target[0] = '\0';
 	targetque.name = target;
@@ -683,6 +683,8 @@ unsigned int main (void) {
     Define_Symbol(MMK_K_SYM_DESCRIP,
     	    	   "MMS", (noaction ? "MMK/NOACTION" : "MMK"),
                           (noaction ? 12             : 3));
+
+    set_mmssuffixes();
 
 /*
 ** Now that all the dependencies are defined, we can do the build.

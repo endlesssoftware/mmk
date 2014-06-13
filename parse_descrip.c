@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2013, Endless Software Solutions.
+**  Copyright (c) 2014, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -98,9 +98,11 @@
 **					 assignment.
 **	01-MAY-2013 V2.6-1  Sneddon	#68: Updated all mention of '!=' to
 **					 be '|='.
+**	08-JUN-2014 V2.7    Sneddon     #82: Add support for .SUFFIXES_*
+**  	13-JUN-2014 V2.8    Sneddon	Changes to Define_Symbol args.
 **--
 */
-#pragma module PARSE_DESCRIP "V2.6-1"
+#pragma module PARSE_DESCRIP "V2.7"
 #include "mmk.h"
 #include "globals.h"
 #include <tpadef.h>
@@ -192,6 +194,9 @@
 #define PRS_K_SYM_APPEND    52
 #define PRS_K_SYM_DO	    53
 #define PRS_K_SYM_EVAL      54
+#define PRS_K_DIR_SFX_AFTER  55
+#define PRS_K_DIR_SFX_BEFORE 56
+#define PRS_K_DIR_SFX_DELETE 57
 
 /*
 ** .IFDEF context block.  Used for tracking when we're in and out
@@ -329,8 +334,8 @@ void parse_descrip (char *xline, int xlinelen, FILEHANDLE *newu, int *newmaxl,
 */
 int parse_store (struct TPABLK *tpa) {
 
-    int append = 0, len, i, do_it;
-    char *cp, *cp1, *vl_cp;
+    int len, i, do_it;
+    char *append = 0, *cp, *cp1, *vl_cp;
     int vl_sb, vl_tp, vl_ub;
     struct SYMBOL *s;
     unsigned int status;
@@ -540,6 +545,9 @@ int parse_store (struct TPABLK *tpa) {
     	break;
 
     case PRS_K_DIR_SFX:
+    case PRS_K_DIR_SFX_AFTER:
+    case PRS_K_DIR_SFX_BEFORE:
+    case PRS_K_DIR_SFX_DELETE:
     case PRS_K_DIR_FIRST:
     case PRS_K_DIR_LAST:
     	current_dirtype = tpa->tpa0.tpa$l_param;
@@ -559,6 +567,100 @@ int parse_store (struct TPABLK *tpa) {
     	    } else Build_Suffix_List("", 0);
     	    current_dirtype = 0;
     	    break;
+        case PRS_K_DIR_SFX_AFTER:
+        case PRS_K_DIR_SFX_BEFORE:
+            if (tpa->tpa0.tpa$l_stringcnt > 0) {
+                char *rhs, *rhsend;
+                int rhslen;
+
+                Resolve_Symbols((tpa->tpa_l_stringbase+
+                    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+                    tpa->tpa0.tpa$l_stringcnt, &rhs, &rhslen, 0);
+
+                cp = rhs;
+                rhsend = rhs+(rhslen-1);
+
+                /*
+                ** Skip leading whitespace and then count the following
+                ** non-whitespace characters (the suffix).
+                */
+                while ((cp <= rhsend) && isspace(*cp)) cp++;
+                for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]); len++)
+    	    	    ;
+		if (len == 0) {
+    	    	    lib$signal(MMK__NOSUFFLST, 1,
+    	    	    	       (current_dirtype == PRS_K_DIR_SFX_AFTER) ?
+    	    	    	    	   ".SUFFIXES_AFTER" : ".SUFFIXES_BEFORE");
+    	    	} else {
+    	    	    struct SFX *sfx;
+
+    	    	    sfx = find_suffix(cp, len);
+    	    	    if (sfx == 0) {
+    	    	    	lib$signal(MMK__NOTINSUFFLST, 2, len, cp);
+    	    	    	sfx = suffixes.blink;
+    	    	    } else {
+    	    	    	if (current_dirtype == PRS_K_DIR_SFX_BEFORE)
+    	    	    	    sfx = sfx->blink;
+    	    	    }
+
+    	    	    cp += len;
+                    while (cp <= rhsend) {
+                    	while ((cp <= rhsend) && isspace(*cp)) cp++;
+                    	for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]);
+    	    	    	    	len++)
+    	    	    	    ;
+    	    	    	if (len > 0) {
+    	    	    	    if (create_suffix(cp, len, sfx) == 0)
+    	    	    	    	lib$signal(MMK__ALRINSUFFLST, 2, len, cp);
+    	    	    	}
+	    	    	cp += len;
+    	    	    }
+                }
+                free(rhs);
+    	    	set_mmssuffixes();
+            } else {
+    	    	lib$signal(MMK__NOSUFFLST, 1,
+    	    	    	   (current_dirtype == PRS_K_DIR_SFX_AFTER) ?
+    	    	    	       ".SUFFIXES_AFTER" : ".SUFFIXES_BEFORE");
+    	    }
+            current_dirtype = 0;
+            break;
+        case PRS_K_DIR_SFX_DELETE:
+            if (tpa->tpa0.tpa$l_stringcnt > 0) {
+                char *rhs, *rhsend;
+                int rhslen;
+
+                Resolve_Symbols((tpa->tpa_l_stringbase+
+                    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
+                    tpa->tpa0.tpa$l_stringcnt, &rhs, &rhslen, 0);
+
+                cp = rhs;
+                rhsend = rhs+(rhslen-1);
+                while (cp <= rhsend) {
+                    struct SFX *sfx;
+
+                    /*
+                    ** Skip leading whitespace and then count the following
+                    ** non-whitespace characters (the suffix).
+                    */
+                    while ((cp <= rhsend) && isspace(*cp)) cp++;
+                    for (len = 0; (cp+len <= rhsend) && !isspace(cp[len]);
+    	    	    	    len++)
+    	    	    	;
+    	    	    if (len > 0) {
+    	    	    	sfx = find_suffix(cp, len);
+    	    	    	if (sfx != 0) {
+    	    	    	    queue_remove(sfx, &sfx);
+    	    	    	    mem_free_sfx(sfx);
+    	    	    	}
+    	    	    }
+    	    	    cp += len;
+                }
+                free(rhs);
+    	    	set_mmssuffixes();
+            } else Build_Suffix_List("", 0);
+            current_dirtype = 0;
+            break;
     	case PRS_K_DIR_FIRST:
     	    current_cmdque = (struct QUE *) &do_first;
     	    current_dirtype = 0;
@@ -801,7 +903,7 @@ int parse_store (struct TPABLK *tpa) {
     	    break;
 	}
     case PRS_K_SYM_APPEND:
-	if (tpa->tpa0.tpa$l_param == PRS_K_SYM_APPEND) append = 1;
+	if (tpa->tpa0.tpa$l_param == PRS_K_SYM_APPEND) append = "";
     case PRS_K_SYM_VALUE:
     	if (tpa->tpa0.tpa$l_stringcnt == 0) {
     	    Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, "", 0, append);
@@ -850,7 +952,7 @@ int parse_store (struct TPABLK *tpa) {
 	sp_once(&cmd, sym_do_actrtn, &result);
 
 	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name,
-			result.dsc$a_pointer, result.dsc$w_length, 0);
+			result.dsc$a_pointer, result.dsc$w_length);
 
 	str$free1_dx(&result);
 	free(cp);
@@ -863,7 +965,7 @@ int parse_store (struct TPABLK *tpa) {
 	Resolve_Symbols((tpa->tpa_l_stringbase+
     	    (((char *)tpa->tpa0.tpa$l_stringptr)-tpa->tpa_l_upbase)),
     	    tpa->tpa0.tpa$l_stringcnt, &cp, &len, 0);
-	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len, 0);
+	Define_Symbol(MMK_K_SYM_DESCRIP, current_sym->name, cp, len);
 	free(cp);
     	just_did_rule = 0;
     	break;
