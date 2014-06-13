@@ -62,7 +62,7 @@
 **				 [DCL]DCLDEF.SDL (VMS source).
 **  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
 **  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
-**  09-JUN-2014	    Sneddon	Add create_suffix.
+**  12-JUN-2014	    Sneddon	Add create_suffix and set_mmssuffixes.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -363,6 +363,7 @@ typedef POINTER SPHANDLE;
     int Resolve_Symbols(char *in, int inlen, char * *out, int *outlen, int dont_resolve_unknowns);
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *dep, struct OBJREF *srcref, struct QUE *chgque);
+    void set_mmssuffixes(void);
 /*
 **  OBJECTS
 */
