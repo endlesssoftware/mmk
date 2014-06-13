@@ -46,6 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	09-Apr-2013	Sneddon		INCLUDE does not require leading '.'.
 	01-May-2013	Sneddon		#68: change '!=' to '|='.
 	30-May-2014	Sneddon		Replace | with <vbar>.
+    	13-JUN-2014     Sneddon         Add .SUFFIXES_* directives.
 
 <ENDCOMMENT>
 <INCLUDE>(ETC_DIR:DYNAMIC_SYMBOLS.SDML)
@@ -333,8 +334,24 @@ list which goes with its list of built-in inference rules; see
 <reference>(default_rules) for more information on the built-in rules
 and suffix list.
 <P>You can augment or replace the built-in suffix list
-with your own suffixes by using the .SUFFIXES directive in a rules
-file or a makefile.
+with your own suffixes by using the directives listed in <reference>(sfxdir)
+in a rules file or a makefile.
+
+<table>(Suffix List Directives\sfxdir)
+<table_setup>(10)
+<table_heads>(Directive\Description)
+<table_row>(.SUFFIXES\Specify no file types to clear the list or append file
+                      types to the end of the suffix list)
+<table_row>(.SUFFIXES_BEFORE\Inserts a list of file types in the suffixes
+			     precedence list before the specified first
+			     file type)
+<table_row>(.SUFFIXES_AFTER\Inserts a list of file types in the suffixes
+			    precedence list after the specified first
+			    file type.)
+<table_row>(.SUFFIXES_DELETE\Removes a list of files types from the suffix
+			     precedence list.)
+<end_table>
+
 <P>For example, let's say you have a Modula-2 compiler on your system, whose
 source files have a file type (suffix) of .MOD. MMK has no built-in inference
 rules for this file type; you could add one with the following sequence:
@@ -355,6 +372,10 @@ clears the current suffix list.  You can do this to prevent MMK from
 using any inference rules for the current build, or to follow it with
 another .SUFFIXES directive that specifies only those suffixes for which you
 want inference rules to be enabled.
+
+<P>
+It is also possible to determine the current active .SUFFIXES list by
+using the builtin macro MMSSUFFIXES.
 
 <head1>(Using Conditionals\using_cond)
 <p>

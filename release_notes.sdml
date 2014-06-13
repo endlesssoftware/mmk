@@ -24,11 +24,47 @@ that is not provided elsewhere in the MMK manual.
 <CHAPTER>(Installation Notes)
 <P>
 This chapter contains items of interest pertaining to the installation
-of MX.
+of MMK.
+
+<CHAPTER>(New Features and Changes in MMK V5.1)
+<P>
+This chapter notes the changes that were made in MMK V5.1.
+
+<HEAD1>(New builtin macros)
+<P>This release of MMK includes the following new builtin macros.
+<LIST>(UNNUMBERED)
+<LE>MMSSUFFIXES
+<ENDLIST>
+
+<HEAD1>(Extended Suffix List Manipulation)
+<P>This release now includes support for the MMS suffix manipulation
+directives listed in <reference>(sfxdir).
+
+<table>(New Suffix List Directives\sfxdir)
+<table_setup>(10)
+<table_heads>(Directive\Description)
+<table_row>(.SUFFIXES_BEFORE\Inserts a list of file types in the suffixes
+                             precedence list before the specified first
+                             file type)
+<table_row>(.SUFFIXES_AFTER\Inserts a list of file types in the suffixes
+                            precedence list after the specified first
+                            file type.)
+<table_row>(.SUFFIXES_DELETE\Removes a list of files types from the suffix
+                             precedence list.)
+<end_table>
+
+<note>
+These directives will produce informational messages, similar to MMS, for
+instances where suffixes already exist or are missing (in the case of the
+first argument to .SUFFIXES_BEFORE and .SUFFIXES_AFTER).  However, the usual
+behaviour of silently adding existing suffixes when using .SUFFIXES is
+retained.
+<endnote>
 
 <CHAPTER>(New Features and Changes in MMK V5.0)
 <P>
-This chapter notes the changes that were made in MMK V5.0.
+This chapter notes the changes that were made in MMK V5.0, release
+07-MAR-2013.
 
 <HEAD1>(Name Change)
 <P>MadGoat Make has been renamed back to MMK, now that MadGoat
