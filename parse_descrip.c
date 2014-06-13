@@ -412,28 +412,28 @@ int parse_store (struct TPABLK *tpa) {
     case PRS_K_DIR_IFLEQ:
     case PRS_K_DIR_IFGTR:
     case PRS_K_DIR_IFLSS:
-        iftype = tpa->tpa0.tpa$l_param;
-        return SS$_NORMAL;
+    	iftype = tpa->tpa0.tpa$l_param;
+    	return SS$_NORMAL;
 
     case PRS_K_DIR_IFRHS:
-	if (and || or || elsif) {
-	    ifent = ifque.flink;
-	} else {
-	    ifent = malloc(sizeof(struct IF));
-	    ifent->matched = 0;
+    	if (and || or || elsif) {
+    	    ifent = ifque.flink;
+    	} else {
+    	    ifent = malloc(sizeof(struct IF));
+    	    ifent->matched = 0;
             queue_insert(ifent, &ifque);
-	}
-	if (ifent->matched) {
-	    elsif = 0;
-	    return SS$_NORMAL;
-	}
-        /*
-	** If the length of the rhs token is zero then this is the symbol form of
-	** .IF. MMS has obsoleted .IF[N]DEF and replaced it with '.IF [.NOT] symbol'.
-	** So, we do a lookup instead. If the symbol exists, then the test result
-	** is positive.
-        */
-	if (tpa->tpa0.tpa$l_tokencnt == 0) {
+    	}
+    	if (ifent->matched) {
+    	    elsif = 0;
+    	    return SS$_NORMAL;
+    	}
+    	/*
+    	** If the length of the rhs token is zero then this is the symbol
+    	** form of .IF. MMS has obsoleted .IF[N]DEF and replaced it with
+    	** '.IF [.NOT] symbol'.  So, we do a lookup instead. If the symbol
+    	** exists, then the test result is positive.
+    	*/
+    	if (tpa->tpa0.tpa$l_tokencnt == 0) {
             strncpy(symnam, iflhs.dsc$a_pointer, iflhs.dsc$w_length);
             *(symnam+iflhs.dsc$w_length) = 0;
             s = Lookup_Symbol(symnam);
