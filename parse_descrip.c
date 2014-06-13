@@ -597,10 +597,10 @@ int parse_store (struct TPABLK *tpa) {
     	    	    sfx = find_suffix(cp, len);
     	    	    if (sfx == 0) {
     	    	    	lib$signal(MMK__NOTINSUFFLST, 2, len, cp);
-    	    	    	sfx = &suffixes;
+    	    	    	sfx = suffixes.blink;
     	    	    } else {
     	    	    	if (current_dirtype == PRS_K_DIR_SFX_BEFORE)
-    	    	    	    sfx = sfx->flink;
+    	    	    	    sfx = sfx->blink;
     	    	    }
 
     	    	    cp += len;
@@ -610,7 +610,7 @@ int parse_store (struct TPABLK *tpa) {
     	    	    	    	len++)
     	    	    	    ;
     	    	    	if (len > 0) {
-    	    	    	    if (create_suffix(cp, len, sfx->blink) == 0)
+    	    	    	    if (create_suffix(cp, len, sfx) == 0)
     	    	    	    	lib$signal(MMK__ALRINSUFFLST, 2, len, cp);
     	    	    	}
 	    	    	cp += len;
