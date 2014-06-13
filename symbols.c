@@ -891,8 +891,7 @@ void set_mmssuffixes (void) {
 
     sfx = suffixes.flink;
     while (sfx != (struct SFX *) &suffixes) {
-    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value, -1,
-    	    	      (sfx->flink != (struct SFX *) &suffixes) ? " " : "");
+    	Define_Symbol(MMK_K_SYM_BUILTIN, mmssuffixes, sfx->value, -1, " ");
     	sfx = sfx->flink;
     }
 
