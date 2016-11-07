@@ -63,7 +63,7 @@
 **  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
 **  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
 **  12-JUN-2014	    Sneddon	Add create_suffix and set_mmssuffixes.
-**  07-NOV-2016     Sneddon     Adjust MMK_S_DCL as suggested by Hunter Goatley. #97.
+**  07-NOV-2016     Sneddon     Adjust MMK_S_DCL as suggested by Hunter Goatley. #94.
 */
 #ifndef mmk_h__
 #define mmk_h__
