@@ -63,6 +63,7 @@
 **  07-FEB-2013	    Sneddon	Tweaked Resolve_Symbols definition.
 **  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
 **  12-JUN-2014	    Sneddon	Add create_suffix and set_mmssuffixes.
+**  07-NOV-2016     Sneddon     Adjust MMK_S_DCL as suggested by Hunter Goatley. #97.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -147,7 +148,7 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 #if __VMS_VER >= 70320022	/* OpenVMS Alpha V7.3-2 and higher has... */
 #define MMK_S_DCL	4097	/*  4096 is DCL command line + trailing null */
 #else				/* OpenVMS Alpha V7.3-1 and lower has... */
-#define MMK_S_DCL	256	/* 255 is DCL command line + trailing null */
+#define MMK_S_DCL	254	/* 255 is DCL command line + trailing null */
 #endif
 #define MMK_S_MAXRSS	NAML$C_MAXRSS
 #else
