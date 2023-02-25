@@ -237,7 +237,7 @@
 /*
 ** External references
 */
-#if defined(__ALPHA) || defined(__ia64__)
+#ifndef __VAX
     extern mmk_cld;
 #else
     globalref mmk_cld;
