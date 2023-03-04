@@ -174,6 +174,7 @@
 #ifndef SYI$_ARCH_NAME
 #define SYI$_ARCH_NAME 4454
 #endif
+#include <stdio.h>
 
     typedef struct _exhblk {
     	struct _exhblk *exh_a_flink;
@@ -279,6 +280,8 @@ unsigned int main (void) {
     ITMLST  syilst[2];
     DESCRIP cmdstr;
     char target[256], descripfile[256], tmp[256];
+    char str1[256], *str2;
+    int length_needed;
     $DESCRIPTOR(cmdname, "MMK ");
     unsigned int status;
     int did1macro, doing_file, i;
@@ -368,12 +371,12 @@ unsigned int main (void) {
     }
     Define_Symbol(MMK_K_SYM_BUILTIN, "MMS$ARCH_NAME", tmp, len);
     Define_Symbol(MMK_K_SYM_BUILTIN, "MMSARCH_NAME", tmp, len);
-    if (tmp[0] == 'V')
-        Define_Symbol(MMK_K_SYM_BUILTIN, "MMSVAX", "1", 1);
-    else if (tmp[0] == 'A')
-        Define_Symbol(MMK_K_SYM_BUILTIN, "MMSALPHA", "1", 1);
-    else
-        Define_Symbol(MMK_K_SYM_BUILTIN, "MMSIA64", "1", 1);
+    length_needed = snprintf(str1, sizeof str1, "MMS%s", tmp);
+    if (length_needed < 0 || length_needed >= sizeof str1) {
+        return SS$_INSFMEM;
+    }
+    for (str2 = str1; *str2 = toupper(*str2); str2++);
+    Define_Symbol(MMK_K_SYM_BUILTIN, str1, "1", 1);
 
 /*
 ** Get the command parameters and qualifiers
