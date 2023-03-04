@@ -1,7 +1,7 @@
 $ say = "write sys$output"
 $ arch = F$GETSYI("ARCH_NAME")
 $ mflag = ""
-$ IF arch .NES. "VAX" THEN mflag = "/MIGRATION"
+$ IF arch .NES. "VAX" THEN mflag = "/MIGRATION/NOWARN"
 $
 $ say ""
 $ say "   MMK Bootstrap Procedure"
