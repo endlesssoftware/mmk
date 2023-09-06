@@ -62,7 +62,7 @@ $   mmk_system_type = 1
 $   mmk_system_name = mmk_arch
 $ ELSE
 $   mmk_system_type = F$GETSYI ("ARCH_TYPE")
-$   mmk_system_name = F$ELEMENT(mmk_system_type, ",", "OTHER,VAX,AXP,I64") - ","
+$   mmk_system_name = F$ELEMENT(mmk_system_type, ",", "OTHER,VAX,AXP,I64,X86_64") - ","
 $   mmk_arch = F$EDIT (F$GETSYI ("ARCH_NAME"), "TRIM,UPCASE")
 $ ENDIF
 $ IF mmk_arch .EQS. "VAX"
@@ -76,12 +76,21 @@ $ THEN
 $   MMK_REQD_VMSVER = "V1.5"
 $   MMK_REQD_VMSVER_OLD = "015"
 $   base_saveset   = "C"
+$   mmk_arch = "AXP"
 $ ENDIF
 $ IF mmk_arch .EQS. "IA64"
 $ THEN
 $   MMK_REQD_VMSVER = "V8.2"
 $   MMK_REQD_VMSVER_OLD = "082"
 $   base_saveset   = "D"
+$   mmk_arch = "I64"
+$ ENDIF
+$ IF mmk_arch .EQS. "X86_64"
+$ THEN
+$   MMK_REQD_VMSVER = "V9.2"
+$   MMK_REQD_VMSVER_OLD = "092"
+$   base_saveset   = "E"
+$   mmk_arch = "X86"
 $ ENDIF
 $ VMI$CALLBACK CHECK_VMS_VERSION MMK_VMSVEROK 'MMK_REQD_VMSVER_OLD'
 $ IF .NOT. MMK_VMSVEROK
@@ -148,11 +157,11 @@ $ TYPE SYS$INPUT:
 $!
 $ mmk_upgrading = 0
 $!
-$ mmk_do_command = "YES"
-$ mmk_do_help = "YES"
-$ mmk_do_doc = "YES"
-$ mmk_do_source = "NO"
-$ mmk_do_startup = "YES"
+$ mmk_do_command == "YES"
+$ mmk_do_help == "YES"
+$ mmk_do_doc == "YES"
+$ mmk_do_source == "NO"
+$ mmk_do_startup == "YES"
 $!
 $ mmk_pcsi_db = "SYS$SYSTEM:ESS-''mmk_system_name'VMS-MMK-*.PCSI$DATABASE"
 $ IF F$SEARCH(mmk_pcsi_db) .NES. ""
@@ -281,7 +290,7 @@ $   VMI$CALLBACK MESSAGE I INSTALL_SOURCE "Installing source kit..."
 $   IF F$PARSE("''mmk_root'.SRC]").eqs."" THEN -
         VMI$CALLBACK CREATE_DIRECTORY USER 'mmk_root'.SRC] -
                 "/OWNER=[1,4]/PROT=(S:RWE,O:RWE,G:R,W:R)"
-$   VMI$CALLBACK RESTORE_SAVESET E
+$   VMI$CALLBACK RESTORE_SAVESET F
 $   VMI$CALLBACK PROVIDE_FILE MMK_TMP MMK'mmk_kit_version'_SOURCE.ZIP -
 	'mmk_root'.SRC]
 $ ENDIF
