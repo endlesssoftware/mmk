@@ -154,6 +154,8 @@
 **					 of queue.
 **    	13-JUN-2014 V5.3    Sneddon     Changes for new Define_Symbol args.
 **                                      Define MMSSUFFIXES before parsing.
+**	 5-SEP-2023 V5.4    Goatley	Add code from Craig Berry to define
+**					architecture builtins.
 **--
 */
 #include "version.h"
@@ -280,7 +282,7 @@ unsigned int main (void) {
     ITMLST  syilst[2];
     DESCRIP cmdstr;
     char target[256], descripfile[256], tmp[256];
-    char str1[256], *str2;
+    char str1[256], *str2, *str3;
     int length_needed;
     $DESCRIPTOR(cmdname, "MMK ");
     unsigned int status;
@@ -371,11 +373,33 @@ unsigned int main (void) {
     }
     Define_Symbol(MMK_K_SYM_BUILTIN, "MMS$ARCH_NAME", tmp, len);
     Define_Symbol(MMK_K_SYM_BUILTIN, "MMSARCH_NAME", tmp, len);
-    length_needed = snprintf(str1, sizeof str1, "MMS%s", tmp);
-    if (length_needed < 0 || length_needed >= sizeof str1) {
+
+/*
+** From Craig Berry, added by Hunter Goatley,  5-SEP-2023 15:28
+
+Fix architecture built-in macro for x86_64
+
+Rather than adding a fourth hard-coded option to the list, let's
+derive the built-in name from the architecture name we already
+have.  Some of them come back from sys$getsyi in mixed case, so
+upper case the result when defining the built-in.
+
+N.B.  The existing behavior differs from MMS and is not changed
+here.  MMS will set, for example, MMSALPHA to a value of "ALPHA"
+whereas MMK sets it to "1".  Either should work in an IFDEF, so
+it may not matter.
+
+*/
+
+    if ((len + 3) > sizeof(str1))
         return SS$_INSFMEM;
-    }
-    for (str2 = str1; *str2 = toupper(*str2); str2++);
+    /* We don't have snprintf() on VAX, so just copy the bytes to
+    ** create the MMSxxxx builtin name
+    */
+    str1[0] = 'M';
+    str1[1] = 'M';
+    str1[2] = 'S';
+    for (str2 = &str1[3], str3 = tmp; *str2 = toupper(*str3++); str2++);
     Define_Symbol(MMK_K_SYM_BUILTIN, str1, "1", 1);
 
 /*
