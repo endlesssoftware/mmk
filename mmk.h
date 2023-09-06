@@ -103,6 +103,16 @@ typedef struct dsc$descriptor DESCRIP;
 typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 
 /*
+** If building on pre-V7, supply our own strdup() and str*casecmp() routines
+*/
+#if __CRTL_VER <= 70000000
+extern char *strdup (char *);
+extern int *strcasecmp (char *, char *);
+extern int *strncasecmp (char *, char *, int);
+#endif
+
+
+/*
 ** Handy macros
 */
 #define OK(s) $VMS_STATUS_SUCCESS(s)
