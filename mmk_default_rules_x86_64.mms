@@ -9,6 +9,7 @@
 !
 !   03-MAY-2004	V1.0	Madison	    Initial coding (from ACP)
 !   22-AUG-2012 V2.4    Sneddon     Add GENCAT support.
+!   13-JUL-2023	V2.5	Goatley	    Add X86_64 support.
 !
 
 !

@@ -26,7 +26,7 @@ that is not provided elsewhere in the MMK manual.
 This chapter contains items of interest pertaining to the installation
 of MMK.
 
-<CHAPTER>(New Features and Changes in MMK V5.1-2)
+<CHAPTER>(New Features and Changes in MMK V5.1-3)
 <P>
 This chapter notes the changes that were made in MMK V5.1-2 and V5.1-1.
 
@@ -35,8 +35,16 @@ This chapter notes the changes that were made in MMK V5.1-2 and V5.1-1.
 
 <HEAD1>(Fixed builtin symbol bug)
 <P>
-Changes for MMK on OpenVMS X86_64: the builtin symbol MMSIA64 is no longer
+MMK V5.1-2 changes on OpenVMS X86_64: the builtin symbol MMSIA64 is no longer
 defined, and the builtin symbol MMSX86_64 is now defined.
+
+<HEAD1>(Fix long command line support for VAX)
+<P>
+MMK now properly handles DCL command lines longer than 255 characters on VAX.
+Such lines are broken up into continuation lines that are passed to the
+worker subprocess. The code was there in previous versions, but the limit
+was defined incorrectly, so the continuation lines were 257 characters long,
+which was two characters too long for VAX.
 
 
 <CHAPTER>(New Features and Changes in MMK V5.1)
