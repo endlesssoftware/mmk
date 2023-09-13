@@ -64,6 +64,13 @@
 **  09-JUN-2014	    Sneddon	Add length argument to find_suffix.
 **  12-JUN-2014	    Sneddon	Add create_suffix and set_mmssuffixes.
 **  07-NOV-2016     Sneddon     Adjust MMK_S_DCL as suggested by Hunter Goatley. #94.
+**   6-SEP-2023	    Goatley	Handle long DCL lines on VAX by setting max
+**				length to 254 instead of the old 256. There's
+**				code to do continuation lines, but the lines
+**				were 257 bytes long, which exceeds the limit
+**				of 255. By limiting to 254, there's room for
+**				a '-' that is character 255, and lines longer
+**				than 255 can be processed successfully.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -101,6 +108,16 @@ typedef void 	    	*POINTER;
 typedef struct { LONG long1, long2; } TIME;
 typedef struct dsc$descriptor DESCRIP;
 typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
+
+/*
+** If building on pre-V7, supply our own strdup() and str*casecmp() routines
+*/
+#if __CRTL_VER <= 70000000
+extern char *strdup (char *);
+extern int *strcasecmp (char *, char *);
+extern int *strncasecmp (char *, char *, int);
+#endif
+
 
 /*
 ** Handy macros
@@ -148,13 +165,13 @@ typedef struct { WORD bufsiz, itmcod; POINTER bufadr, retlen; } ITMLST;
 #if __VMS_VER >= 70320022	/* OpenVMS Alpha V7.3-2 and higher has... */
 #define MMK_S_DCL	4097	/*  4096 is DCL command line + trailing null */
 #else				/* OpenVMS Alpha V7.3-1 and lower has... */
-#define MMK_S_DCL	254	/* 255 is DCL command line + trailing null */
+#define MMK_S_DCL	254	/* 255 is max DCL command line - allow for '-' */
 #endif
 #define MMK_S_MAXRSS	NAML$C_MAXRSS
 #else
 #define MMK_S_SFX       41      /* 39 + leading dot + trailing null */
 #define MMK_S_FILE      256     /* 255 is RMS limit, + trailing null */
-#define MMK_S_DCL	256	/* 255 is DCL command line + trailing null */
+#define MMK_S_DCL	254	/* 255 is max DCL command line - allow for '-' */
 #define MMK_S_MAXRSS	NAML$C_MAXRSS
 #endif
 

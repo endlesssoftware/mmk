@@ -35,11 +35,12 @@ $ if ((f$getsyi("HW_MODEL") .gt. 0) .and. (f$getsyi("HW_MODEL") .lt. 1024))
 $ then _arch_type = 1
 $ else _arch_type = f$getsyi("ARCH_TYPE")
 $ endif
-$ _arch_name = f$element(_arch_type,",","OTHER,VAX,AXP,I64") - ","
+$ _arch_name = f$element(_arch_type,",","OTHER,VAX,AXP,I64,X86") - ","
 $ _vax = (_arch_type .eq. 1)
 $ _axp = (_arch_type .eq. 2)
 $ _i64 = (_arch_type .eq. 3)
-$ _other = (.not. (_vax .or. _axp .or. _i64))
+$ _x86 = (_arch_type .eq. 4)
+$ _other = (.not. (_vax .or. _axp .or. _i64 .or. _x86))
 $
 $ dns = "define/nolog/system"
 $ say = "write sys$output"
@@ -50,6 +51,7 @@ $start:
 $ dns/translation=concealed	MMK_ROOT	'location'.]
 $ dns				MMK_AXP_EXE	MMK_ROOT:[AXP_EXE]
 $ dns				MMK_I64_EXE	MMK_ROOT:[I64_EXE]
+$ dns				MMK_X86_EXE	MMK_ROOT:[X86_EXE]
 $ dns				MMK_VAX_EXE	MMK_ROOT:[VAX_EXE]
 $ dns				MMK_EXE		MMK_'_arch_name'_EXE:
 $

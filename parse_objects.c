@@ -132,7 +132,7 @@
 /*
 ** External references
 */
-#if defined(__ALPHA) || defined(__ia64__)
+#ifndef __VAX
     extern int po_state, po_key;
     unsigned int lib$table_parse();
 #define lib$tparse lib$table_parse
