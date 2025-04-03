@@ -343,12 +343,12 @@ static void strip_comments (char *dest, char *source) {
 
     quote = 0;
     for (cp = source; *cp; cp++) {
-    	if (quote) {
-    	    if (*cp == '"') quote = !quote;
-    	} else {
-	    if (*cp == '!' || *cp == '#') break;
-	}
-    	*cp1++ = *cp;
+        if (*cp == '"') {
+            quote = !quote;
+        } else {
+            if (!quote && (*cp == '!' || *cp == '#')) break;
+        }
+        *cp1++ = *cp;
     }
     while (cp1 > dest && isspace(*(cp1-1))) cp1--;
     *cp1 = 0;
