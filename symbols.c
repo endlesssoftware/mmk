@@ -12,7 +12,7 @@
 **  AUTHOR: 	    M. Madison
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2014, Endless Software Solutions.
+**  Copyright (c) 2014-2026, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -112,9 +112,20 @@
 **	12-JUN-2014 V3.5    Sneddon	Add set_mmssuffixes.
 **	13-JUN-2014 V3.6    Sneddon	Changed how append works for the
 **                                      routine Define_Symbol.
+**      23-JUL-2026 V3.7    Sneddon     Fixed $(ORIGIN ) result strings. They
+**                                      did not align with the internal MMK
+**                                      Symbol_Types enum.
+**      24-JUL-2026 V3.7-1  Sneddon     Fix $(FOREACH ) to respect separator
+**					settings based on gnu_syntax flag.
+**					Fix Define_Symbol and Lookup_Symbol to
+**					use comon hash function and respect
+**					the case_sensitive flag.
+**	28-JUL-2026 V3.8    Sneddon	Further changes to restructure all the
+**					filespec-related builtin functions.
+**                                      Re-write COLLAPSE.
 **--
 */
-#pragma module SYMBOLS "V3.6"
+#pragma module SYMBOLS "V3.8"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -127,6 +138,59 @@
 #include <ctype.h>
 #include <rms.h>
 #define ARGMAX (sizeof(int) * 8)
+
+/*
+ * WHITESPACE is here, rather than a static below because there
+ * are some instances where we need to add a character to this
+ * list. So, we use the C string syntax where two adjacent
+ * string literals become the same string literal.
+ */
+#define WHITESPACE " \r\n\t\v\f"
+
+/*
+ * Macros for accessing the fields in NAM or NAML blocks,
+ * depending on the architecture.
+ */
+#ifndef NAML$C_BID
+#define NAM_S_BLN NAM$C_BLN
+
+#define get_node(_np)		(((struct NAM *)(_np))->nam$l_node)
+#define get_node_size(_np)	(((struct NAM *)(_np))->nam$b_node)
+#define get_dev(_np)		(((struct NAM *)(_np))->nam$l_dev)
+#define get_dev_size(_np)	(((struct NAM *)(_np))->nam$b_dev)
+#define get_dir(_np)		(((struct NAM *)(_np))->nam$l_dir)
+#define get_dir_size(_np)	(((struct NAM *)(_np))->nam$b_dir)
+#define get_name(_np)		(((struct NAM *)(_np))->nam$l_name)
+#define get_name_size(_np)	(((struct NAM *)(_np))->nam$b_name)
+#define get_type(_np)		(((struct NAM *)(_np))->nam$l_type)
+#define get_type_size(_np)	(((struct NAM *)(_np))->nam$b_type)
+#define get_ver(_np)		(((struct NAM *)(_np))->nam$l_ver)
+#define get_ver_size(_np)	(((struct NAM *)(_np))->nam$b_ver)
+
+#else
+#define NAM_S_BLN NAML$C_BLN
+
+#define get_node(_np)		(((struct NAML *)(_np))->naml$l_long_node)
+#define get_node_size(_np)	(((struct NAML *)(_np))->naml$l_long_node_size)
+#define get_dev(_np)		(((struct NAML *)(_np))->naml$l_long_dev)
+#define get_dev_size(_np)	(((struct NAML *)(_np))->naml$l_long_dev_size)
+#define get_dir(_np)		(((struct NAML *)(_np))->naml$l_long_dir)
+#define get_dir_size(_np)	(((struct NAML *)(_np))->naml$l_long_dir_size)
+#define get_name(_np)		(((struct NAML *)(_np))->naml$l_long_name)
+#define get_name_size(_np)	(((struct NAML *)(_np))->naml$l_long_name_size)
+#define get_type(_np)		(((struct NAML *)(_np))->naml$l_long_type)
+#define get_type_size(_np)	(((struct NAML *)(_np))->naml$l_long_type_size)
+#define get_ver(_np)		(((struct NAML *)(_np))->naml$l_long_ver)
+#define get_ver_size(_np)	(((struct NAML *)(_np))->naml$l_long_ver_size)
+
+#define exp_name(_np)		(((struct NAML *)(_np))->naml$v_exp_name)
+#define exp_dir(_np)		(((struct NAML *)(_np))->naml$v_exp_dir)
+#define exp_dev(_np)		(((struct NAML *)(_np))->naml$v_exp_dev)
+#define exp_node(_np)		(((struct NAML *)(_np))->naml$v_node)
+#define exp_type(_np)		(((struct NAML *)(_np))->naml$v_exp_type)
+#define exp_ver(_np)		(((struct NAML *)(_np))->naml$v_exp_ver)
+#endif
+
 /*
 ** Builtin function descriptor
 */
@@ -156,6 +220,8 @@
     void Clear_Local_Symbols(void);
     void Create_Local_Symbols(struct DEPEND *, struct OBJREF *, struct QUE *);
     void set_mmssuffixes(void);
+    static int parse(char *fna, int fns, void *np, char *esa, int ess, char *rsa, int rss);
+    static unsigned int get_hash(const char *name);
     static void apply_subst_rule(char *, char *, char **, int *);
     static void apply_full_subst_rule(char *, char *, char **, int *);
     static char *apply_builtin (char *, char *, int, char **, int *, int *,
@@ -166,6 +232,7 @@
     static int apply_basename(int, struct dsc$descriptor *, char **, int*);
     static int apply_call(int, struct dsc$descriptor *, char **, int *);
     static int apply_collapse(int, struct dsc$descriptor *, char **, int *);
+    static int apply_device(int, struct dsc$descriptor *, char **, int *);
     static int apply_dir(int, struct dsc$descriptor *, char **, int *);
     static int apply_directory(int, struct dsc$descriptor *, char **, int *);
     static int apply_error(int, struct dsc$descriptor *, char **, int *);
@@ -203,7 +270,6 @@
 
     static struct SYMTABLE dcl_symbols;
     static int dcl_symbols_inited = 0;
-    static char *WHITESPACE = " \r\n\t\v\f";
     static char SPECIALS[] = "@*<+?%&";
     static char *SPECIAL_VAR[] = {"MMS$TARGET","MMS$TARGET_NAME",
     	    	    	    	  "MMS$SOURCE","MMS$SOURCE_LIST",
@@ -222,6 +288,7 @@
 	{ "BASENAME",		0, 1, 0x00000000, apply_basename,    },
 	{ "CALL",		1, 1, 0x00000000, apply_call,	     },
 	{ "COLLAPSE",		0, 1, 0x00000000, apply_collapse,    },
+	{ "DEVICE",		0, 1, 0x00000000, apply_device,	     },
 	{ "DIR",		0, 1, 0x00000000, apply_dir,	     },
 	{ "DIRECTORY",		0, 1, 0x00000000, apply_directory,   },
 	{ "ERROR",		1, 1, 0x00000000, apply_error,	     },
@@ -281,7 +348,8 @@ struct SYMBOL *Lookup_Symbol (char *name) {
 
     struct SYMBOL *sym;
     struct QUE    *symq;
-    unsigned char *cp;
+    unsigned char *cp = 0;
+    char *namep = 0;
     struct dsc$descriptor namdsc, valdsc;
     unsigned int status, hash_value;
     int i;
@@ -299,16 +367,23 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	dcl_symbols_inited = 1;
     }
 
-    hash_value = 0;
-    for (cp = (unsigned char *) name, i = 0; *cp != '\0' && i < 4; cp++, i++) {
-    	hash_value |= *cp;
+    if (case_sensitive) {
+    	namep = name;
+    } else {
+    	char upname[MMK_S_SYMBOL+1];
+
+    	strcpy(upname, name);
+    	upcase(upname);
+
+   	namep = upname;
     }
-    hash_value &= 0xff;
+
+    hash_value = get_hash(namep);
 
     if (temporary_symbols != 0) {
 	symq = &temporary_symbols->symlist[hash_value];
     	for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
-    	    if (strcmp(name, sym->name) == 0) return sym;
+    	    if (strcmp(namep, sym->name) == 0) return sym;
     	}
     }
 
@@ -316,16 +391,16 @@ struct SYMBOL *Lookup_Symbol (char *name) {
     	symq = symbol_override ? &override_order[i]->symlist[hash_value]
     	    	    	       : &normal_order[i]->symlist[hash_value];
     	for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
-    	    if (strcmp(name, sym->name) == 0) return sym;
+    	    if (strcmp(namep, sym->name) == 0) return sym;
     	}
     	if ((symbol_override && override_order[i] == &dcl_symbols) ||
     	    	    (!symbol_override && normal_order[i] == &dcl_symbols)) {
-    	    INIT_SDESC(namdsc, strlen(name), name);
+    	    INIT_SDESC(namdsc, strlen(namep), namep);
     	    INIT_DYNDESC(valdsc);
     	    status = lib$get_symbol(&namdsc, &valdsc);
     	    if (OK(status)) {
     	    	sym = mem_get_symbol();
-    	    	strcpy(sym->name, name);
+    	    	strcpy(sym->name, namep);
 		sym->type = MMK_K_SYM_CLI;
     	    	sym->value = malloc(valdsc.dsc$w_length+1);
     	    	memcpy(sym->value, valdsc.dsc$a_pointer, valdsc.dsc$w_length);
@@ -376,7 +451,7 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
 
     struct SYMBOL *sym;
     struct QUE    *symq;
-    char *sep = 0, upname[MMK_S_SYMBOL+1];
+    char *sep = 0, *namep = 0;
     unsigned char *cp;
     unsigned int hash_value;
     int actualcount, i;
@@ -389,14 +464,18 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     	va_end(ap);
     }
 
-    strcpy(upname, name);
-    upcase(upname);
+    if (case_sensitive) {
+    	namep = name;
+    } else {
+    	char upname[MMK_S_SYMBOL+1];
 
-    hash_value = 0;
-    for (cp = (unsigned char *) upname, i = 0; *cp != '\0' && i < 4; cp++, i++) {
-        hash_value |= *cp;
+    	strcpy(upname, name);
+    	upcase(upname);
+
+   	namep = upname;
     }
-    hash_value &= 0xff;
+
+    hash_value = get_hash(namep);
 
     switch (symtype) {
 
@@ -421,11 +500,11 @@ void Define_Symbol (SYMTYPE symtype, char *name, char *val, int vallen, ...) {
     }
 
     for (sym = symq->head; sym != (struct SYMBOL *) symq; sym = sym->flink) {
-    	if (strcmp(upname, sym->name) == 0) break;
+    	if (strcmp(namep, sym->name) == 0) break;
     }
     if (sym == (struct SYMBOL *) symq) {
     	sym = mem_get_symbol();
-    	strcpy(sym->name, upname);
+    	strcpy(sym->name, namep);
     	queue_insert(sym, symq->tail);
     } else {
 	if (sep == 0) {
@@ -554,8 +633,8 @@ int Resolve_Symbols (char *in, int inlen, char **out, int *outlen,
 **  check for $(var:<sfx>=<sfx>).
 */
     	    	    if (pp != (char *) 0) {
-			colp = find_char(dp, pp, " :");
-			if (colp != 0 && *colp == ' ') {
+			colp = find_char(dp, pp, WHITESPACE":");
+			if (colp != 0 && (strchr(WHITESPACE, *colp) != 0)) {
 			    int i;
 
 			    pp = 0;
@@ -897,6 +976,128 @@ void set_mmssuffixes (void) {
     }
 
 } /* set_mmssuffixes */
+
+/*
+**++
+**  ROUTINE:	parse
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Load the specified filename into a NAM or NAML (depending on
+**      compilation options and architecture) and call $PARSE.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int parse(char *fna,
+    	    	 int fns,
+    	    	 void *np,
+    	    	 char *esa,
+    	    	 int ess,
+    	    	 char *rsa,
+    	    	 int rss) {
+
+#ifndef NAML$C_BID
+    struct NAM *nam = (struct NAM *) np;
+#else
+    struct NAML *nam = (struct NAML *) np;
+#endif
+    struct FAB fab;
+
+    /* Initialize the FAB */
+    fab = cc$rms_fab;
+
+#ifndef NAML$C_BID
+    /* Setup NAM/FAB for VAX */
+    fab.fab$l_nam = nam;
+    fab.fab$l_fna = fna;
+    fab.fab$b_fns = fns;
+
+    *nam = cc$rms_nam;
+    nam->nam$l_esa = esa;
+    nam->nam$b_ess = ess;
+    nam->nam$l_rsa = rsa;
+    nam->nam$b_rss = rss;
+
+    nam->nam$v_synchk = 1;
+#ifdef NAM$M_NO_SHORT_UPCASE
+    nam->nam$v_no_short_upcase = 1;
+#endif
+
+#else
+    /* NAM/FAB for everyone else. */
+    fab.fab$l_naml = nam;
+    fab.fab$l_fna = (char *) -1;
+    fab.fab$b_fns = 0;
+
+    *nam = cc$rms_naml;
+    nam->naml$l_long_filename = fna;
+    nam->naml$l_long_filename_size = fns;
+    nam->naml$l_long_expand = esa;
+    nam->naml$l_long_expand_alloc = ess;
+    nam->naml$l_long_result = rsa;
+    nam->naml$l_long_result_alloc = rss;
+
+    nam->naml$v_synchk = 1;
+    nam->naml$v_no_short_upcase = 1;
+    nam->naml$v_no_short_output = 1;
+#endif
+
+    return sys$parse(&fab);
+
+} /* parse */
+
+/*
+**++
+**  ROUTINE:	get_hash
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Calculate hash value for specified name.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static unsigned int get_hash(const char *name) {
+
+    int i;
+    const unsigned char *cp;
+    unsigned int hash_value = 0;
+
+    for (cp = (const unsigned char *) name, i = 0; *cp != '\0' && i < 4; cp++, i++) {
+        hash_value |= *cp;
+    }
+
+    return hash_value &= 0xff;
+} /* get_hash */
 
 /*
 **++
@@ -1421,7 +1622,7 @@ static int apply_and (int argc, struct dsc$descriptor *argv,
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**  	Handler for built-in BASENAME  function.
+**  	Handler for built-in BASENAME function.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
@@ -1443,42 +1644,53 @@ static int apply_and (int argc, struct dsc$descriptor *argv,
 static int apply_basename (int argc, struct dsc$descriptor *argv,
 			   char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_dev,
-			   nam.nam$b_dev + nam.nam$b_dir + nam.nam$b_name,
-			   " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_node(nam)) *out = cat(*out, get_node(nam), get_node_size(nam));
+		if (exp_dev(nam))  *out = cat(*out, get_dev(nam),  get_dev_size(nam));
+    	    	if (exp_dir(nam))  *out = cat(*out, get_dir(nam),  get_dir_size(nam));
+    	    	if (exp_name(nam)) *out = cat(*out, get_name(nam), get_name_size(nam));
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_basename */
@@ -1575,7 +1787,93 @@ static int apply_call (int argc, struct dsc$descriptor *argv,
 static int apply_collapse (int argc, struct dsc$descriptor *argv,
 			   char **out, int *outlen) {
 
-    char *cp, *ep, *in, *inend;
+    int quote = 0;
+    int len = 0;
+    char *cp, *sp = 0, *in, *inend;
+
+    *out = 0;
+    *outlen = 0;
+
+    in = cp = argv[0].dsc$a_pointer;
+    inend = in + argv[0].dsc$w_length;
+
+    while (cp < inend) {
+    	unsigned char c = *cp;
+
+	if (quote) {
+    	    /* We're inside a quoted string, so everything is included. */
+    	    if (c == quote) {
+    	    	/* Okay, we've found the end quote. Flip quoting off */
+    	    	quote = 0;
+    	    }
+    	} else {
+    	    if (strchr(WHITESPACE, c) == 0) {
+    	    	/* We've got a non-whitespace char */
+    	    	if ((c == '\'') || (c == '"')) {
+    	    	    quote = c;
+    	    	}
+
+    	    	if (!sp)
+    	    	    sp = cp;
+    	    } else {
+		/*
+    	    	 * We've found a blank, so flush what we have and
+    	    	 * clear the start pointer.
+    	    	 */
+    	    	len = cp-sp;
+    	    	if (sp && (len > 0)) {
+	            *out = cat (*out, sp, len);
+    	    	}
+
+    	    	sp = 0;
+    	    }
+    	}
+
+    	cp++;
+    }
+
+    len = cp - sp;
+    if (sp && (len > 0)) {
+    	*out = cat(*out, sp, len);
+    }
+
+    if (*out != (char *) 0) *outlen = strlen(*out);
+
+    return 0;
+} /* apply_collapse */
+
+/*
+**++
+**  ROUTINE:	apply_device
+**
+**  FUNCTIONAL DESCRIPTION:
+**
+**  	Handler for built-in DEVICE function.
+**
+**  RETURNS:	cond_value, longword (unsigned), write only, by value
+**
+**  PROTOTYPE:
+**
+**  	tbs
+**
+**  IMPLICIT INPUTS:	None.
+**
+**  IMPLICIT OUTPUTS:	None.
+**
+**  COMPLETION CODES:
+**
+**
+**  SIDE EFFECTS:   	None.
+**
+**--
+*/
+static int apply_device (int argc, struct dsc$descriptor *argv,
+		         char **out, int *outlen) {
+
+    int status;
+    char *cp, *in, *inend, *sp;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
@@ -1584,20 +1882,41 @@ static int apply_collapse (int argc, struct dsc$descriptor *argv,
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
-    	    ep = cp;
-    	    while ((++cp < inend)
-    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0))
-    	    	;
-	    *out = cat (*out, ep, cp-ep);
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+		if (exp_dev(nam))  *out = cat(*out, get_dev(nam),  get_dev_size(nam));
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
     	}
-    	while ((++cp < inend)
-    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-    	    ;
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != (char *) 0) *outlen = strlen(*out);
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
-} /* apply_collapse */
+} /* apply_dir */
 
 /*
 **++
@@ -1605,7 +1924,7 @@ static int apply_collapse (int argc, struct dsc$descriptor *argv,
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**  	Handler for built-in DIR  function.
+**  	Handler for built-in DIR function.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
@@ -1627,41 +1946,53 @@ static int apply_collapse (int argc, struct dsc$descriptor *argv,
 static int apply_dir (int argc, struct dsc$descriptor *argv,
 		      char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_dev, nam.nam$b_dev + nam.nam$b_dir,
-			   " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_node(nam)) *out = cat(*out, get_node(nam), get_node_size(nam));
+		if (exp_dev(nam))  *out = cat(*out, get_dev(nam),  get_dev_size(nam));
+    	    	if (exp_dir(nam))  *out = cat(*out, get_dir(nam),  get_dir_size(nam));
+    	    	else		   *out = cat(*out, "[]", 2);
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_dir */
@@ -1672,7 +2003,7 @@ static int apply_dir (int argc, struct dsc$descriptor *argv,
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**  	Handler for built-in DIRECTORY  function.
+**  	Handler for built-in DIRECTORY function.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
@@ -1692,42 +2023,53 @@ static int apply_dir (int argc, struct dsc$descriptor *argv,
 **--
 */
 static int apply_directory (int argc, struct dsc$descriptor *argv,
-			    char **out, int *outlen) {
+		            char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_dir, nam.nam$b_dir, " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_dir(nam))  *out = cat(*out, get_dir(nam),  get_dir_size(nam));
+    	    	else		   *out = cat(*out, "[]", 2);
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_directory */
@@ -1771,7 +2113,7 @@ static int apply_error (int argc, struct dsc$descriptor *argv,
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**  	Handler for built-in FILENAME  function.
+**  	Handler for built-in FILENAME function.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
@@ -1791,42 +2133,52 @@ static int apply_error (int argc, struct dsc$descriptor *argv,
 **--
 */
 static int apply_filename (int argc, struct dsc$descriptor *argv,
-			   char **out, int *outlen) {
+		           char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_name, nam.nam$b_name, " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_name(nam)) *out = cat(*out, get_name(nam), get_name_size(nam));
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_filename */
@@ -1857,42 +2209,52 @@ static int apply_filename (int argc, struct dsc$descriptor *argv,
 **--
 */
 static int apply_filetype (int argc, struct dsc$descriptor *argv,
-			   char **out, int *outlen) {
+		      	   char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_type, nam.nam$b_type, " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_type(nam)) *out = cat(*out, get_type(nam), get_type_size(nam));
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_filetype */
@@ -1925,45 +2287,55 @@ static int apply_filetype (int argc, struct dsc$descriptor *argv,
 static int apply_fileversion (int argc, struct dsc$descriptor *argv,
 			      char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS], rsa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$l_rsa = rsa;
-    nam.nam$b_rss = sizeof(rsa);
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-		if (OK(sys$search(&fab))) {
-	    	    *out = cat(*out, nam.nam$l_ver, nam.nam$b_ver, " ", 1);
-		} else {
-		    *out = cat(*out, ";", 1, " ", 1);
-		}
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	if (exp_ver(nam)) *out = cat(*out, get_ver(nam), get_ver_size(nam));
+
+    	    	/*
+    	    	 * We only append a space if something has been
+    	    	 * written to out. This matches the MMS output.
+    	    	 */
+    	       	if (*out)
+    	    	    *out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*outlen = strlen(*out);
+    	if (*outlen)
+    	    *outlen = *outlen - 1;
+    }
 
     return 0;
 } /* apply_fileversion */
@@ -2226,16 +2598,22 @@ static int apply_firstword (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
+    /* Skip leading whitespace */
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while ((cp < inend)
-	&& (strchr(WHITESPACE, *cp++) != (char *) 0))
-	;
+	&& (strchr(WHITESPACE, *cp) != (char *) 0)) {
+	cp++;
+    }
+
+    /* Have we got a string left? */
     if (cp < inend) {
-	sp = cp-1;
+    	/* Yup, so now skip ahead until we hit the next whitespace */
+	sp = cp++;
 	while ((cp < inend)
-	    && (strchr(WHITESPACE, *cp++) == (char *) 0))
-	    ;
+	    && (strchr(WHITESPACE, *cp) == (char *) 0)) {
+	    cp++;
+    	}
 	*outlen = cp-sp;
 	*out = cat(0, sp, *outlen);
     }
@@ -2295,13 +2673,23 @@ static int apply_foreach (int argc, struct dsc$descriptor *argv,
 	    resolved_MMS_macro |= Resolve_Symbols(argv[2].dsc$a_pointer,
 						  argv[2].dsc$w_length, &tmp,
 						  &tmplen, 0);
-	    *out = cat (*out, tmp, tmplen, " ");
+	    *out = cat (*out, tmp, tmplen,
+			gnu_syntax ? " " : "");
     	}
     	while ((++cp < inend)
     	    && (strchr(WHITESPACE, *cp) != (char *) 0))
     	    ;
     }
-    if (*out != (char *) 0) *outlen = strlen(*out) - 1;
+    if (*out != (char *) 0) {
+    	*outlen = strlen(*out);
+
+    	/*
+	 * GNU syntax applies a space separator. So, if GNU
+	 * syntax is enabled, we remove the last one in the buffer.
+   	 */
+	if (gnu_syntax)
+    	    *outlen -= 1;
+    }
 
     symq = temporary_symbols;
     temporary_symbols = symq->next;
@@ -2539,7 +2927,7 @@ static int apply_lastword (int argc, struct dsc$descriptor *argv,
 **
 **  FUNCTIONAL DESCRIPTION:
 **
-**  	Handler for built-in NOTDIR  function.
+**  	Handler for built-in NOTDIR function.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
@@ -2559,43 +2947,53 @@ static int apply_lastword (int argc, struct dsc$descriptor *argv,
 **--
 */
 static int apply_notdir (int argc, struct dsc$descriptor *argv,
-			 char **out, int *outlen) {
+		         char **out, int *outlen) {
 
+    int status;
     char *cp, *in, *inend, *sp;
-    char esa[NAM$C_MAXRSS];
-    struct FAB fab;
-    struct NAM nam;
+    char esa[MMK_S_MAXRSS], rsa[MMK_S_MAXRSS];
+    char nam[NAM_S_BLN];
 
     *out = 0;
     *outlen = 0;
-    fab = cc$rms_fab;
-    fab.fab$l_nam = &nam;
-    nam = cc$rms_nam;
-    nam.nam$l_esa = esa;
-    nam.nam$b_ess = sizeof(esa);
-    nam.nam$b_nop = NAM$M_SYNCHK;
-#ifdef NAM$M_NO_SHORT_UPCASE
-    nam.nam$b_nop |= NAM$M_NO_SHORT_UPCASE;
-#endif
+
     in = cp = argv[0].dsc$a_pointer;
     inend = in + argv[0].dsc$w_length;
     while (cp < inend) {
-	if (strchr(WHITESPACE, *cp) == (char *)0) {
-	    fab.fab$l_fna = cp;
-	    while ((++cp < inend)
-		&& (strchr(WHITESPACE, *cp) == (char *) 0))
-		;
-	    fab.fab$b_fns = cp - fab.fab$l_fna;
-	    if (OK(sys$parse(&fab))) {
-	    	*out = cat(*out, nam.nam$l_name,
-			   nam.nam$b_name + nam.nam$b_type, " ", 1);
-	    }
-	}
-	while ((++cp < inend)
-	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-	    ;
+    	if (strchr(WHITESPACE, *cp) == (char *) 0) {
+    	    /* Not whitespace! Must be a file specification */
+    	    char *fna = cp;
+
+    	    /* Now, skip to the next whitespace, or end of string */
+    	    while ((cp < inend)
+    	    	&& (strchr(WHITESPACE, *cp) == (char *) 0)) {
+    	    	cp++;
+    	    }
+
+    	    /* Parse the filespec we have */
+    	    status = parse(fna, cp - fna, nam,
+    	    	    	   esa, sizeof(esa),
+    	    	    	   rsa, sizeof(rsa));
+    	    if (OK(status)) {
+    	    	/* That worked! Return the bits we supplied */
+    	    	if (exp_name(nam)) *out = cat(*out, get_name(nam), get_name_size(nam));
+    	    	if (exp_type(nam)) *out = cat(*out, get_type(nam), get_type_size(nam));
+
+    	       	*out = cat(*out, " ", 1);
+    	    }
+    	}
+
+	/* Skip over any whitespace in the input file list */
+    	while ((cp < inend)
+   	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+    	}
     }
-    if (*out != 0) *outlen = strlen(*out) - 1;
+
+    if (*out != 0) {
+    	*out = trim(*out);
+    	*outlen = strlen(*out);
+    }
 
     return 0;
 } /* apply_notdir */
@@ -2694,8 +3092,11 @@ static int apply_or (int argc, struct dsc$descriptor *argv,
 static int apply_origin (int argc, struct dsc$descriptor *argv,
 			 char **out, int *outlen) {
 
-    static char *ORIGINS[] = { "UNDEFINED", "SPECIAL", "FILE",
-	"COMMAND LINE", "SPECIAL", "DEFAULT", "CLI SYMBOL", "TEMPORARY" };
+    static char *ORIGINS[] = {
+    	"SPECIAL", "FILE", "COMMAND LINE",
+        "LOCAL", "DEFAULT", "CLI SYMBOL",
+	"TEMPORARY"
+    };
 
     struct SYMBOL *sym;
     char *var;
@@ -2706,9 +3107,9 @@ static int apply_origin (int argc, struct dsc$descriptor *argv,
 
     sym = Lookup_Symbol(var);
     if (sym == (struct SYMBOL *)0) {
-	*out = strdup(ORIGINS[0]);
+	*out = strdup("UNDEFINED");
     } else {
-	*out = strdup(ORIGINS[sym->type+1]);
+	*out = strdup(ORIGINS[sym->type]);
     }
     *outlen = strlen(*out);
     free(var);
@@ -2754,6 +3155,7 @@ static int apply_patsubst (int argc, struct dsc$descriptor *argv,
     *out = 0;
     *outlen = 0;
 
+    /* Gather up the different arguments */
     pat = argv[0].dsc$a_pointer;
     patend = pat + argv[0].dsc$w_length;
 
@@ -2762,9 +3164,23 @@ static int apply_patsubst (int argc, struct dsc$descriptor *argv,
 
     in = cp = argv[2].dsc$a_pointer;
     inend = in + argv[2].dsc$w_length;
+#if 0
+    /* Loop over the text looking for the matches */
+    while (cp < inend) {
+	if (strchr(WHITESPACE, *cp) != (char *) 0) {
+    	    cp++:
+    	    continue;
+    	}
+
+    	while (cp < inend) {
+    	}
+    }
+
+#else
     while (cp < inend) {
     	if (strchr(WHITESPACE, *cp) == (char *) 0) {
 	    char star = 0;
+
 	    in = cp;
 	    pp = pat;
 	    while (cp < inend) {
@@ -2821,11 +3237,13 @@ static int apply_patsubst (int argc, struct dsc$descriptor *argv,
 		free(froment);
 	    }
     	}
-    	while ((++cp < inend)
-    	    && (strchr(WHITESPACE, *cp) != (char *) 0))
-    	    ;
-    }
 
+    	while ((cp < inend)
+    	    && (strchr(WHITESPACE, *cp) != (char *) 0)) {
+    	    cp++;
+	}
+    }
+#endif
     if (*out) *outlen = strlen(*out) - 1;
 
     return 0;

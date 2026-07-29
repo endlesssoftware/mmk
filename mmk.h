@@ -4,7 +4,7 @@
 **  Main #include file for the MMK Make utilty.
 **
 **  Copyright (c) 2008, Matthew Madison.
-**  Copyright (c) 2014, Endless Software Solutions.
+**  Copyright (c) 2014-2026, Endless Software Solutions.
 **  
 **  All rights reserved.
 **  
@@ -71,6 +71,7 @@
 **				of 255. By limiting to 254, there's room for
 **				a '-' that is character 255, and lines longer
 **				than 255 can be processed successfully.
+**  29-JUL-2026     Sneddon     Fixed definition of MMK_S_MAXRSS for VAX.
 */
 #ifndef mmk_h__
 #define mmk_h__
@@ -172,7 +173,7 @@ extern int *strncasecmp (char *, char *, int);
 #define MMK_S_SFX       41      /* 39 + leading dot + trailing null */
 #define MMK_S_FILE      256     /* 255 is RMS limit, + trailing null */
 #define MMK_S_DCL	254	/* 255 is max DCL command line - allow for '-' */
-#define MMK_S_MAXRSS	NAML$C_MAXRSS
+#define MMK_S_MAXRSS	NAM$C_MAXRSS
 #endif
 
 /*
