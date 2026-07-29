@@ -122,10 +122,9 @@
 **					the case_sensitive flag.
 **	28-JUL-2026 V3.8    Sneddon	Further changes to restructure all the
 **					filespec-related builtin functions.
-**                                      Re-write COLLAPSE.
 **--
 */
-#pragma module SYMBOLS "V3.8"
+#pragma module SYMBOLS "V3.7-1"
 #include "mmk.h"
 #include "globals.h"
 #include <builtins.h>
@@ -166,6 +165,13 @@
 #define get_type_size(_np)	(((struct NAM *)(_np))->nam$b_type)
 #define get_ver(_np)		(((struct NAM *)(_np))->nam$l_ver)
 #define get_ver_size(_np)	(((struct NAM *)(_np))->nam$b_ver)
+
+#define exp_name(_np)		(((struct NAM *)(_np))->nam$v_exp_name)
+#define exp_dir(_np)		(((struct NAM *)(_np))->nam$v_exp_dir)
+#define exp_dev(_np)		(((struct NAM *)(_np))->nam$v_exp_dev)
+#define exp_node(_np)		(((struct NAM *)(_np))->nam$v_node)
+#define exp_type(_np)		(((struct NAM *)(_np))->nam$v_exp_type)
+#define exp_ver(_np)		(((struct NAM *)(_np))->nam$v_exp_ver)
 
 #else
 #define NAM_S_BLN NAML$C_BLN
