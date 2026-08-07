@@ -133,7 +133,7 @@
     static unsigned int sp_readattn_ast(SPHANDLE );
     static unsigned int try_to_send(SPHANDLE );
     static unsigned int send_completion(struct SPD *);
-    static unsigned int exit_handler(unsigned int *, struct QUE *);
+    static unsigned int sp_exit_handler(unsigned int *, struct QUE *);
     unsigned int sp_show_subprocess (SPHANDLE );
     static struct SPD *get_spd(int);
     static void free_spd(struct SPD *);
@@ -153,7 +153,7 @@
     	void *handler;
     	unsigned int argcnt;
     	void *p1, *p2;
-    } exhblk = {(struct EXH *) 0, (void *) exit_handler, 2,
+    } exhblk = {(struct EXH *) 0, (void *) sp_exit_handler, 2,
     	    	(void *)&exit_status, (void *) &spque};
 
 /*
@@ -756,7 +756,7 @@ static unsigned int send_completion (struct SPD *spd) {
 
 /*
 **++
-**  ROUTINE:	exit_handler
+**  ROUTINE:	sp_exit_handler
 **
 **  FUNCTIONAL DESCRIPTION:
 **
@@ -767,7 +767,7 @@ static unsigned int send_completion (struct SPD *spd) {
 **
 **  PROTOTYPE:
 **
-**  	exit_handler(unsigned int *stat, struct QUE *spq)
+**  	sp_exit_handler(unsigned int *stat, struct QUE *spq)
 **
 **  IMPLICIT INPUTS:	None.
 **
@@ -780,7 +780,7 @@ static unsigned int send_completion (struct SPD *spd) {
 **
 **--
 */
-static unsigned int exit_handler (unsigned int *stat, struct QUE *spq) {
+static unsigned int sp_exit_handler (unsigned int *stat, struct QUE *spq) {
 
     SPHANDLE ctx;
 
@@ -797,7 +797,7 @@ static unsigned int exit_handler (unsigned int *stat, struct QUE *spq) {
 
     return SS$_NORMAL;
 
-} /* exit_handler */
+} /* sp_exit_handler */
 
 /*
 **++
@@ -806,7 +806,7 @@ static unsigned int exit_handler (unsigned int *stat, struct QUE *spq) {
 **  FUNCTIONAL DESCRIPTION:
 **
 **  	Uses $GETJPI to get info on the subprocess and
-**  displays it à la CTRL/T.
+**  displays it Ã  la CTRL/T.
 **
 **  RETURNS:	cond_value, longword (unsigned), write only, by value
 **
